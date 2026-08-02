@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>テストエビデンス作成ツール 使い方ガイド</title>
+<style>
+  :root{
+    --paper:#fbfaf7; --ink:#1e2430; --line:#d8dce1; --navy:#1f3a5f;
+    --ok:#1c7c4c; --ng:#b0392f; --pending:#a6791f; --muted:#6b7280;
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; background:#e9ebee; color:var(--ink);
+    font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",Arial,sans-serif;
+    line-height:1.75;
+  }
+  header{
+    background:var(--navy); color:#fff; padding:34px 24px 30px;
+  }
+  .head-inner{ max-width:860px; margin:0 auto; }
+  header h1{ font-size:22px; margin:0 0 6px; letter-spacing:.02em; }
+  header p{ margin:0; font-size:13px; color:rgba(255,255,255,.8); }
+
+  main{
+    max-width:860px; margin:26px auto 90px; background:var(--paper);
+    padding:38px 44px 46px; box-shadow:0 1px 3px rgba(0,0,0,.15);
+  }
+  h2{
+    font-size:17px; border-bottom:2px solid var(--navy);
+    padding-bottom:8px; margin:44px 0 16px;
+  }
+  h2:first-of-type{ margin-top:8px; }
+  h2 .secno{ color:var(--navy); font-family:Menlo,Consolas,monospace; font-size:14px; margin-right:8px; }
+  h3{ font-size:14.5px; margin:26px 0 8px; color:var(--navy); }
+  p{ font-size:14px; margin:10px 0; }
+  li{ font-size:14px; margin:5px 0; }
+  ol, ul{ padding-left:24px; }
+
+  nav.toc{
+    background:#fff; border:1px solid var(--line); border-radius:6px;
+    padding:16px 22px; margin-bottom:8px;
+  }
+  nav.toc .toc-title{ font-size:12px; color:var(--muted); letter-spacing:.06em; margin-bottom:8px; }
+  nav.toc ol{ margin:0; padding-left:22px; columns:2; column-gap:36px; }
+  nav.toc li{ font-size:13.5px; margin:3px 0; break-inside:avoid; }
+  nav.toc a{ color:var(--navy); text-decoration:none; }
+  nav.toc a:hover{ text-decoration:underline; }
+
+  table{
+    border-collapse:collapse; width:100%; font-size:13.5px; margin:12px 0 18px;
+    background:#fff;
+  }
+  th, td{ border:1px solid var(--line); padding:8px 12px; text-align:left; vertical-align:top; }
+  th{ background:#f1f2f4; font-size:12px; white-space:nowrap; }
+  td.nowrap{ white-space:nowrap; }
+
+  kbd{
+    display:inline-block; background:#fff; border:1px solid #b8bec6;
+    border-bottom-width:2px; border-radius:4px; padding:1px 7px;
+    font-family:Menlo,Consolas,monospace; font-size:12px; margin:0 1px;
+  }
+  .btnname{
+    display:inline-block; background:var(--navy); color:#fff; border-radius:4px;
+    padding:1px 9px; font-size:12px; font-weight:600; margin:0 1px;
+  }
+  .btnname.ghost{ background:transparent; color:var(--navy); border:1px solid var(--navy); }
+
+  .badge{ display:inline-block; font-size:12px; font-weight:700; padding:1px 10px; border-radius:10px; }
+  .badge.OK{ background:#e2f3ea; color:var(--ok); }
+  .badge.NG{ background:#f9e4e2; color:var(--ng); }
+  .badge.PENDING{ background:#f7eed7; color:var(--pending); }
+
+  .callout{
+    border-left:4px solid var(--navy); background:#eef2f6;
+    padding:12px 16px; border-radius:0 6px 6px 0; margin:16px 0; font-size:13.5px;
+  }
+  .callout.warn{ border-left-color:var(--ng); background:#faeeed; }
+  .callout.warn .callout-title{ color:var(--ng); }
+  .callout .callout-title{ font-weight:700; font-size:13px; margin-bottom:4px; color:var(--navy); }
+
+  .flow{
+    counter-reset:step; margin:14px 0; padding:0; list-style:none;
+  }
+  .flow li{
+    position:relative; padding:0 0 14px 44px; margin:0;
+  }
+  .flow li::before{
+    counter-increment:step; content:counter(step);
+    position:absolute; left:0; top:0;
+    width:28px; height:28px; border-radius:50%;
+    background:var(--navy); color:#fff; font-weight:700; font-size:13px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .flow li:not(:last-child)::after{
+    content:""; position:absolute; left:13.5px; top:30px; bottom:0;
+    width:1px; background:var(--line);
+  }
+  .flow .step-title{ font-weight:700; font-size:14px; }
+
+  footer{
+    max-width:860px; margin:0 auto 40px; text-align:right;
+    font-size:11.5px; color:var(--muted); padding:0 8px;
+  }
+
+  @media print{
+    body{ background:#fff; }
+    main{ box-shadow:none; margin:0; max-width:100%; padding:10mm; }
+    header{ padding:16px 10mm; }
+    h2{ break-after:avoid; }
+    table, .callout, .flow li{ break-inside:avoid; }
+    nav.toc a{ text-decoration:none; color:var(--ink); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="head-inner">
+    <h1>テストエビデンス作成ツール 使い方ガイド</h1>
+    <p>スクリーンショットの貼り付け・注釈・レポート出力までをブラウザ1画面で完結させるツールの操作マニュアルです。</p>
+  </div>
+</header>
+
+<main>
+
+<nav class="toc">
+  <div class="toc-title">目次</div>
+  <ol>
+    <li><a href="#sec1">このツールについて</a></li>
+    <li><a href="#sec2">基本の流れ（クイックスタート）</a></li>
+    <li><a href="#sec3">ツールバーの設定項目</a></li>
+    <li><a href="#sec4">テストケースの操作</a></li>
+    <li><a href="#sec5">画像の追加</a></li>
+    <li><a href="#sec6">注釈のつけかた</a></li>
+    <li><a href="#sec7">保存と読み込み（作業用と配布用）</a></li>
+    <li><a href="#sec8">レポートの見かた（レビュアー向け）</a></li>
+    <li><a href="#sec9">縮小・形式設定の考えかた</a></li>
+    <li><a href="#sec10">注意事項</a></li>
+    <li><a href="#sec11">ショートカット一覧</a></li>
+  </ol>
+</nav>
+
+<h2 id="sec1"><span class="secno">1.</span>このツールについて</h2>
+<p>テスト実施時のエビデンス（画面キャプチャ＋説明）を作成するためのツールです。従来のExcelにスクリーンショットを貼り付ける運用を置き換えることを目的としています。</p>
+<ul>
+  <li><b>インストール不要</b>：HTMLファイルをブラウザで開くだけで動きます。共有フォルダに置けばチーム全員がそのまま使えます。</li>
+  <li><b>すべてブラウザ内で完結</b>：画像もテキストも外部に一切送信されません。ネットワーク接続も不要です。</li>
+  <li><b>成果物は1ファイル</b>：画像込みの単一HTMLとして保存でき、ダブルクリックで誰でも閲覧できます（Excel不要）。</li>
+</ul>
+
+<h2 id="sec2"><span class="secno">2.</span>基本の流れ（クイックスタート）</h2>
+<ol class="flow">
+  <li>
+    <div class="step-title">ツール（HTMLファイル）をブラウザで開く</div>
+    上部ツールバーでプロジェクト名・実施者・日付を入力します。
+  </li>
+  <li>
+    <div class="step-title">テストケースを追加する</div>
+    <span class="btnname ghost">＋ テストケースを追加</span> を押し、タイトル・手順・期待結果を記入します。
+  </li>
+  <li>
+    <div class="step-title">キャプチャを貼り付ける</div>
+    ケース内の点線枠をクリックして貼り付け先に選択し、<kbd>PrintScreen</kbd> 等で撮ったキャプチャを <kbd>Ctrl</kbd>+<kbd>V</kbd> で貼ります。何枚でも連続で貼れます。
+  </li>
+  <li>
+    <div class="step-title">注釈をつける</div>
+    サムネイルをクリックして注釈エディタを開き、四角・矢印・モザイクなどを書き込みます。<kbd>→</kbd> キーで自動保存しながら次の画像へ進めます。
+  </li>
+  <li>
+    <div class="step-title">保存する</div>
+    自分の控え・作業再開用には <span class="btnname ghost">作業用保存</span>、提出・共有用には <span class="btnname">配布用保存</span> を押します。
+  </li>
+</ol>
+
+<h2 id="sec3"><span class="secno">3.</span>ツールバーの設定項目</h2>
+<table>
+  <tr><th>項目</th><th>内容</th></tr>
+  <tr><td class="nowrap">プロジェクト</td><td>レポートのタイトルおよび保存ファイル名になります。</td></tr>
+  <tr><td class="nowrap">実施者 / 日付</td><td>レポートのヘッダーに表示されます。日付は開いた日の日付が自動入力されます。</td></tr>
+  <tr><td class="nowrap">縮小</td><td>貼り付け時に画像の長辺をこのサイズまで自動縮小します。既定は <b>長辺800px</b>。詳しくは <a href="#sec9">9章</a> を参照。</td></tr>
+  <tr><td class="nowrap">形式</td><td>貼り付け時の画像圧縮形式。既定は <b>JPEG 標準（品質85%）</b>。ファイルサイズを大きく左右します。</td></tr>
+  <tr><td class="nowrap">作業用HTMLを読み込む</td><td>「作業用保存」したファイルを開き、編集を再開します（<a href="#sec7">7章</a>）。</td></tr>
+  <tr><td class="nowrap">印刷 / PDF化</td><td>ブラウザの印刷機能で紙またはPDFに出力します。</td></tr>
+  <tr><td class="nowrap">作業用保存 / 配布用保存</td><td>成果物の書き出し。2つの違いは <a href="#sec7">7章</a> を必ず確認してください。</td></tr>
+</table>
+<div class="callout">
+  <div class="callout-title">補足</div>
+  「縮小」「形式」の設定は<b>これから貼り付ける画像</b>に適用されます。すでに貼り付け済みの画像には影響しません。
+</div>
+
+<h2 id="sec4"><span class="secno">4.</span>テストケースの操作</h2>
+<ul>
+  <li><b>追加</b>：ページ下部の <span class="btnname ghost">＋ テストケースを追加</span>。追加したケースは自動的に「貼り付け先」になります。</li>
+  <li><b>タイトル編集</b>：ケース見出しのタイトル部分を直接クリックして書き換えます。</li>
+  <li><b>結果の記録</b>：右側のプルダウンで <span class="badge PENDING">保留</span> / <span class="badge OK">OK</span> / <span class="badge NG">NG</span> を選びます。レポートのサマリ表に色付きで反映されます。</li>
+  <li><b>折りたたみ</b>：見出し左端の ▼ / ▶ でケースの中身を畳めます。ケースが多いときのスクロール量を減らせます。</li>
+  <li><b>削除</b>：「ケース削除」。中の画像ごと消えるため確認ダイアログが出ます。</li>
+  <li><b>入力欄</b>：手順 / 期待結果 / 総評・備考 の3欄。すべてレポートに出力されます（空欄は出力されません）。</li>
+</ul>
+
+<h2 id="sec5"><span class="secno">5.</span>画像の追加</h2>
+<p>各ケースの末尾にある点線枠が画像の追加ゾーンです。追加方法は3通りあります。</p>
+<table>
+  <tr><th>方法</th><th>手順</th></tr>
+  <tr><td class="nowrap">貼り付け（推奨）</td><td>点線枠をクリックして<b>貼り付け先に選択</b>（青枠でハイライトされます）→ <kbd>Ctrl</kbd>+<kbd>V</kbd>。一度選択すれば、画面のどこにいても連続で貼り付けられます。キャプチャ → 貼り付け → キャプチャ → 貼り付け…のループが最速です。</td></tr>
+  <tr><td class="nowrap">ドラッグ&ドロップ</td><td>画像ファイルを点線枠へドロップします。複数ファイル同時も可能です。</td></tr>
+  <tr><td class="nowrap">ファイル選択</td><td>点線枠内の「ファイル選択」ボタンから選びます。複数選択可能です。</td></tr>
+</table>
+<p>貼り付けた画像は次の操作ができます。</p>
+<ul>
+  <li><b>番号</b>：左上のバッジが表示順の番号です。レポートの図番号（図2-3 など）に対応します。</li>
+  <li><b>並べ替え</b>：カード下部の ◀ ▶ で前後に移動します。手順の順序に合わせて整えられます。</li>
+  <li><b>コメント</b>:カード下の入力欄に、その画像が何を示すかのメモを書けます。レポートでは図キャプションとして表示されます。</li>
+  <li><b>削除</b>：カード下部の「削除」。</li>
+</ul>
+<div class="callout">
+  <div class="callout-title">補足</div>
+  貼り付け先を選択していない場合、<kbd>Ctrl</kbd>+<kbd>V</kbd> の画像は<b>一番下のケース</b>に入ります。また、テキスト入力欄にカーソルがある間は画像貼り付けは動作しません（文章のコピペを妨げないためです）。
+</div>
+
+<h2 id="sec6"><span class="secno">6.</span>注釈のつけかた</h2>
+<p>サムネイルをクリックすると注釈エディタが開きます。元画像は保持されたまま注釈が上に乗る方式なので、後から開いて修正・削除できます。</p>
+<h3>ツール</h3>
+<table>
+  <tr><th>ツール</th><th>操作と用途</th></tr>
+  <tr><td class="nowrap">四角</td><td>ドラッグで半透明のハイライト枠を描きます。注目箇所の強調に。</td></tr>
+  <tr><td class="nowrap">矢印</td><td>始点から終点へドラッグ。指し示しに。</td></tr>
+  <tr><td class="nowrap">ペン</td><td>フリーハンドの線。囲み込みなど自由な書き込みに。</td></tr>
+  <tr><td class="nowrap">テキスト</td><td>置きたい位置をクリック → 入力ダイアログに文字を入れます。縁取り付きで画像の上でも読めます。</td></tr>
+  <tr><td class="nowrap">モザイク</td><td>ドラッグした範囲をピクセル化します。個人情報・社外秘のマスキングに。<b>マスキングした場合の配布方法は必ず7章を参照してください。</b></td></tr>
+</table>
+<p>色は赤・黄・青・緑の4色。「元に戻す」で1操作ずつ取り消し、「全消去」でその画像の注釈をすべて消せます。</p>
+<h3>画像間の移動（自動保存）</h3>
+<ul>
+  <li><kbd>→</kbd> / <kbd>←</kbd> キー（または「次へ ›」「‹ 前へ」ボタン）で、<b>現在の画像の注釈を自動保存してから</b>同じケース内の次／前の画像に移動します。エディタを閉じずに20枚へ連続で注釈できます。</li>
+  <li>ツールバー中央の「3 / 20」が現在位置です。ケースの端に来ると移動ボタンはグレーアウトします（ケースはまたぎません）。</li>
+  <li>最後は <span class="btnname">保存して閉じる</span> か <kbd>Esc</kbd> で閉じます。</li>
+</ul>
+<div class="callout warn">
+  <div class="callout-title">「キャンセル」の意味に注意</div>
+  矢印キーで移動するたびに注釈は確定保存されます。「キャンセル」(<kbd>Esc</kbd>) で破棄されるのは<b>いま表示中の画像の未保存分だけ</b>です。移動で通過した画像の注釈は取り消されません（個別に開いて「全消去」してください）。
+</div>
+
+<h2 id="sec7"><span class="secno">7.</span>保存と読み込み（作業用と配布用）</h2>
+<p>保存ボタンは2種類あり、<b>用途がはっきり分かれています</b>。</p>
+<table>
+  <tr><th></th><th>作業用保存</th><th>配布用保存</th></tr>
+  <tr><td class="nowrap">用途</td><td>自分の控え・作業の中断/再開</td><td>提出・共有・レビュー依頼</td></tr>
+  <tr><td class="nowrap">再編集</td><td>可（「作業用HTMLを読み込む」で再開）</td><td>不可（閲覧専用）</td></tr>
+  <tr><td class="nowrap">内容物</td><td>表示用画像＋<b>注釈前の元画像</b>＋図形データ</td><td>表示用画像のみ</td></tr>
+  <tr><td class="nowrap">サイズ</td><td>大きい（約2倍）</td><td>小さい</td></tr>
+  <tr><td class="nowrap">ファイル名</td><td>プロジェクト名.html</td><td>プロジェクト名<b>_配布用</b>.html</td></tr>
+</table>
+<div class="callout warn">
+  <div class="callout-title">重要：モザイクをかけた画像がある場合</div>
+  作業用ファイルには<b>モザイクをかける前の元画像</b>がそのまま含まれており、HTMLのソースを見れば取り出せます。マスキングした内容を守る必要がある相手には、<b>必ず「配布用保存」のファイルを渡してください</b>。作業用ファイルは自分の手元、またはチーム内の安全な場所に限定してください。
+</div>
+<h3>作業の再開</h3>
+<ol>
+  <li>ツールバーの <span class="btnname ghost">作業用HTMLを読み込む</span> を押す</li>
+  <li>「作業用保存」したHTMLファイルを選ぶ</li>
+  <li>ケース・画像・注釈がすべて復元され、続きから編集できます</li>
+</ol>
+<p>配布用ファイルは読み込めません（選ぶとその旨のメッセージが表示されます）。</p>
+
+<h2 id="sec8"><span class="secno">8.</span>レポートの見かた（レビュアー向け）</h2>
+<p>保存されたHTMLをダブルクリックで開くだけです。特別なソフトは不要です。</p>
+<ul>
+  <li>冒頭の<b>サマリ表</b>で全ケースの結果（<span class="badge OK">OK</span> / <span class="badge NG">NG</span> / <span class="badge PENDING">保留</span>）と画像枚数を一覧できます。ケース名をクリックすると該当箇所へジャンプします。</li>
+  <li>画像をクリックすると<b>拡大表示</b>になります。拡大中は：
+    <ul>
+      <li><kbd>→</kbd> / <kbd>←</kbd> キー（または左右のボタン）で前後の画像へ移動。ケースをまたいで全画像を通しで確認できます。</li>
+      <li>下部に図番号とコメント、右上に「12 / 47」の位置カウンターが表示されます。</li>
+      <li><kbd>Esc</kbd> または背景クリックで閉じます。</li>
+    </ul>
+  </li>
+  <li>最初の画像をクリックして <kbd>→</kbd> を押し続けるだけで、全エビデンスを順に確認できます。</li>
+</ul>
+
+<h2 id="sec9"><span class="secno">9.</span>縮小・形式設定の考えかた</h2>
+<p>ファイルサイズは「縮小（画素数）」と「形式（圧縮）」の掛け算で決まります。画素数は長辺の2乗で効くため、縮小設定の影響が特に大きくなります。</p>
+<table>
+  <tr><th>設定</th><th>目安</th></tr>
+  <tr><td class="nowrap">長辺800px（既定）</td><td>標準。正方形に近いキャプチャでも文言が読みやすく、サイズも小さい。</td></tr>
+  <tr><td class="nowrap">長辺500px</td><td>最小。従来のExcel運用で500px相当だった場合に。細かい文字は判読しづらくなるため、下の「採用前チェック」を推奨。</td></tr>
+  <tr><td class="nowrap">長辺1200〜1600px</td><td>細部の文字まで確実に読ませたい場合。サイズは大きくなります。</td></tr>
+  <tr><td class="nowrap">JPEG 標準（既定）</td><td>画面キャプチャでPNGの1/4〜1/6程度。エビデンス用途では通常これで十分です。</td></tr>
+  <tr><td class="nowrap">PNG</td><td>無劣化。文字のにじみを一切許容できない場合のみ。サイズは大幅に増えます。</td></tr>
+</table>
+<div class="callout">
+  <div class="callout-title">採用前チェック（小さい設定にする前に）</div>
+  本番でよく撮る画面を1枚、その設定で貼ってみて、<b>エビデンスとして読めてほしい部分（結果の値・メッセージ文言）が判読できるか</b>を確認してください。読めなければ1段階大きい設定にします。一度小さく取り込んだ画像は後から高精細に戻せません。
+</div>
+<p>また、ウィンドウ全体を毎回撮るのではなく、<kbd>Win</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd> の範囲選択で<b>変化のある領域だけ</b>を撮ると、小さい設定でも文字が読みやすく、レビュアーも差分を追いやすくなります。</p>
+
+<h2 id="sec10"><span class="secno">10.</span>注意事項</h2>
+<ul>
+  <li><b>作業内容はブラウザを閉じると消えます。</b>タブを閉じる・リロードする際には警告が出ますが、長時間の作業ではこまめに「作業用保存」をしてください。自動保存機能はありません。</li>
+  <li>1ケースあたりの画像枚数に制限はありませんが、枚数と設定によってはファイルが数十MBになることがあります。保存時に画面下へ表示されるサイズを目安にしてください。</li>
+  <li>保存済みファイルの内容を修正したい場合は、「作業用HTMLを読み込む」→ 修正 → 再度保存、の流れになります。配布済みの配布用ファイル自体は編集できません。</li>
+  <li>ツール・レポートともに一般的なブラウザ（Edge / Chrome）での利用を想定しています。</li>
+</ul>
+
+<h2 id="sec11"><span class="secno">11.</span>ショートカット一覧</h2>
+<table>
+  <tr><th>場面</th><th>キー</th><th>動作</th></tr>
+  <tr><td rowspan="2" class="nowrap">編集画面</td><td class="nowrap"><kbd>Ctrl</kbd>+<kbd>V</kbd></td><td>選択中の貼り付け先ケースに画像を追加</td></tr>
+  <tr><td class="nowrap">（点線枠クリック）</td><td>貼り付け先ケースの選択</td></tr>
+  <tr><td rowspan="3" class="nowrap">注釈エディタ</td><td class="nowrap"><kbd>→</kbd> / <kbd>←</kbd></td><td>自動保存して次／前の画像へ（同一ケース内）</td></tr>
+  <tr><td class="nowrap"><kbd>Esc</kbd></td><td>閉じる（表示中の画像の未保存分のみ破棄）</td></tr>
+  <tr><td class="nowrap">（マウスドラッグ）</td><td>選択中ツールで描画</td></tr>
+  <tr><td rowspan="2" class="nowrap">レポート拡大表示</td><td class="nowrap"><kbd>→</kbd> / <kbd>←</kbd></td><td>前後の画像へ（全ケース通し）</td></tr>
+  <tr><td class="nowrap"><kbd>Esc</kbd></td><td>拡大表示を閉じる</td></tr>
+</table>
+
+</main>
+
+<footer>テストエビデンス作成ツール 使い方ガイド ｜ 2026-07-31 版</footer>
+
+</body>
+</html>
