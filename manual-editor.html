@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>手順書エディタ</title>
+<style>
+  :root{
+    --ink:#1C2530;
+    --ink-soft:#3A4553;
+    --paper:#EDF0F2;
+    --paper-raised:#FFFFFF;
+    --accent:#FF7A00;
+    --accent-soft:#FFE3C2;
+    --done:#2E7D6B;
+    --done-soft:#DCEEE9;
+    --border:#D8DCE0;
+    --font-display:"Bahnschrift","Arial Narrow","Segoe UI Condensed",sans-serif;
+    --font-body:"Segoe UI","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
+    --font-mono:"Consolas","Cascadia Mono","Courier New",monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{font-family:var(--font-body);background:var(--paper);color:var(--ink);}
+  #app{display:flex;flex-direction:column;height:100vh;}
+
+  .topbar{display:flex;align-items:center;gap:12px;background:var(--ink);color:#fff;padding:10px 16px;flex-wrap:wrap;}
+  .brand{font-family:var(--font-display);font-weight:700;font-size:20px;letter-spacing:.5px;display:flex;align-items:center;gap:8px;}
+  .brand-mark{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;background:var(--accent);color:var(--ink);font-family:var(--font-mono);font-weight:700;border-radius:3px;font-size:14px;}
+  .meta-fields{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+  .meta-fields input{font-family:var(--font-body);font-size:13px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.25);border-radius:4px;color:#fff;padding:6px 8px;}
+  .meta-fields input::placeholder{color:rgba(255,255,255,.5);}
+  .title-input{font-family:var(--font-display);font-size:16px;font-weight:600;min-width:220px;max-width:340px;}
+  .sys-input, .ver-input{width:130px;}
+  .actions{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap;}
+  button, .btnfile{font-family:var(--font-body);font-size:13px;font-weight:600;padding:8px 12px;border-radius:4px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.06);color:#fff;cursor:pointer;transition:background .15s;}
+  button:hover, .btnfile:hover{background:rgba(255,255,255,.16);}
+  button.primary{background:var(--accent);border-color:var(--accent);color:var(--ink);}
+  button.primary:hover{background:#ff8a1a;}
+  .btnfile{display:inline-block;}
+
+  .layout{display:flex;flex:1;min-height:0;}
+  .sheet-rail{width:220px;flex-shrink:0;background:var(--ink-soft);color:#fff;padding:14px 10px;overflow-y:auto;}
+  .rail-label{font-family:var(--font-mono);font-size:11px;letter-spacing:1px;color:#B9C2CC;text-transform:uppercase;margin:4px 6px 10px;}
+  .sheet-tab{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:5px;padding:6px 8px;margin-bottom:6px;cursor:pointer;}
+  .sheet-tab.active{background:var(--accent);border-color:var(--accent);}
+  .sheet-tab.active .sheet-name{color:var(--ink);font-weight:700;}
+  .sheet-name{flex:1;background:transparent;border:none;color:#fff;font-size:13px;font-family:var(--font-body);padding:2px;min-width:0;}
+  .sheet-name:focus{outline:none;}
+  .sheet-tab-actions{display:flex;gap:2px;}
+  .sheet-tab-actions button{padding:2px 5px;font-size:10px;border:none;background:transparent;color:inherit;opacity:.7;}
+  .sheet-tab-actions button:hover{opacity:1;background:rgba(0,0,0,.15);}
+  #addSheet{width:100%;margin-top:4px;background:transparent;border:1px dashed rgba(255,255,255,.35);}
+
+  .editor-main{flex:1;overflow-y:auto;padding:22px 26px;}
+  .step-card{display:flex;gap:14px;background:var(--paper-raised);border:1px solid var(--border);border-radius:6px;padding:14px 16px;margin-bottom:12px;position:relative;}
+  .step-num{font-family:var(--font-display);font-size:26px;font-weight:700;color:var(--accent);width:46px;flex-shrink:0;text-align:center;line-height:1;padding-top:2px;}
+  .step-body{flex:1;min-width:0;}
+  .step-text{width:100%;min-height:70px;resize:vertical;border:1px solid var(--border);border-radius:4px;padding:8px 10px;font-family:var(--font-mono);font-size:13px;background:#fff;color:var(--ink);}
+  .step-text:focus{outline:2px solid var(--accent-soft);border-color:var(--accent);}
+  .md-hint{font-size:11px;color:var(--ink-soft);margin-top:4px;font-family:var(--font-mono);}
+  .step-preview{margin-top:6px;border:1px dashed var(--border);border-radius:4px;padding:8px 10px;font-size:13px;background:var(--paper);min-height:20px;}
+  .step-preview:empty::before{content:"（プレビュー）";color:#9aa4ad;}
+  .step-preview ul,.step-preview ol{margin:6px 0 6px 20px;padding:0;}
+  .step-preview li{margin-bottom:2px;}
+  .step-preview code{background:#fff;padding:1px 4px;border-radius:3px;font-family:var(--font-mono);font-size:12px;border:1px solid var(--border);}
+  .step-preview pre{background:var(--ink);color:#fff;padding:8px 10px;border-radius:4px;overflow-x:auto;font-family:var(--font-mono);font-size:12px;margin:6px 0;}
+  .step-preview pre code{background:transparent;border:none;padding:0;color:inherit;}
+  .step-preview p{margin:4px 0;}
+  .step-note{width:100%;margin-top:8px;border:1px solid var(--border);border-radius:4px;padding:6px 10px;font-family:var(--font-body);font-size:12px;background:#fff;color:var(--ink-soft);}
+  .step-image{margin-top:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .step-image img{max-width:160px;max-height:110px;border:1px solid var(--border);border-radius:4px;display:block;}
+  .img-upload{font-size:12px;padding:6px 10px;border:1px dashed var(--ink-soft);color:var(--ink-soft);background:transparent;border-radius:4px;cursor:pointer;}
+  .img-upload:hover{background:var(--paper);}
+  .img-remove{font-size:12px;padding:6px 10px;background:transparent;color:#B23A2E;border:1px solid #E3B8B0;}
+  .check-toggle{display:flex;align-items:center;gap:6px;margin-top:10px;font-size:12px;color:var(--ink-soft);}
+  .field-label{display:block;font-size:11px;color:var(--ink-soft);margin:8px 0 3px;}
+  .step-controls{display:flex;flex-direction:column;gap:4px;flex-shrink:0;}
+  .step-controls button{background:var(--paper);color:var(--ink-soft);border:1px solid var(--border);width:30px;height:30px;padding:0;font-size:13px;}
+  .step-controls .del{color:#B23A2E;}
+  .step-controls button:hover{background:#e6e9eb;}
+  #addStep{width:100%;padding:12px;border:2px dashed var(--border);background:transparent;color:var(--ink-soft);font-size:14px;border-radius:6px;}
+  #addStep:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft);}
+  .sheet-header{display:flex;align-items:baseline;gap:10px;margin-bottom:16px;}
+  .sheet-header h2{font-family:var(--font-display);font-size:22px;margin:0;}
+  .sheet-header .count{font-family:var(--font-mono);font-size:12px;color:var(--ink-soft);}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:100;}
+  .modal.hidden{display:none;}
+  .modal-inner{width:92vw;height:90vh;background:#fff;border-radius:8px;position:relative;overflow:hidden;}
+  .modal-close{position:absolute;top:10px;right:10px;z-index:2;background:var(--ink);color:#fff;}
+  #previewFrame{width:100%;height:100%;border:none;}
+  .hint{font-size:12px;color:var(--ink-soft);background:var(--paper-raised);border:1px solid var(--border);border-radius:6px;padding:10px 12px;margin-bottom:16px;}
+
+  .table-block{margin-top:10px;border:1px solid var(--border);border-radius:6px;padding:10px;background:var(--paper);}
+  .table-block-controls{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px;font-size:12px;color:var(--ink-soft);}
+  .table-block-controls button{font-size:11px;padding:4px 8px;background:#fff;color:var(--ink-soft);border:1px solid var(--border);}
+  .table-block-controls button:hover{background:#eef1f2;}
+  .table-block-controls .del-table{color:#B23A2E;border-color:#E3B8B0;}
+  .table-grid{border-collapse:collapse;width:100%;}
+  .table-grid td{border:1px solid var(--border);padding:2px;}
+  .table-grid input{width:100%;border:none;padding:5px 6px;font-size:12px;font-family:var(--font-body);background:transparent;}
+  .table-grid input:focus{outline:2px solid var(--accent-soft);}
+  .table-grid tr:first-child input{font-weight:700;}
+  .add-table-btn{font-size:12px;padding:6px 10px;border:1px dashed var(--ink-soft);color:var(--ink-soft);background:transparent;border-radius:4px;}
+  .add-table-btn:hover{background:#fff;}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark">§</span>手順書エディタ</div>
+    <div class="meta-fields">
+      <input id="projectTitle" class="title-input" value="本番作業手順書" placeholder="手順書タイトル">
+      <input id="metaSystem" class="sys-input" placeholder="対象システム名">
+      <input id="metaVersion" class="ver-input" placeholder="版数 (例: v1.0)">
+    </div>
+    <div class="actions">
+      <button id="btnSaveJson" title="作業中のデータをファイルとして保存">JSON保存</button>
+      <label class="btnfile">JSON読込<input type="file" id="fileLoadJson" accept="application/json" hidden></label>
+      <button id="btnPreview">プレビュー（印刷確認）</button>
+      <button id="btnExport" class="primary">HTMLエクスポート</button>
+    </div>
+  </header>
+  <div class="layout">
+    <aside class="sheet-rail">
+      <div class="rail-label">シート一覧</div>
+      <div id="sheetRail"></div>
+      <button id="addSheet">＋ シートを追加</button>
+    </aside>
+    <main class="editor-main" id="editorMain"></main>
+  </div>
+</div>
+
+<div id="previewModal" class="modal hidden">
+  <div class="modal-inner">
+    <button id="closePreview" class="modal-close">✕ 閉じる</button>
+    <iframe id="previewFrame"></iframe>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var uid = function(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); };
+
+  // ---- lightweight Markdown (bold/italic/inline-code/code-block/lists), no external deps ----
+  function escapeHtmlMd(s){
+    return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+  function mdToHtml(src){
+    if (!src) return "";
+    var blocks = [];
+    var withPlaceholders = String(src).replace(/```([\s\S]*?)```/g, function(_, code){
+      var idx = blocks.length; blocks.push(code);
+      return "\u0000CODEBLOCK" + idx + "\u0000";
+    });
+    var escaped = escapeHtmlMd(withPlaceholders);
+    escaped = escaped.replace(/`([^`]+)`/g, function(_, c){ return "<code>" + c + "</code>"; });
+    escaped = escaped.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+    escaped = escaped.replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, "$1<em>$2</em>");
+    var lines = escaped.split("\n");
+    var out = []; var i = 0;
+    while (i < lines.length){
+      var line = lines[i];
+      var codeMatch = line.trim().match(/^\u0000CODEBLOCK(\d+)\u0000$/);
+      if (codeMatch){
+        var codeLines = blocks[parseInt(codeMatch[1],10)].split("\n");
+        if (codeLines.length>1 && /^[a-zA-Z0-9_-]{1,20}$/.test(codeLines[0].trim())) codeLines.shift();
+        var codeText = codeLines.join("\n").replace(/^\n+|\n+$/g,"");
+        out.push("<pre><code>" + escapeHtmlMd(codeText) + "</code></pre>");
+        i++; continue;
+      }
+      if (/^\s*[-*]\s+/.test(line)){
+        var items = [];
+        while (i < lines.length && /^\s*[-*]\s+/.test(lines[i])){
+          items.push("<li>" + lines[i].replace(/^\s*[-*]\s+/, "") + "</li>"); i++;
+        }
+        out.push("<ul>" + items.join("") + "</ul>"); continue;
+      }
+      if (/^\s*\d+\.\s+/.test(line)){
+        var oitems = [];
+        while (i < lines.length && /^\s*\d+\.\s+/.test(lines[i])){
+          oitems.push("<li>" + lines[i].replace(/^\s*\d+\.\s+/, "") + "</li>"); i++;
+        }
+        out.push("<ol>" + oitems.join("") + "</ol>"); continue;
+      }
+      if (line.trim() === ""){ i++; continue; }
+      var para = [line]; i++;
+      while (i < lines.length && lines[i].trim() !== "" &&
+             !/^\s*[-*]\s+/.test(lines[i]) && !/^\s*\d+\.\s+/.test(lines[i]) &&
+             !/^\u0000CODEBLOCK/.test(lines[i].trim())){
+        para.push(lines[i]); i++;
+      }
+      out.push("<p>" + para.join("<br>") + "</p>");
+    }
+    return out.join("");
+  }
+  function tableToHtml(t){
+    if (!t || !t.rows || !t.rows.length) return "";
+    var html = '<table class="pm-inline-table">';
+    var start = 0;
+    if (t.hasHeader){
+      html += "<thead><tr>";
+      t.rows[0].forEach(function(c){ html += "<th>" + escapeHtmlMd(c||"") + "</th>"; });
+      html += "</tr></thead>"; start = 1;
+    }
+    html += "<tbody>";
+    for (var r=start;r<t.rows.length;r++){
+      html += "<tr>";
+      t.rows[r].forEach(function(c){ html += "<td>" + escapeHtmlMd(c||"") + "</td>"; });
+      html += "</tr>";
+    }
+    html += "</tbody></table>";
+    return html;
+  }
+
+  var project = {
+    manualId: uid(),
+    title: "本番作業手順書",
+    meta: { system: "", version: "" },
+    sheets: [
+      { id: uid(), name: "シート1", steps: [
+        { id: uid(), text: "", hasCheckbox: true, image: null, note: "", table: null }
+      ]}
+    ]
+  };
+  var activeSheetId = project.sheets[0].id;
+
+  var $ = function(sel){ return document.querySelector(sel); };
+  var sheetRail = $("#sheetRail");
+  var editorMain = $("#editorMain");
+  var projectTitleInput = $("#projectTitle");
+  var metaSystemInput = $("#metaSystem");
+  var metaVersionInput = $("#metaVersion");
+
+  function getSheet(id){
+    for (var i=0;i<project.sheets.length;i++) if (project.sheets[i].id===id) return project.sheets[i];
+    return null;
+  }
+
+  function renderRail(){
+    sheetRail.innerHTML = "";
+    project.sheets.forEach(function(sheet, idx){
+      var tab = document.createElement("div");
+      tab.className = "sheet-tab" + (sheet.id===activeSheetId ? " active" : "");
+      var nameInput = document.createElement("input");
+      nameInput.className = "sheet-name"; nameInput.value = sheet.name;
+      nameInput.addEventListener("click", function(e){ e.stopPropagation(); });
+      nameInput.addEventListener("input", function(){ sheet.name = nameInput.value; });
+      tab.appendChild(nameInput);
+      var actions = document.createElement("div"); actions.className = "sheet-tab-actions";
+      var up = document.createElement("button"); up.textContent="↑"; up.title="上へ";
+      up.addEventListener("click", function(e){ e.stopPropagation(); moveSheet(idx,-1); });
+      var down = document.createElement("button"); down.textContent="↓"; down.title="下へ";
+      down.addEventListener("click", function(e){ e.stopPropagation(); moveSheet(idx,1); });
+      var del = document.createElement("button"); del.textContent="✕"; del.title="削除";
+      del.addEventListener("click", function(e){
+        e.stopPropagation();
+        if (project.sheets.length<=1){ alert("最後の1シートは削除できません。"); return; }
+        if (!confirm("「" + sheet.name + "」を削除しますか？")) return;
+        project.sheets.splice(idx,1);
+        if (activeSheetId===sheet.id) activeSheetId = project.sheets[0].id;
+        renderAll();
+      });
+      actions.appendChild(up); actions.appendChild(down); actions.appendChild(del);
+      tab.appendChild(actions);
+      tab.addEventListener("click", function(){ activeSheetId = sheet.id; renderAll(); });
+      sheetRail.appendChild(tab);
+    });
+  }
+
+  function moveSheet(idx, dir){
+    var newIdx = idx+dir;
+    if (newIdx<0 || newIdx>=project.sheets.length) return;
+    var tmp = project.sheets[idx]; project.sheets[idx]=project.sheets[newIdx]; project.sheets[newIdx]=tmp;
+    renderAll();
+  }
+
+  function renderMain(){
+    editorMain.innerHTML = "";
+    var sheet = getSheet(activeSheetId);
+    if (!sheet) return;
+
+    var header = document.createElement("div"); header.className = "sheet-header";
+    var h2 = document.createElement("h2"); h2.textContent = sheet.name;
+    var count = document.createElement("span"); count.className="count"; count.textContent = "STEPS: " + sheet.steps.length;
+    header.appendChild(h2); header.appendChild(count);
+    editorMain.appendChild(header);
+
+    var hint = document.createElement("div"); hint.className = "hint";
+    hint.innerHTML = "本番環境にはファイルを持ち込めない前提のため、実際のチェックは印刷した紙にペンで行います（画面のチェックは事前レビュー用・将来タブレット等を使う場合の時刻自動記録用）。作業内容欄は <b>Markdown</b> が使えます：<code>**太字**</code>／<code>- 箇条書き</code>／<code>`コード`</code>／<code>```で囲むコードブロック</code>。表が必要な場合はMarkdown記法ではなく、下の「表を追加」ボタンでGUIから作成してください。作業内容はこまめに「JSON保存」してください。";
+    editorMain.appendChild(hint);
+
+    sheet.steps.forEach(function(step, idx){
+      editorMain.appendChild(renderStepCard(sheet, step, idx));
+    });
+
+    var addBtn = document.createElement("button");
+    addBtn.id = "addStep"; addBtn.textContent = "＋ 手順を追加";
+    addBtn.addEventListener("click", function(){
+      sheet.steps.push({ id: uid(), text: "", hasCheckbox: true, image: null, note: "", table: null });
+      renderMain();
+    });
+    editorMain.appendChild(addBtn);
+  }
+
+  function renderStepCard(sheet, step, idx){
+    var card = document.createElement("div"); card.className = "step-card";
+    var num = document.createElement("div"); num.className="step-num"; num.textContent = String(idx+1).padStart(2,"0");
+    card.appendChild(num);
+
+    var body = document.createElement("div"); body.className = "step-body";
+
+    var textarea = document.createElement("textarea");
+    textarea.className = "step-text";
+    textarea.placeholder = "作業内容（コマンド・確認内容など）をMarkdownで入力できます";
+    textarea.value = step.text;
+    var preview = document.createElement("div");
+    preview.className = "step-preview";
+    preview.innerHTML = mdToHtml(step.text);
+    textarea.addEventListener("input", function(){
+      step.text = textarea.value;
+      preview.innerHTML = mdToHtml(step.text);
+    });
+    body.appendChild(textarea);
+    var mdHint = document.createElement("div"); mdHint.className = "md-hint";
+    mdHint.textContent = "対応記法: **太字** / *斜体* / - 箇条書き / 1. 番号付き / `コード` / ```コードブロック```";
+    body.appendChild(mdHint);
+    body.appendChild(preview);
+
+    var imgWrap = document.createElement("div"); imgWrap.className = "step-image";
+    if (step.image){
+      var img = document.createElement("img"); img.src = step.image;
+      imgWrap.appendChild(img);
+      var removeBtn = document.createElement("button");
+      removeBtn.className = "img-remove"; removeBtn.textContent = "画像を削除";
+      removeBtn.addEventListener("click", function(){ step.image = null; renderMain(); });
+      imgWrap.appendChild(removeBtn);
+    } else {
+      var uploadLabel = document.createElement("label");
+      uploadLabel.className = "img-upload"; uploadLabel.textContent = "＋ 画像を追加";
+      var fileInput = document.createElement("input");
+      fileInput.type = "file"; fileInput.accept = "image/*"; fileInput.hidden = true;
+      fileInput.addEventListener("change", function(){
+        var file = fileInput.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function(){ step.image = reader.result; renderMain(); };
+        reader.readAsDataURL(file);
+      });
+      uploadLabel.appendChild(fileInput);
+      imgWrap.appendChild(uploadLabel);
+    }
+    body.appendChild(imgWrap);
+
+    body.appendChild(renderTableBlock(step));
+
+    var noteLabel = document.createElement("span");
+    noteLabel.className = "field-label"; noteLabel.textContent = "備考（任意・空欄なら印刷時に手書き欄になります）";
+    body.appendChild(noteLabel);
+    var noteInput = document.createElement("input");
+    noteInput.className = "step-note"; noteInput.value = step.note || "";
+    noteInput.placeholder = "例：エラー時は中断しリーダーへ連絡";
+    noteInput.addEventListener("input", function(){ step.note = noteInput.value; });
+    body.appendChild(noteInput);
+
+    var checkLabel = document.createElement("label");
+    checkLabel.className = "check-toggle";
+    var checkInput = document.createElement("input");
+    checkInput.type = "checkbox"; checkInput.checked = step.hasCheckbox;
+    checkInput.addEventListener("change", function(){ step.hasCheckbox = checkInput.checked; });
+    checkLabel.appendChild(checkInput);
+    checkLabel.appendChild(document.createTextNode("この手順にチェック欄をつける（実施チェック用）"));
+    body.appendChild(checkLabel);
+
+    card.appendChild(body);
+
+    var controls = document.createElement("div"); controls.className = "step-controls";
+    var up = document.createElement("button"); up.textContent="↑";
+    up.addEventListener("click", function(){ moveStep(sheet, idx, -1); });
+    var down = document.createElement("button"); down.textContent="↓";
+    down.addEventListener("click", function(){ moveStep(sheet, idx, 1); });
+    var del = document.createElement("button"); del.className="del"; del.textContent="✕";
+    del.addEventListener("click", function(){
+      if (!confirm("この手順を削除しますか？")) return;
+      sheet.steps.splice(idx,1); renderMain();
+    });
+    controls.appendChild(up); controls.appendChild(down); controls.appendChild(del);
+    card.appendChild(controls);
+    return card;
+  }
+
+  function renderTableBlock(step){
+    var wrap = document.createElement("div");
+    if (!step.table){
+      var addBtn = document.createElement("button");
+      addBtn.className = "add-table-btn"; addBtn.textContent = "＋ 表を追加";
+      addBtn.addEventListener("click", function(){
+        step.table = { hasHeader: true, rows: [["",""],["",""]] };
+        renderMain();
+      });
+      wrap.appendChild(addBtn);
+      return wrap;
+    }
+    var block = document.createElement("div"); block.className = "table-block";
+
+    var controls = document.createElement("div"); controls.className = "table-block-controls";
+    var lbl = document.createElement("span"); lbl.textContent = "表：";
+    controls.appendChild(lbl);
+
+    var hdrLabel = document.createElement("label");
+    var hdrCb = document.createElement("input"); hdrCb.type = "checkbox"; hdrCb.checked = !!step.table.hasHeader;
+    hdrCb.addEventListener("change", function(){ step.table.hasHeader = hdrCb.checked; renderMain(); });
+    hdrLabel.appendChild(hdrCb);
+    hdrLabel.appendChild(document.createTextNode(" 先頭行を見出しにする"));
+    controls.appendChild(hdrLabel);
+
+    var addRowBtn = document.createElement("button"); addRowBtn.textContent = "＋行";
+    addRowBtn.addEventListener("click", function(){
+      var cols = step.table.rows[0] ? step.table.rows[0].length : 2;
+      step.table.rows.push(new Array(cols).fill("")); renderMain();
+    });
+    var delRowBtn = document.createElement("button"); delRowBtn.textContent = "－行";
+    delRowBtn.addEventListener("click", function(){
+      if (step.table.rows.length<=1) return; step.table.rows.pop(); renderMain();
+    });
+    var addColBtn = document.createElement("button"); addColBtn.textContent = "＋列";
+    addColBtn.addEventListener("click", function(){
+      step.table.rows.forEach(function(r){ r.push(""); }); renderMain();
+    });
+    var delColBtn = document.createElement("button"); delColBtn.textContent = "－列";
+    delColBtn.addEventListener("click", function(){
+      if (!step.table.rows[0] || step.table.rows[0].length<=1) return;
+      step.table.rows.forEach(function(r){ r.pop(); }); renderMain();
+    });
+    var delTableBtn = document.createElement("button"); delTableBtn.className="del-table"; delTableBtn.textContent = "表を削除";
+    delTableBtn.addEventListener("click", function(){
+      if (!confirm("この表を削除しますか？")) return;
+      step.table = null; renderMain();
+    });
+    controls.appendChild(addRowBtn); controls.appendChild(delRowBtn);
+    controls.appendChild(addColBtn); controls.appendChild(delColBtn);
+    controls.appendChild(delTableBtn);
+    block.appendChild(controls);
+
+    var table = document.createElement("table"); table.className = "table-grid";
+    step.table.rows.forEach(function(row){
+      var tr = document.createElement("tr");
+      row.forEach(function(cell, c){
+        var td = document.createElement("td");
+        var input = document.createElement("input");
+        input.value = cell;
+        input.addEventListener("input", function(){ row[c] = input.value; });
+        td.appendChild(input);
+        tr.appendChild(td);
+      });
+      table.appendChild(tr);
+    });
+    block.appendChild(table);
+    wrap.appendChild(block);
+    return wrap;
+  }
+
+  function moveStep(sheet, idx, dir){
+    var newIdx = idx+dir;
+    if (newIdx<0 || newIdx>=sheet.steps.length) return;
+    var tmp = sheet.steps[idx]; sheet.steps[idx]=sheet.steps[newIdx]; sheet.steps[newIdx]=tmp;
+    renderMain();
+  }
+
+  function renderAll(){ renderRail(); renderMain(); }
+
+  projectTitleInput.addEventListener("input", function(){ project.title = projectTitleInput.value; });
+  metaSystemInput.addEventListener("input", function(){ project.meta.system = metaSystemInput.value; });
+  metaVersionInput.addEventListener("input", function(){ project.meta.version = metaVersionInput.value; });
+
+  $("#addSheet").addEventListener("click", function(){
+    var s = { id: uid(), name: "シート" + (project.sheets.length+1), steps: [] };
+    project.sheets.push(s); activeSheetId = s.id; renderAll();
+  });
+
+  $("#btnSaveJson").addEventListener("click", function(){
+    var blob = new Blob([JSON.stringify(project, null, 2)], {type:"application/json"});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a"); a.href = url; a.download = (project.title || "manual") + ".json";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  $("#fileLoadJson").addEventListener("change", function(e){
+    var file = e.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(){
+      try{
+        var data = JSON.parse(reader.result);
+        if (!data.sheets || !Array.isArray(data.sheets)) throw new Error("invalid");
+        project = data;
+        if (!project.manualId) project.manualId = uid();
+        if (!project.meta) project.meta = { system:"", version:"" };
+        project.sheets.forEach(function(s){
+          s.steps.forEach(function(st){
+            if (st.note===undefined) st.note="";
+            if (st.table===undefined) st.table=null;
+          });
+        });
+        activeSheetId = project.sheets[0] ? project.sheets[0].id : null;
+        projectTitleInput.value = project.title || "";
+        metaSystemInput.value = project.meta.system || "";
+        metaVersionInput.value = project.meta.version || "";
+        renderAll();
+      }catch(err){
+        alert("JSONファイルの読み込みに失敗しました。形式を確認してください。");
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  });
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+    });
+  }
+
+  function buildExportHtml(){
+    var dataJson = JSON.stringify(project);
+    var parts = [];
+    parts.push('<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8">');
+    parts.push('<meta name="viewport" content="width=device-width, initial-scale=1.0">');
+    parts.push('<title>' + escapeHtml(project.title || "手順書") + '</title>');
+    parts.push('<style>');
+    parts.push(EXPORT_CSS);
+    parts.push('</style></head><body>');
+    parts.push('<script id="pm-data" type="application/json">' + dataJson.replace(/<\/script>/g,'<\\/script>') + '<' + '/script>');
+    parts.push('<div id="pmApp"></div>');
+    parts.push('<script>' + EXPORT_JS + '</' + 'script>');
+    parts.push('</body></html>');
+    return parts.join("\n");
+  }
+
+  var EXPORT_CSS = [
+    "@page{ size:A4; margin:16mm 14mm; }",
+    ":root{--ink:#1C2530;--ink-soft:#3A4553;--paper:#EDF0F2;--paper-raised:#FFFFFF;",
+    "--accent:#FF7A00;--accent-soft:#FFE3C2;--done:#2E7D6B;--done-soft:#DCEEE9;--border:#D8DCE0;",
+    "--font-display:'Bahnschrift','Arial Narrow','Segoe UI Condensed',sans-serif;",
+    "--font-body:'Segoe UI','Hiragino Kaku Gothic ProN','Yu Gothic',sans-serif;",
+    "--font-mono:'Consolas','Cascadia Mono','Courier New',monospace;}",
+    "*{box-sizing:border-box;}body{margin:0;font-family:var(--font-body);background:var(--paper);color:var(--ink);}",
+    ".pm-header{background:var(--ink);color:#fff;padding:16px 22px;position:sticky;top:0;z-index:5;}",
+    ".pm-title-row{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:8px;}",
+    ".pm-title{font-family:var(--font-display);font-size:22px;font-weight:700;letter-spacing:.3px;}",
+    ".pm-subtitle{font-family:var(--font-mono);font-size:12px;color:#B9C2CC;margin-top:4px;}",
+    ".pm-note-line{font-family:var(--font-mono);font-size:11px;color:#B9C2CC;margin-top:6px;max-width:520px;}",
+    ".pm-print-btn{background:var(--accent);color:var(--ink);border:none;font-weight:700;font-size:13px;padding:8px 16px;border-radius:4px;cursor:pointer;}",
+    ".pm-log-btn{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.3);font-size:12px;padding:6px 12px;border-radius:4px;cursor:pointer;margin-right:6px;}",
+    ".pm-log-btn:hover{background:rgba(255,255,255,.12);}",
+    ".pm-progress-wrap{margin-top:10px;background:rgba(255,255,255,.15);border-radius:4px;height:6px;overflow:hidden;max-width:420px;}",
+    ".pm-progress-bar{height:100%;background:var(--accent);width:0%;transition:width .25s;}",
+    ".pm-progress-label{font-family:var(--font-mono);font-size:11px;color:#B9C2CC;margin-top:6px;}",
+    ".pm-nav{display:flex;gap:6px;flex-wrap:wrap;background:var(--paper-raised);padding:10px 22px;border-bottom:1px solid var(--border);position:sticky;top:96px;z-index:4;}",
+    ".pm-nav button{font-family:var(--font-body);font-size:12px;font-weight:600;padding:6px 12px;border-radius:20px;border:1px solid var(--border);background:#fff;color:var(--ink-soft);cursor:pointer;}",
+    ".pm-nav button:hover{border-color:var(--accent);color:var(--accent);}",
+    ".pm-main{max-width:900px;margin:0 auto;padding:22px;}",
+    ".pm-sheet{background:var(--paper-raised);border:1px solid var(--border);border-radius:6px;margin-bottom:26px;padding:20px 22px;}",
+    ".pm-sheet-title-row{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid var(--ink);padding-bottom:8px;margin-bottom:6px;}",
+    ".pm-sheet-title-row h2{font-family:var(--font-display);font-size:19px;margin:0;}",
+    ".pm-reset{font-size:11px;background:transparent;border:1px solid var(--border);color:var(--ink-soft);padding:5px 10px;border-radius:4px;cursor:pointer;}",
+    ".pm-reset:hover{background:var(--paper);}",
+    ".pm-fillin{display:flex;gap:26px;flex-wrap:wrap;font-size:12px;color:var(--ink-soft);margin-bottom:16px;font-family:var(--font-mono);}",
+    ".pm-fillin span{border-bottom:1px solid var(--ink-soft);padding-bottom:2px;min-width:140px;display:inline-block;}",
+    "table.pm-table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed;}",
+    "table.pm-table thead th{background:var(--paper);border:1px solid var(--border);padding:8px 6px;font-family:var(--font-mono);font-size:11px;color:var(--ink-soft);text-align:left;}",
+    "table.pm-table td{border:1px solid var(--border);padding:8px 6px;vertical-align:top;}",
+    "col.col-no{width:34px;} col.col-check{width:60px;} col.col-time{width:90px;} col.col-note{width:140px;}",
+    ".pm-num{font-family:var(--font-display);font-size:17px;font-weight:700;color:var(--accent);text-align:center;}",
+    "tr.done .pm-num{color:var(--done);}",
+    ".pm-step-text{font-size:13px;line-height:1.6;}",
+    ".pm-step-text p{margin:4px 0;}",
+    ".pm-step-text ul,.pm-step-text ol{margin:6px 0 6px 20px;padding:0;}",
+    ".pm-step-text li{margin-bottom:2px;}",
+    ".pm-step-text code{background:var(--paper);padding:1px 4px;border-radius:3px;font-family:var(--font-mono);font-size:12px;}",
+    ".pm-step-text pre{background:var(--ink);color:#fff;padding:8px 10px;border-radius:4px;overflow-x:auto;font-family:var(--font-mono);font-size:12px;margin:6px 0;}",
+    ".pm-step-text pre code{background:transparent;padding:0;color:inherit;}",
+    "tr.done .pm-step-text{color:var(--ink-soft);}",
+    ".pm-step-text img{max-width:100%;max-height:220px;border:1px solid var(--border);border-radius:4px;margin-top:8px;display:block;}",
+    "table.pm-inline-table{width:100%;border-collapse:collapse;margin-top:8px;font-size:12px;}",
+    "table.pm-inline-table th,table.pm-inline-table td{border:1px solid var(--border);padding:4px 6px;text-align:left;}",
+    "table.pm-inline-table th{background:var(--paper);font-family:var(--font-mono);}",
+    ".pm-check-cell{text-align:center;}",
+    ".pm-check{display:inline-flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;user-select:none;}",
+    ".box{display:inline-block;width:22px;height:22px;border:2px solid var(--ink-soft);border-radius:3px;position:relative;background:#fff;}",
+    ".pm-check input{position:absolute;opacity:0;width:22px;height:22px;cursor:pointer;}",
+    "tr.done .box{border-color:var(--done);background:var(--done-soft);}",
+    ".pm-check-mark{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--done);font-weight:700;font-size:15px;}",
+    ".pm-time-cell{font-family:var(--font-mono);color:var(--ink-soft);font-size:11px;}",
+    ".pm-time-auto{display:none;font-weight:700;color:var(--done);font-size:12px;}",
+    "tr.has-time .pm-time-auto{display:block;}",
+    "tr.has-time .pm-time-line{display:none;}",
+    ".pm-time-line{display:block;border-bottom:1px solid var(--border);height:16px;margin-top:14px;}",
+    ".pm-note-cell{font-size:11px;color:var(--ink-soft);}",
+    ".pm-note-cell .blank-line{display:block;border-bottom:1px solid var(--border);height:14px;margin-top:12px;}",
+    "@media print{",
+    "  .no-print{display:none !important;}",
+    "  body{background:#fff;}",
+    "  .pm-header{position:static;background:#fff !important;color:#000 !important;border-bottom:2px solid #000;padding:0 0 8px;}",
+    "  .pm-subtitle{color:#333 !important;}",
+    "  .pm-main{max-width:none;padding:0;}",
+    "  .pm-sheet{border:none;border-radius:0;box-shadow:none;padding:0;margin-bottom:0;page-break-before:always;}",
+    "  .pm-sheet:first-of-type{page-break-before:avoid;}",
+    "  .pm-sheet-title-row{border-bottom-color:#000;}",
+    "  table.pm-table thead{display:table-header-group;}",
+    "  table.pm-table tr{page-break-inside:avoid;}",
+    "  table.pm-table td, table.pm-table th{border-color:#000;}",
+    "  table.pm-inline-table td, table.pm-inline-table th{border-color:#000;}",
+    "  .box{border-color:#000 !important;background:#fff !important;}",
+    "  .pm-time-auto{display:none !important;}",
+    "  .pm-time-line{display:block !important;}",
+    "  .pm-log-btn{display:none !important;}",
+    "  .pm-check-mark{display:none !important;}",
+    "  .pm-step-text pre{background:#F2F2F2 !important;color:#000 !important;border:1px solid #000;}",
+    "  .pm-step-text code{background:#F2F2F2 !important;}",
+    "  tr.done .pm-step-text{color:#000 !important;}",
+    "  tr.done .pm-num{color:#000 !important;}",
+    "}"
+  ].join("\n");
+
+  var EXPORT_JS = [
+    "(function(){",
+    "  function escapeHtmlMd(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }",
+    "  function mdToHtml(src){",
+    "    if (!src) return '';",
+    "    var blocks = [];",
+    "    var withPlaceholders = String(src).replace(/```([\\s\\S]*?)```/g, function(_, code){",
+    "      var idx = blocks.length; blocks.push(code);",
+    "      return '\\u0000CODEBLOCK' + idx + '\\u0000';",
+    "    });",
+    "    var escaped = escapeHtmlMd(withPlaceholders);",
+    "    escaped = escaped.replace(/`([^`]+)`/g, function(_, c){ return '<code>' + c + '</code>'; });",
+    "    escaped = escaped.replace(/\\*\\*([^*]+)\\*\\*/g, '<strong>$1</strong>');",
+    "    escaped = escaped.replace(/(^|[^*])\\*([^*\\n]+)\\*(?!\\*)/g, '$1<em>$2</em>');",
+    "    var lines = escaped.split('\\n');",
+    "    var out = []; var i = 0;",
+    "    while (i < lines.length){",
+    "      var line = lines[i];",
+    "      var codeMatch = line.trim().match(/^\\u0000CODEBLOCK(\\d+)\\u0000$/);",
+    "      if (codeMatch){",
+    "        var codeLines = blocks[parseInt(codeMatch[1],10)].split('\\n');",
+    "        if (codeLines.length>1 && /^[a-zA-Z0-9_-]{1,20}$/.test(codeLines[0].trim())) codeLines.shift();",
+    "        var codeText = codeLines.join('\\n').replace(/^\\n+|\\n+$/g,'');",
+    "        out.push('<pre><code>' + escapeHtmlMd(codeText) + '</code></pre>');",
+    "        i++; continue;",
+    "      }",
+    "      if (/^\\s*[-*]\\s+/.test(line)){",
+    "        var items = [];",
+    "        while (i < lines.length && /^\\s*[-*]\\s+/.test(lines[i])){",
+    "          items.push('<li>' + lines[i].replace(/^\\s*[-*]\\s+/, '') + '</li>'); i++;",
+    "        }",
+    "        out.push('<ul>' + items.join('') + '</ul>'); continue;",
+    "      }",
+    "      if (/^\\s*\\d+\\.\\s+/.test(line)){",
+    "        var oitems = [];",
+    "        while (i < lines.length && /^\\s*\\d+\\.\\s+/.test(lines[i])){",
+    "          oitems.push('<li>' + lines[i].replace(/^\\s*\\d+\\.\\s+/, '') + '</li>'); i++;",
+    "        }",
+    "        out.push('<ol>' + oitems.join('') + '</ol>'); continue;",
+    "      }",
+    "      if (line.trim() === ''){ i++; continue; }",
+    "      var para = [line]; i++;",
+    "      while (i < lines.length && lines[i].trim() !== '' &&",
+    "             !/^\\s*[-*]\\s+/.test(lines[i]) && !/^\\s*\\d+\\.\\s+/.test(lines[i]) &&",
+    "             !/^\\u0000CODEBLOCK/.test(lines[i].trim())){",
+    "        para.push(lines[i]); i++;",
+    "      }",
+    "      out.push('<p>' + para.join('<br>') + '</p>');",
+    "    }",
+    "    return out.join('');",
+    "  }",
+    "  function tableToHtmlStr(t){",
+    "    if (!t || !t.rows || !t.rows.length) return '';",
+    "    var html = '<table class=\"pm-inline-table\">';",
+    "    var start = 0;",
+    "    if (t.hasHeader){",
+    "      html += '<thead><tr>';",
+    "      t.rows[0].forEach(function(c){ html += '<th>' + escapeHtmlMd(c||'') + '</th>'; });",
+    "      html += '</tr></thead>'; start = 1;",
+    "    }",
+    "    html += '<tbody>';",
+    "    for (var r=start;r<t.rows.length;r++){",
+    "      html += '<tr>';",
+    "      t.rows[r].forEach(function(c){ html += '<td>' + escapeHtmlMd(c||'') + '</td>'; });",
+    "      html += '</tr>';",
+    "    }",
+    "    html += '</tbody></table>';",
+    "    return html;",
+    "  }",
+    "",
+    "  var raw = document.getElementById('pm-data').textContent;",
+    "  var project = JSON.parse(raw);",
+    "  var storeKey = 'pm_state_' + project.manualId;",
+    "  var state = {};",
+    "  try{ state = JSON.parse(localStorage.getItem(storeKey) || '{}'); }catch(e){ state = {}; }",
+    "  var app = document.getElementById('pmApp');",
+    "",
+    "  function saveState(){ try{ localStorage.setItem(storeKey, JSON.stringify(state)); }catch(e){} }",
+    "  function getEntry(sheetId, stepId){ return (state[sheetId] && state[sheetId][stepId]) || null; }",
+    "  function isChecked(sheetId, stepId){ var e=getEntry(sheetId,stepId); if(!e) return false; if(typeof e==='boolean') return e; return !!e.checked; }",
+    "  function getTime(sheetId, stepId){ var e=getEntry(sheetId,stepId); if(!e || typeof e==='boolean') return null; return e.time || null; }",
+    "  function setChecked(sheetId, stepId, val){",
+    "    if(!state[sheetId]) state[sheetId] = {};",
+    "    if (val){",
+    "      var now = new Date();",
+    "      var hh = String(now.getHours()).padStart(2,'0');",
+    "      var mm = String(now.getMinutes()).padStart(2,'0');",
+    "      state[sheetId][stepId] = { checked:true, time: hh+':'+mm };",
+    "    } else {",
+    "      state[sheetId][stepId] = { checked:false, time:null };",
+    "    }",
+    "    saveState();",
+    "  }",
+    "  function buildLogText(){",
+    "    var lines = [];",
+    "    var head = project.title || '手順書';",
+    "    if (project.meta && project.meta.system) head += '  /  ' + project.meta.system;",
+    "    if (project.meta && project.meta.version) head += '  ' + project.meta.version;",
+    "    lines.push(head);",
+    "    lines.push('出力日時: ' + new Date().toLocaleString());",
+    "    lines.push('');",
+    "    project.sheets.forEach(function(sheet){",
+    "      var any = false;",
+    "      sheet.steps.forEach(function(step, idx){",
+    "        if (step.hasCheckbox && isChecked(sheet.id, step.id)){",
+    "          if(!any){ lines.push('[' + sheet.name + ']'); any = true; }",
+    "          var t = getTime(sheet.id, step.id) || '--:--';",
+    "          var oneLine = (step.text || '').replace(/\\n/g, ' ');",
+    "          lines.push(t + '  No.' + String(idx+1).padStart(2,'0') + '  ' + oneLine);",
+    "        }",
+    "      });",
+    "      if (any) lines.push('');",
+    "    });",
+    "    return lines.join('\\n');",
+    "  }",
+    "  function copyLog(){",
+    "    var text = buildLogText();",
+    "    if (navigator.clipboard && navigator.clipboard.writeText){",
+    "      navigator.clipboard.writeText(text).then(function(){ alert('実施ログをクリップボードにコピーしました。'); }).catch(function(){ window.prompt('コピーできない場合は下のテキストを選択してコピーしてください', text); });",
+    "    } else {",
+    "      window.prompt('コピーできない場合は下のテキストを選択してコピーしてください', text);",
+    "    }",
+    "  }",
+    "  function downloadLog(){",
+    "    var text = buildLogText();",
+    "    var blob = new Blob([text], {type:'text/plain'});",
+    "    var url = URL.createObjectURL(blob);",
+    "    var a = document.createElement('a'); a.href = url; a.download = (project.title || 'log') + '_実施ログ.txt';",
+    "    document.body.appendChild(a); a.click(); document.body.removeChild(a);",
+    "    URL.revokeObjectURL(url);",
+    "  }",
+    "",
+    "  function getSheet(id){ for(var i=0;i<project.sheets.length;i++) if(project.sheets[i].id===id) return project.sheets[i]; return null; }",
+    "",
+    "  function overallProgress(){",
+    "    var total=0, done=0;",
+    "    project.sheets.forEach(function(s){ s.steps.forEach(function(st){ if(st.hasCheckbox){ total++; if(isChecked(s.id, st.id)) done++; } }); });",
+    "    return {total:total, done:done};",
+    "  }",
+    "",
+    "  var progressBarEl, progressLabelEl;",
+    "  function updateProgress(){",
+    "    var p = overallProgress();",
+    "    progressBarEl.style.width = (p.total? Math.round(p.done/p.total*100):0) + '%';",
+    "    progressLabelEl.textContent = '事前レビュー進捗（画面上のみ・印刷には反映されません） ' + p.done + ' / ' + p.total;",
+    "  }",
+    "",
+    "  function build(){",
+    "    app.innerHTML = '';",
+    "",
+    "    var header = document.createElement('div'); header.className = 'pm-header';",
+    "    var titleRow = document.createElement('div'); titleRow.className = 'pm-title-row';",
+    "    var titleWrap = document.createElement('div');",
+    "    var titleEl = document.createElement('div'); titleEl.className = 'pm-title'; titleEl.textContent = project.title || '手順書';",
+    "    titleWrap.appendChild(titleEl);",
+    "    var sub = document.createElement('div'); sub.className = 'pm-subtitle';",
+    "    var subBits = [];",
+    "    if (project.meta && project.meta.system) subBits.push('対象システム: ' + project.meta.system);",
+    "    if (project.meta && project.meta.version) subBits.push('版数: ' + project.meta.version);",
+    "    sub.textContent = subBits.join('　/　');",
+    "    titleWrap.appendChild(sub);",
+    "    var note = document.createElement('div'); note.className = 'pm-note-line no-print';",
+    "    note.textContent = '画面でチェックすると実施時刻を自動記録します（将来タブレット等で運用する場合の実施ログ用）。印刷した紙は従来どおり空欄です。';",
+    "    titleWrap.appendChild(note);",
+    "    titleRow.appendChild(titleWrap);",
+    "    var btnGroup = document.createElement('div'); btnGroup.className = 'no-print';",
+    "    var copyBtn = document.createElement('button'); copyBtn.className='pm-log-btn'; copyBtn.textContent='実施ログをコピー';",
+    "    copyBtn.addEventListener('click', copyLog);",
+    "    var dlBtn = document.createElement('button'); dlBtn.className='pm-log-btn'; dlBtn.textContent='実施ログを保存';",
+    "    dlBtn.addEventListener('click', downloadLog);",
+    "    var printBtn = document.createElement('button'); printBtn.className='pm-print-btn'; printBtn.textContent='印刷する';",
+    "    printBtn.addEventListener('click', function(){ window.print(); });",
+    "    btnGroup.appendChild(copyBtn); btnGroup.appendChild(dlBtn); btnGroup.appendChild(printBtn);",
+    "    titleRow.appendChild(btnGroup);",
+    "    header.appendChild(titleRow);",
+    "",
+    "    var pw = document.createElement('div'); pw.className = 'pm-progress-wrap no-print';",
+    "    progressBarEl = document.createElement('div'); progressBarEl.className = 'pm-progress-bar';",
+    "    pw.appendChild(progressBarEl); header.appendChild(pw);",
+    "    progressLabelEl = document.createElement('div'); progressLabelEl.className = 'pm-progress-label no-print';",
+    "    header.appendChild(progressLabelEl);",
+    "    app.appendChild(header);",
+    "",
+    "    var nav = document.createElement('div'); nav.className = 'pm-nav no-print';",
+    "    project.sheets.forEach(function(s){",
+    "      var b = document.createElement('button'); b.textContent = s.name;",
+    "      b.addEventListener('click', function(){",
+    "        var target = document.getElementById('sheet-' + s.id);",
+    "        if (target) target.scrollIntoView({behavior:'smooth', block:'start'});",
+    "      });",
+    "      nav.appendChild(b);",
+    "    });",
+    "    app.appendChild(nav);",
+    "",
+    "    var main = document.createElement('div'); main.className = 'pm-main';",
+    "    project.sheets.forEach(function(sheet){ main.appendChild(buildSheetSection(sheet)); });",
+    "    app.appendChild(main);",
+    "",
+    "    updateProgress();",
+    "  }",
+    "",
+    "  function buildSheetSection(sheet){",
+    "    var section = document.createElement('section');",
+    "    section.className = 'pm-sheet'; section.id = 'sheet-' + sheet.id;",
+    "",
+    "    var titleRow = document.createElement('div'); titleRow.className = 'pm-sheet-title-row';",
+    "    var h2 = document.createElement('h2'); h2.textContent = sheet.name; titleRow.appendChild(h2);",
+    "    var resetBtn = document.createElement('button'); resetBtn.className = 'pm-reset no-print'; resetBtn.textContent = '画面チェックをリセット';",
+    "    resetBtn.addEventListener('click', function(){",
+    "      if(!confirm('このシートの画面上のチェックをリセットしますか？（印刷には影響しません）')) return;",
+    "      state[sheet.id] = {}; saveState(); build();",
+    "    });",
+    "    titleRow.appendChild(resetBtn);",
+    "    section.appendChild(titleRow);",
+    "",
+    "    var fillin = document.createElement('div'); fillin.className = 'pm-fillin';",
+    "    ['実施日：', '実施者：', '確認者：'].forEach(function(label){",
+    "      var d = document.createElement('div');",
+    "      d.appendChild(document.createTextNode(label));",
+    "      var span = document.createElement('span'); span.innerHTML = '&nbsp;';",
+    "      d.appendChild(span);",
+    "      fillin.appendChild(d);",
+    "    });",
+    "    section.appendChild(fillin);",
+    "",
+    "    var table = document.createElement('table'); table.className = 'pm-table';",
+    "    var colgroup = document.createElement('colgroup');",
+    "    var colDefs = ['col-no','','col-check','col-time','col-note'];",
+    "    colDefs.forEach(function(c){ var col = document.createElement('col'); if(c) col.className = c; colgroup.appendChild(col); });",
+    "    table.appendChild(colgroup);",
+    "",
+    "    var thead = document.createElement('thead');",
+    "    var htr = document.createElement('tr');",
+    "    ['No','作業内容','実施','実施時刻','備考'].forEach(function(t){",
+    "      var th = document.createElement('th'); th.textContent = t; htr.appendChild(th);",
+    "    });",
+    "    thead.appendChild(htr); table.appendChild(thead);",
+    "",
+    "    var tbody = document.createElement('tbody');",
+    "    sheet.steps.forEach(function(step, idx){ tbody.appendChild(buildStepRow(sheet, step, idx)); });",
+    "    table.appendChild(tbody);",
+    "    section.appendChild(table);",
+    "",
+    "    return section;",
+    "  }",
+    "",
+    "  function buildStepRow(sheet, step, idx){",
+    "    var tr = document.createElement('tr');",
+    "    var checked = step.hasCheckbox && isChecked(sheet.id, step.id);",
+    "    var time = step.hasCheckbox ? getTime(sheet.id, step.id) : null;",
+    "    if (checked) tr.classList.add('done');",
+    "    if (time) tr.classList.add('has-time');",
+    "",
+    "    var tdNum = document.createElement('td'); tdNum.className = 'pm-num'; tdNum.textContent = String(idx+1).padStart(2,'0');",
+    "    tr.appendChild(tdNum);",
+    "",
+    "    var tdText = document.createElement('td');",
+    "    var textDiv = document.createElement('div'); textDiv.className = 'pm-step-text';",
+    "    textDiv.innerHTML = mdToHtml(step.text || '');",
+    "    tdText.appendChild(textDiv);",
+    "    if (step.image){ var img = document.createElement('img'); img.src = step.image; textDiv.appendChild(img); }",
+    "    if (step.table){",
+    "      var tableHtml = tableToHtmlStr(step.table);",
+    "      if (tableHtml){",
+    "        var tw = document.createElement('div'); tw.innerHTML = tableHtml;",
+    "        textDiv.appendChild(tw.firstChild);",
+    "      }",
+    "    }",
+    "    tr.appendChild(tdText);",
+    "",
+    "    var tdCheck = document.createElement('td'); tdCheck.className = 'pm-check-cell';",
+    "    var timeAutoEl, timeLineEl;",
+    "    if (step.hasCheckbox){",
+    "      var label = document.createElement('label'); label.className = 'pm-check no-print-interactive';",
+    "      var boxWrap = document.createElement('span'); boxWrap.className = 'box';",
+    "      var cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = checked;",
+    "      cb.addEventListener('change', function(){",
+    "        setChecked(sheet.id, step.id, cb.checked);",
+    "        tr.classList.toggle('done', cb.checked);",
+    "        mark.style.display = cb.checked ? 'flex' : 'none';",
+    "        var t = getTime(sheet.id, step.id);",
+    "        tr.classList.toggle('has-time', !!t);",
+    "        timeAutoEl.textContent = t || '';",
+    "        updateProgress();",
+    "      });",
+    "      boxWrap.appendChild(cb);",
+    "      var mark = document.createElement('span'); mark.className = 'pm-check-mark';",
+    "      mark.textContent = '✓'; mark.style.display = checked ? 'flex' : 'none';",
+    "      boxWrap.appendChild(mark);",
+    "      label.appendChild(boxWrap);",
+    "      tdCheck.appendChild(label);",
+    "    } else {",
+    "      tdCheck.textContent = '－';",
+    "    }",
+    "    tr.appendChild(tdCheck);",
+    "",
+    "    var tdTime = document.createElement('td'); tdTime.className = 'pm-time-cell';",
+    "    timeAutoEl = document.createElement('span'); timeAutoEl.className = 'pm-time-auto'; timeAutoEl.textContent = time || '';",
+    "    timeLineEl = document.createElement('span'); timeLineEl.className = 'pm-time-line';",
+    "    tdTime.appendChild(timeAutoEl); tdTime.appendChild(timeLineEl);",
+    "    tr.appendChild(tdTime);",
+    "",
+    "    var tdNote = document.createElement('td'); tdNote.className = 'pm-note-cell';",
+    "    if (step.note){",
+    "      tdNote.textContent = step.note;",
+    "    } else {",
+    "      var bl = document.createElement('span'); bl.className = 'blank-line'; tdNote.appendChild(bl);",
+    "    }",
+    "    tr.appendChild(tdNote);",
+    "",
+    "    return tr;",
+    "  }",
+    "",
+    "  build();",
+    "})();"
+  ].join("\n");
+
+  $("#btnExport").addEventListener("click", function(){
+    var html = buildExportHtml();
+    var blob = new Blob([html], {type:"text/html"});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a"); a.href = url; a.download = (project.title || "manual") + ".html";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  $("#btnPreview").addEventListener("click", function(){
+    var html = buildExportHtml();
+    $("#previewFrame").srcdoc = html;
+    $("#previewModal").classList.remove("hidden");
+  });
+  $("#closePreview").addEventListener("click", function(){ $("#previewModal").classList.add("hidden"); });
+
+  renderAll();
+})();
+</script>
+</body>
+</html>
