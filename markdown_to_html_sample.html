@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>document</title>
+<style>
+  /* 単体HTML側のページレイアウト */
+  body{ max-width:760px; margin:40px auto; padding:0 20px; }
+
+body{
+  font-family:"Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", sans-serif;
+  line-height:1.7;
+  color:#1c1c1c;
+}
+body h1, body h2, body h3{ line-height:1.3; }
+body code{ background:#eae8e3; padding:1px 5px; border-radius:4px; font-size:.9em; }
+body pre{ background:#1c1c1c; color:#eee; padding:12px 14px; border-radius:6px; overflow-x:auto; }
+body pre code{ background:none; padding:0; font-size:1em; }
+body blockquote{ border-left:3px solid #ccc; margin:0; padding-left:14px; color:#555; }
+body table{ border-collapse:collapse; }
+body th, body td{ border:1px solid #ccc; padding:6px 10px; }
+body img{ max-width:100%; }
+</style>
+</head>
+<body>
+<h1>✨ プロジェクト・ノヴァ</h1>
+<blockquote>
+<p>「デザインとは、単なる見た目や感触ではない。それがどう機能するかだ。」
+—— 架空の格言より</p>
+</blockquote>
+<hr>
+<h2>🌿 概要</h2>
+<p>これは <strong>マークダウンの装飾サンプル</strong> として作成したダミーテキストです。
+見出し・強調・リスト・表・コードブロックなど、代表的な記法を一通り盛り込んでいます。</p>
+<ul>
+<li><em>斜体</em> で軽やかに</li>
+<li><strong>太字</strong> でしっかりと</li>
+<li><del>取り消し線</del> で過去のものに</li>
+<li><code>インラインコード</code> でひとさじの技術感</li>
+</ul>
+<hr>
+<h2>📋 特徴一覧</h2>
+<table>
+<thead>
+<tr>
+<th align="left">項目</th>
+<th align="left">内容</th>
+<th align="center">ステータス</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">デザイン</td>
+<td align="left">ミニマル &amp; モダン</td>
+<td align="center">✅ 完了</td>
+</tr>
+<tr>
+<td align="left">レスポンシブ</td>
+<td align="left">全デバイス対応</td>
+<td align="center">✅ 完了</td>
+</tr>
+<tr>
+<td align="left">ダークモード</td>
+<td align="left">自動切替対応</td>
+<td align="center">🚧 進行中</td>
+</tr>
+<tr>
+<td align="left">多言語対応</td>
+<td align="left">日本語・英語</td>
+<td align="center">📝 予定</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>🚀 導入手順</h2>
+<ol>
+<li>リポジトリをクローンする</li>
+<li>依存パッケージをインストールする<ul>
+<li><code>npm install</code> を実行</li>
+<li>もしくは <code>yarn install</code></li>
+</ul>
+</li>
+<li>開発サーバーを起動する</li>
+</ol>
+<pre><code class="language-bash">git clone https://example.com/project-nova.git
+cd project-nova
+npm install
+npm run dev
+</code></pre>
+<hr>
+<h2>💡 コンセプト</h2>
+<blockquote>
+<p>Simplicity is the ultimate sophistication.</p>
+</blockquote>
+<p>このプロジェクトが目指すのは、<strong>余白を活かした静かなデザイン</strong>です。
+情報を詰め込みすぎず、必要なものだけを、必要な場所に置く。</p>
+<h3>サブセクション：三つの柱</h3>
+<ol>
+<li><strong>明快さ</strong> — 誰が見ても迷わない構造</li>
+<li><strong>一貫性</strong> — 色・フォント・間隔のルールを統一</li>
+<li><strong>余韻</strong> — 使い終わったあとにも残る印象</li>
+</ol>
+<hr>
+<h2>🎨 文字色のカスタマイズ（HTML + CSS）</h2>
+<p>マークダウン標準には文字色を変える記法がないため、<code>&lt;span&gt;</code>タグに<code>style</code>属性を添えて表現します。</p>
+<p><span style="color:#e63946;">情熱を表す、鮮やかなレッド。</span>
+<span style="color:#2a9d8f;">落ち着きを表す、深いティール。</span>
+<span style="color:#f4a261;">温かみのある、サンドオレンジ。</span>
+<span style="color:#457b9d;">信頼感のある、スチールブルー。</span></p>
+<p>グラデーション風に強弱をつけることもできます:</p>
+<p><span style="color:#264653; font-weight:bold;">濃紺の太字見出し</span>のあとに、
+<span style="color:#8d99ae; font-style:italic;">グレーの斜体で補足</span>を添える、という使い方も。</p>
+<p>背景色を組み合わせてハイライト風にする例:</p>
+<p><span style="background-color:#fff3b0; padding:2px 6px; border-radius:4px;">⚡ 注目ポイントはここ</span></p>
+<blockquote>
+<p>⚠️ 表示環境に注意
+GitHubやObsidianなど多くのビューアではHTMLがそのまま解釈されますが、
+プレーンテキストとしてしか扱わないビューアでは<code>&lt;span&gt;</code>タグがそのまま文字として表示されてしまいます。</p>
+</blockquote>
+<hr>
+<h2>🔗 関連リンク</h2>
+<ul>
+<li><a href="https://example.com">公式サイト</a></li>
+<li><a href="https://example.com/docs">ドキュメント</a></li>
+<li><a href="mailto:hello@example.com">お問い合わせ</a></li>
+</ul>
+<hr>
+<div align="center">
+
+<p><em>Made with ☕ and ✨ by the Nova Team</em></p>
+</div>
+
+</body>
+</html>
