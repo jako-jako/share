@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>テストエビデンス作成ツール</title>
+<style>
+  :root{
+    --paper:#fbfaf7; --ink:#1e2430; --line:#d8dce1; --navy:#1f3a5f;
+    --ok:#1c7c4c; --ng:#b0392f; --pending:#a6791f; --muted:#6b7280;
+  }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:#e9ebee; color:var(--ink); font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",Arial,sans-serif; }
+  .toolbar{ position:sticky; top:0; z-index:10; background:var(--navy); color:#fff; padding:12px 20px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .toolbar h1{ font-size:14px; font-weight:600; margin:0 12px 0 0; }
+  .toolbar input[type=text]{ padding:6px 9px; border:none; border-radius:4px; font-size:12.5px; width:140px; }
+  .toolbar select{ padding:5px 6px; border:none; border-radius:4px; font-size:12px; }
+  .toolbar button{ background:#fff; color:var(--navy); border:none; padding:7px 13px; border-radius:4px; font-size:12.5px; font-weight:600; cursor:pointer; }
+  .toolbar button.secondary{ background:transparent; color:#fff; border:1px solid rgba(255,255,255,.5); }
+  .toolbar button:hover{ filter:brightness(1.05); }
+  .meta-row{ display:flex; gap:6px; align-items:center; font-size:12px; color:rgba(255,255,255,.85); }
+  #toast{
+    position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(10px);
+    background:#12151a; color:#fff; font-size:12.5px; padding:10px 16px; border-radius:6px;
+    opacity:0; pointer-events:none; transition:opacity .25s, transform .25s; z-index:200;
+    box-shadow:0 4px 14px rgba(0,0,0,.3);
+  }
+  #toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  #sheet{ max-width:1040px; margin:24px auto 80px; background:var(--paper); padding:32px 36px; box-shadow:0 1px 3px rgba(0,0,0,.15); }
+  .doc-title{ font-size:20px; font-weight:700; border-bottom:2px solid var(--navy); padding-bottom:10px; margin-bottom:6px; }
+  .doc-sub{ font-size:12.5px; color:var(--muted); margin-bottom:24px; }
+
+  .case{ border:1px solid var(--line); border-radius:6px; margin-bottom:22px; background:#fff; overflow:hidden; }
+  .case-head{ display:flex; align-items:center; gap:8px; padding:10px 14px; background:#f1f2f4; border-bottom:1px solid var(--line); }
+  .case-head .no{ font-family:Menlo,Consolas,monospace; font-size:12px; color:var(--muted); width:34px; }
+  .case-head input[type=text]{ flex:1; border:1px solid transparent; background:transparent; font-size:14px; font-weight:600; padding:4px 6px; border-radius:4px; }
+  .case-head input[type=text]:hover, .case-head input[type=text]:focus{ border-color:var(--line); background:#fff; }
+  .case-head .img-count{ font-size:11.5px; color:var(--muted); white-space:nowrap; }
+  select.result{ font-size:12.5px; font-weight:700; padding:5px 8px; border-radius:4px; border:1px solid var(--line); }
+  select.result.OK{ color:var(--ok); } select.result.NG{ color:var(--ng); } select.result.PENDING{ color:var(--pending); }
+  .icon-btn{ background:none; border:none; color:var(--muted); cursor:pointer; font-size:12px; padding:4px 6px; }
+  .icon-btn:hover{ color:var(--ng); }
+  .icon-btn.toggle{ color:var(--navy); font-size:13px; }
+
+  .case-body{ padding:14px; display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .field label{ display:block; font-size:11px; color:var(--muted); margin-bottom:3px; }
+  .field textarea{ width:100%; min-height:48px; border:1px solid var(--line); border-radius:4px; padding:7px 8px; font-size:13px; resize:vertical; font-family:inherit; }
+
+  .gallery-section{ grid-column:1 / -1; }
+  .gallery{ display:grid; grid-template-columns:repeat(auto-fill, minmax(170px,1fr)); gap:12px; }
+  .shot-card{ border:1px solid var(--line); border-radius:6px; overflow:hidden; background:#fafafa; display:flex; flex-direction:column; }
+  .shot-card .thumb-wrap{ position:relative; cursor:pointer; background:#111; }
+  .shot-card img{ width:100%; display:block; }
+  .shot-card .num{ position:absolute; top:4px; left:4px; background:var(--navy); color:#fff; font-size:11px; font-weight:700; padding:1px 7px; border-radius:10px; }
+  .shot-card .edit-hint{ position:absolute; bottom:4px; right:4px; background:rgba(0,0,0,.55); color:#fff; font-size:10px; padding:2px 6px; border-radius:3px; }
+  .shot-card textarea{ width:100%; border:none; border-top:1px solid var(--line); padding:6px 7px; font-size:12px; resize:vertical; min-height:36px; font-family:inherit; }
+  .shot-card .shot-actions{ display:flex; gap:2px; padding:3px 6px; background:#f4f4f4; }
+  .shot-card .shot-actions .spacer{ flex:1; }
+
+  .add-shot{ border:2px dashed var(--line); border-radius:6px; min-height:120px; display:flex; flex-direction:column; gap:8px; align-items:center; justify-content:center; text-align:center; color:var(--muted); font-size:11.5px; cursor:pointer; padding:8px; }
+  .add-shot.selected{ border-style:solid; border-color:var(--navy); background:#eef2f6; color:var(--navy); font-weight:600; }
+  .add-shot .pick-file{ background:#fff; border:1px solid var(--line); border-radius:4px; padding:4px 10px; font-size:11.5px; cursor:pointer; color:var(--ink); }
+
+  .add-case{ display:block; width:100%; padding:12px; border:1px dashed var(--navy); background:none; color:var(--navy); font-size:13px; font-weight:600; border-radius:6px; cursor:pointer; margin-top:6px; }
+  .add-case:hover{ background:#eef2f6; }
+
+  /* annotation modal */
+  #annotateModal{ position:fixed; inset:0; background:rgba(15,18,24,.92); z-index:100; display:none; flex-direction:column; }
+  #annotateModal.open{ display:flex; }
+  .anno-toolbar{ display:flex; align-items:center; gap:8px; padding:10px 16px; background:#12151a; flex-wrap:wrap; }
+  .anno-toolbar button{ background:#232833; color:#e8e6e2; border:1px solid #363c47; padding:7px 11px; border-radius:5px; font-size:12.5px; cursor:pointer; }
+  .anno-toolbar button.active{ background:#3a6ea5; border-color:#3a6ea5; }
+  .anno-toolbar button:hover{ filter:brightness(1.15); }
+  .anno-toolbar button:disabled{ opacity:.35; cursor:default; }
+  .anno-toolbar button:disabled:hover{ filter:none; }
+  .swatch{ width:22px; height:22px; border-radius:50%; border:2px solid transparent; cursor:pointer; }
+  .swatch.active{ border-color:#fff; }
+  .anno-spacer{ flex:1; }
+  .anno-canvas-wrap{ flex:1; display:flex; align-items:center; justify-content:center; overflow:auto; padding:16px; }
+  #annoCanvas{ background:#000; max-width:100%; max-height:100%; cursor:crosshair; box-shadow:0 0 0 1px #333; }
+
+  @media print{
+    .toolbar, .add-case, .icon-btn, .shot-actions, .add-shot, .edit-hint{ display:none !important; }
+    body{ background:#fff; }
+    #sheet{ box-shadow:none; margin:0; max-width:100%; }
+    .case{ break-inside:avoid; }
+    textarea, input, select{ border:none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <h1>テストエビデンス作成</h1>
+  <div class="meta-row">プロジェクト<input type="text" id="projName" value="〇〇機能 結合テスト"></div>
+  <div class="meta-row">実施者<input type="text" id="tester" value=""></div>
+  <div class="meta-row">日付<input type="text" id="testDate" value=""></div>
+  <div class="meta-row">縮小<select id="shrinkSel"><option value="1600">長辺1600px</option><option value="1200">長辺1200px</option><option value="800" selected>長辺800px</option><option value="500">長辺500px</option><option value="0">なし</option></select></div>
+  <div class="meta-row">形式<select id="fmtSel"><option value="jpeg85" selected>JPEG 標準</option><option value="jpeg92">JPEG 高画質</option><option value="png">PNG</option></select></div>
+  <div style="flex:1"></div>
+  <button class="secondary" onclick="document.getElementById('importInput').click()">作業用HTMLを読み込む</button>
+  <input type="file" id="importInput" accept=".html,text/html" style="display:none" onchange="if(this.files[0]) importHtml(this.files[0]); this.value='';">
+  <button class="secondary" onclick="window.print()">印刷 / PDF化</button>
+  <button class="secondary" onclick="exportHtml(true)">作業用保存</button>
+  <button onclick="exportHtml(false)">配布用保存</button>
+</div>
+
+<div id="sheet">
+  <div class="doc-title" id="docTitleView"></div>
+  <div class="doc-sub" id="docSubView"></div>
+  <div id="cases"></div>
+  <button class="add-case" onclick="addCase()">＋ テストケースを追加</button>
+</div>
+
+<!-- annotation modal -->
+<div id="annotateModal">
+  <div class="anno-toolbar">
+    <button data-tool="rect">四角</button>
+    <button data-tool="arrow">矢印</button>
+    <button data-tool="pen">ペン</button>
+    <button data-tool="text">テキスト</button>
+    <button data-tool="mosaic">モザイク</button>
+    <span style="width:1px;height:20px;background:#363c47;margin:0 4px;"></span>
+    <div class="swatch" style="background:#ff3b30" data-color="#ff3b30"></div>
+    <div class="swatch" style="background:#ffd60a" data-color="#ffd60a"></div>
+    <div class="swatch" style="background:#3a6ea5" data-color="#3a6ea5"></div>
+    <div class="swatch" style="background:#34c759" data-color="#34c759"></div>
+    <span style="width:1px;height:20px;background:#363c47;margin:0 4px;"></span>
+    <button id="undoBtn">元に戻す</button>
+    <button id="clearBtn">全消去</button>
+    <span style="width:1px;height:20px;background:#363c47;margin:0 4px;"></span>
+    <button id="annoPrev" title="この画像を自動保存して前の画像へ（←キー）">‹ 前へ</button>
+    <span id="annoPos" style="font-size:12px;color:#aeb6c2;min-width:52px;text-align:center;"></span>
+    <button id="annoNext" title="この画像を自動保存して次の画像へ（→キー）">次へ ›</button>
+    <span style="font-size:11px;color:#7c8698;">←→キーでも移動（自動保存）</span>
+    <div class="anno-spacer"></div>
+    <button id="cancelBtn" title="この画像の未保存の変更を破棄して閉じます（移動時に自動保存済みの分は残ります）">キャンセル (Esc)</button>
+    <button id="saveBtn" style="background:#2f8f5b;border-color:#2f8f5b;">保存して閉じる</button>
+  </div>
+  <div class="anno-canvas-wrap">
+    <canvas id="annoCanvas"></canvas>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+let cases = [];
+let caseSeq = 0;
+let imgSeq = 0;
+let activePasteCaseId = null;
+
+/* ---------- state ops ---------- */
+function addCase(){
+  caseSeq++;
+  cases.push({ id: caseSeq, collapsed:false, title:`テストケース ${caseSeq}`, step:'', expected:'', actual:'', result:'PENDING', images:[] });
+  activePasteCaseId = caseSeq;
+  render();
+}
+function removeCase(id){
+  if(!confirm('このケースを削除しますか？（画像も削除されます）')) return;
+  cases = cases.filter(c => c.id !== id);
+  if(activePasteCaseId === id) activePasteCaseId = cases.length ? cases[cases.length-1].id : null;
+  render();
+}
+function toggleCollapse(id){ const c = findCase(id); if(c){ c.collapsed = !c.collapsed; render(); } }
+function updateField(id, field, value){ const c = findCase(id); if(c) c[field] = value; }
+function findCase(id){ return cases.find(c => c.id === id); }
+function findImage(caseId, imgId){ const c = findCase(caseId); return c ? c.images.find(i => i.id === imgId) : null; }
+function updateImageComment(caseId, imgId, value){ const img = findImage(caseId, imgId); if(img) img.comment = value; }
+
+function addImageToCase(caseId, dataUrl){
+  const c = findCase(caseId);
+  if(!c) return;
+  imgSeq++;
+  c.images.push({ id: imgSeq, original: dataUrl, shapes: [], flattened: dataUrl, comment: '' });
+  render();
+}
+function removeImage(caseId, imgId){
+  const c = findCase(caseId); if(!c) return;
+  c.images = c.images.filter(i => i.id !== imgId);
+  render();
+}
+function moveImage(caseId, imgId, dir){
+  const c = findCase(caseId); if(!c) return;
+  const idx = c.images.findIndex(i => i.id === imgId);
+  const to = idx + dir;
+  if(idx < 0 || to < 0 || to >= c.images.length) return;
+  const [item] = c.images.splice(idx, 1);
+  c.images.splice(to, 0, item);
+  render();
+}
+
+/* ---------- image intake ---------- */
+function readFileAsDataUrl(file, cb){
+  const reader = new FileReader();
+  reader.onload = e => cb(e.target.result);
+  reader.readAsDataURL(file);
+}
+function getFmt(){
+  const v = document.getElementById('fmtSel').value;
+  if(v === 'png') return { mime:'image/png', q:undefined };
+  if(v === 'jpeg92') return { mime:'image/jpeg', q:0.92 };
+  return { mime:'image/jpeg', q:0.85 };
+}
+function encodeCanvas(cv, likeDataUrl){
+  if(likeDataUrl && likeDataUrl.indexOf('data:image/jpeg') === 0){
+    const f = getFmt();
+    return cv.toDataURL('image/jpeg', f.mime === 'image/jpeg' ? f.q : 0.85);
+  }
+  return cv.toDataURL('image/png');
+}
+function preprocessImage(dataUrl, cb){
+  const maxW = Number(document.getElementById('shrinkSel').value);
+  const fmt = getFmt();
+  const img = new Image();
+  img.onload = () => {
+    const longEdge = Math.max(img.naturalWidth, img.naturalHeight);
+    const needShrink = maxW > 0 && longEdge > maxW;
+    const wantJpeg = fmt.mime === 'image/jpeg';
+    const alreadyJpeg = dataUrl.indexOf('data:image/jpeg') === 0;
+    if(!needShrink && (!wantJpeg || alreadyJpeg)) return cb(dataUrl);
+    const sc = needShrink ? maxW / longEdge : 1;
+    const cv = document.createElement('canvas');
+    cv.width = Math.round(img.naturalWidth * sc);
+    cv.height = Math.round(img.naturalHeight * sc);
+    const cx = cv.getContext('2d');
+    if(wantJpeg){ cx.fillStyle = '#fff'; cx.fillRect(0, 0, cv.width, cv.height); }
+    cx.drawImage(img, 0, 0, cv.width, cv.height);
+    cb(wantJpeg ? cv.toDataURL('image/jpeg', fmt.q) : cv.toDataURL('image/png'));
+  };
+  img.src = dataUrl;
+}
+function processIncoming(dataUrl, caseId){ preprocessImage(dataUrl, d => addImageToCase(caseId, d)); }
+function handleFileInput(caseId, files){
+  Array.from(files).forEach(file => {
+    if(file.type.startsWith('image/')) readFileAsDataUrl(file, d => processIncoming(d, caseId));
+  });
+}
+function selectPasteTarget(id){ activePasteCaseId = id; render(); }
+
+document.addEventListener('paste', e => {
+  const ae = document.activeElement;
+  if(ae && (ae.tagName === 'TEXTAREA' || ae.tagName === 'INPUT')) return; // don't hijack text paste
+  const items = e.clipboardData && e.clipboardData.items;
+  if(!items) return;
+  let target = (activePasteCaseId != null && findCase(activePasteCaseId)) ? activePasteCaseId
+             : (cases.length ? cases[cases.length-1].id : null);
+  if(target == null) return;
+  let handled = false;
+  for(const item of items){
+    if(item.type.indexOf('image') === 0){
+      handled = true;
+      readFileAsDataUrl(item.getAsFile(), d => processIncoming(d, target));
+    }
+  }
+  if(handled) e.preventDefault();
+});
+
+/* ---------- render ---------- */
+function escapeHtml(s){ return (s||'').replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
+
+function render(){
+  const container = document.getElementById('cases');
+  container.innerHTML = '';
+  cases.forEach((c, idx) => {
+    const imagesHtml = c.images.map((img, ii) => `
+      <div class="shot-card">
+        <div class="thumb-wrap" onclick="openAnnotate(${c.id}, ${img.id})">
+          <span class="num">${ii+1}</span>
+          <img src="${img.flattened}">
+          <span class="edit-hint">クリックで注釈</span>
+        </div>
+        <textarea placeholder="この画像のコメント" oninput="updateImageComment(${c.id},${img.id},this.value)">${escapeHtml(img.comment)}</textarea>
+        <div class="shot-actions">
+          <button class="icon-btn" onclick="moveImage(${c.id},${img.id},-1)" title="前へ">◀</button>
+          <button class="icon-btn" onclick="moveImage(${c.id},${img.id},1)" title="後へ">▶</button>
+          <span class="spacer"></span>
+          <button class="icon-btn" onclick="removeImage(${c.id},${img.id})">削除</button>
+        </div>
+      </div>`).join('');
+
+    const bodyHtml = c.collapsed ? '' : `
+      <div class="case-body">
+        <div class="field"><label>手順</label><textarea oninput="updateField(${c.id},'step',this.value)">${escapeHtml(c.step)}</textarea></div>
+        <div class="field"><label>期待結果</label><textarea oninput="updateField(${c.id},'expected',this.value)">${escapeHtml(c.expected)}</textarea></div>
+        <div class="field" style="grid-column:1 / -1"><label>総評・備考</label><textarea oninput="updateField(${c.id},'actual',this.value)">${escapeHtml(c.actual)}</textarea></div>
+        <div class="gallery-section">
+          <div class="gallery">
+            ${imagesHtml}
+            <div class="add-shot ${activePasteCaseId===c.id ? 'selected' : ''}" data-caseid="${c.id}" onclick="selectPasteTarget(${c.id})">
+              <div>${activePasteCaseId===c.id ? '✔ 貼り付け先に選択中' : 'クリックして貼り付け先に選択'}</div>
+              <div>Ctrl+V で画像貼り付け / ドラッグ&ドロップ</div>
+              <button class="pick-file" onclick="event.stopPropagation(); document.getElementById('fileInput_${c.id}').click()">ファイル選択</button>
+              <input type="file" id="fileInput_${c.id}" accept="image/*" multiple style="display:none" onchange="handleFileInput(${c.id}, this.files)">
+            </div>
+          </div>
+        </div>
+      </div>`;
+
+    const div = document.createElement('div');
+    div.className = 'case';
+    div.innerHTML = `
+      <div class="case-head">
+        <button class="icon-btn toggle" onclick="toggleCollapse(${c.id})">${c.collapsed ? '▶' : '▼'}</button>
+        <span class="no">#${String(idx+1).padStart(2,'0')}</span>
+        <input type="text" value="${escapeHtml(c.title)}" oninput="updateField(${c.id},'title',this.value)">
+        <span class="img-count">画像 ${c.images.length} 枚</span>
+        <select class="result ${c.result}" onchange="updateField(${c.id},'result',this.value); this.className='result '+this.value;">
+          <option value="PENDING" ${c.result==='PENDING'?'selected':''}>保留</option>
+          <option value="OK" ${c.result==='OK'?'selected':''}>OK</option>
+          <option value="NG" ${c.result==='NG'?'selected':''}>NG</option>
+        </select>
+        <button class="icon-btn" onclick="removeCase(${c.id})">ケース削除</button>
+      </div>
+      ${bodyHtml}`;
+    container.appendChild(div);
+  });
+  bindDropZones();
+  updateHeader();
+}
+
+function bindDropZones(){
+  document.querySelectorAll('.add-shot').forEach(zone => {
+    zone.addEventListener('dragover', e => e.preventDefault());
+    zone.addEventListener('drop', e => {
+      e.preventDefault();
+      const caseId = Number(zone.dataset.caseid);
+      activePasteCaseId = caseId;
+      Array.from(e.dataTransfer.files).forEach(file => {
+        if(file.type.startsWith('image/')) readFileAsDataUrl(file, d => processIncoming(d, caseId));
+      });
+    });
+  });
+}
+
+function updateHeader(){
+  const proj = document.getElementById('projName').value;
+  const tester = document.getElementById('tester').value;
+  const date = document.getElementById('testDate').value;
+  document.getElementById('docTitleView').textContent = proj || 'テストエビデンス';
+  document.getElementById('docSubView').textContent =
+    [tester ? `実施者: ${tester}` : null, date ? `実施日: ${date}` : null].filter(Boolean).join('　/　');
+}
+['projName','tester','testDate'].forEach(id => document.getElementById(id).addEventListener('input', updateHeader));
+
+/* ---------- annotation ---------- */
+let annoState = { caseId:null, imgId:null, tool:'rect', color:'#ff3b30', shapes:[], baseImage:null, drawing:false, startX:0, startY:0, currentPenPath:null };
+const canvas = document.getElementById('annoCanvas');
+const ctx = canvas.getContext('2d');
+
+function openAnnotate(caseId, imgId){
+  const img = findImage(caseId, imgId);
+  if(!img) return;
+  const image = new Image();
+  image.onload = () => {
+    canvas.width = image.naturalWidth;
+    canvas.height = image.naturalHeight;
+    annoState.caseId = caseId;
+    annoState.imgId = imgId;
+    annoState.baseImage = image;
+    annoState.shapes = JSON.parse(JSON.stringify(img.shapes || []));
+    document.getElementById('annotateModal').classList.add('open');
+    redrawAnno();
+    updateAnnoNavUI();
+  };
+  image.src = img.original;
+}
+function closeAnnotate(){
+  document.getElementById('annotateModal').classList.remove('open');
+  annoState.drawing = false;
+  render();
+}
+function updateAnnoNavUI(){
+  const c = findCase(annoState.caseId);
+  if(!c) return;
+  const idx = c.images.findIndex(i => i.id === annoState.imgId);
+  document.getElementById('annoPos').textContent = (idx + 1) + ' / ' + c.images.length;
+  document.getElementById('annoPrev').disabled = idx <= 0;
+  document.getElementById('annoNext').disabled = idx >= c.images.length - 1;
+}
+function annoSaveCurrent(){
+  const img = findImage(annoState.caseId, annoState.imgId);
+  if(img){
+    img.shapes = annoState.shapes;
+    redrawAnno();
+    img.flattened = encodeCanvas(canvas, img.original);
+  }
+}
+function annoNav(dir){
+  const c = findCase(annoState.caseId);
+  if(!c) return;
+  const idx = c.images.findIndex(i => i.id === annoState.imgId);
+  const ni = idx + dir;
+  if(idx < 0 || ni < 0 || ni >= c.images.length) return;
+  annoSaveCurrent();
+  openAnnotate(annoState.caseId, c.images[ni].id);
+}
+
+function redrawAnno(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.drawImage(annoState.baseImage, 0, 0);
+  annoState.shapes.forEach(s => drawShape(ctx, s, annoState.baseImage, canvas.width));
+}
+
+function drawShape(c, s, baseImg, cw){
+  c.strokeStyle = s.color; c.fillStyle = s.color; c.lineWidth = Math.max(3, cw*0.004);
+  if(s.type === 'rect'){
+    c.save(); c.globalAlpha = 0.15; c.fillRect(s.x, s.y, s.w, s.h); c.restore();
+    c.strokeRect(s.x, s.y, s.w, s.h);
+  } else if(s.type === 'arrow'){
+    const headlen = Math.max(12, cw*0.015);
+    const angle = Math.atan2(s.y2-s.y1, s.x2-s.x1);
+    c.beginPath(); c.moveTo(s.x1,s.y1); c.lineTo(s.x2,s.y2); c.stroke();
+    c.beginPath();
+    c.moveTo(s.x2, s.y2);
+    c.lineTo(s.x2 - headlen*Math.cos(angle-Math.PI/6), s.y2 - headlen*Math.sin(angle-Math.PI/6));
+    c.lineTo(s.x2 - headlen*Math.cos(angle+Math.PI/6), s.y2 - headlen*Math.sin(angle+Math.PI/6));
+    c.closePath(); c.fill();
+  } else if(s.type === 'pen'){
+    c.beginPath();
+    s.points.forEach((p,i) => i===0 ? c.moveTo(p.x,p.y) : c.lineTo(p.x,p.y));
+    c.stroke();
+  } else if(s.type === 'text'){
+    c.font = `bold ${s.size}px sans-serif`;
+    c.save(); c.strokeStyle = 'rgba(0,0,0,.65)'; c.lineWidth = 4; c.strokeText(s.text, s.x, s.y); c.restore();
+    c.fillText(s.text, s.x, s.y);
+  } else if(s.type === 'mosaic'){
+    if(!baseImg || s.w < 2 || s.h < 2) return;
+    const blockPx = Math.max(8, cw*0.012);
+    const tw = Math.max(1, Math.round(s.w / blockPx));
+    const th = Math.max(1, Math.round(s.h / blockPx));
+    const tmp = document.createElement('canvas'); tmp.width = tw; tmp.height = th;
+    tmp.getContext('2d').drawImage(baseImg, s.x, s.y, s.w, s.h, 0, 0, tw, th);
+    c.save();
+    c.imageSmoothingEnabled = false;
+    c.drawImage(tmp, 0, 0, tw, th, s.x, s.y, s.w, s.h);
+    c.restore();
+  }
+}
+
+function canvasCoords(e){
+  const rect = canvas.getBoundingClientRect();
+  return { x:(e.clientX-rect.left) * (canvas.width/rect.width), y:(e.clientY-rect.top) * (canvas.height/rect.height) };
+}
+
+canvas.addEventListener('pointerdown', e => {
+  try{ canvas.setPointerCapture(e.pointerId); }catch(err){}
+  const {x,y} = canvasCoords(e);
+  annoState.drawing = true;
+  annoState.startX = x; annoState.startY = y;
+  if(annoState.tool === 'pen'){
+    annoState.currentPenPath = { type:'pen', color:annoState.color, points:[{x,y}] };
+    annoState.shapes.push(annoState.currentPenPath);
+  } else if(annoState.tool === 'text'){
+    annoState.drawing = false;
+    const text = prompt('テキストを入力してください');
+    if(text){
+      annoState.shapes.push({ type:'text', x, y, text, color:annoState.color, size:Math.max(20, canvas.width*0.025) });
+      redrawAnno();
+    }
+  }
+});
+canvas.addEventListener('pointermove', e => {
+  if(!annoState.drawing) return;
+  const {x,y} = canvasCoords(e);
+  if(annoState.tool === 'pen'){
+    annoState.currentPenPath.points.push({x,y});
+    redrawAnno();
+  } else if(annoState.tool === 'rect' || annoState.tool === 'arrow' || annoState.tool === 'mosaic'){
+    redrawAnno();
+    const preview = (annoState.tool === 'arrow')
+      ? { type:'arrow', x1:annoState.startX, y1:annoState.startY, x2:x, y2:y, color:annoState.color }
+      : { type:annoState.tool, x:Math.min(annoState.startX,x), y:Math.min(annoState.startY,y), w:Math.abs(x-annoState.startX), h:Math.abs(y-annoState.startY), color:annoState.color };
+    drawShape(ctx, preview, annoState.baseImage, canvas.width);
+  }
+});
+canvas.addEventListener('pointerup', e => {
+  if(!annoState.drawing) return;
+  annoState.drawing = false;
+  const {x,y} = canvasCoords(e);
+  if(annoState.tool === 'rect' || annoState.tool === 'mosaic'){
+    annoState.shapes.push({ type:annoState.tool, x:Math.min(annoState.startX,x), y:Math.min(annoState.startY,y), w:Math.abs(x-annoState.startX), h:Math.abs(y-annoState.startY), color:annoState.color });
+  } else if(annoState.tool === 'arrow'){
+    annoState.shapes.push({ type:'arrow', x1:annoState.startX, y1:annoState.startY, x2:x, y2:y, color:annoState.color });
+  }
+  redrawAnno();
+});
+canvas.addEventListener('pointercancel', () => { annoState.drawing = false; redrawAnno(); });
+
+document.querySelectorAll('.anno-toolbar [data-tool]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    annoState.tool = btn.dataset.tool;
+    document.querySelectorAll('.anno-toolbar [data-tool]').forEach(b => b.classList.toggle('active', b===btn));
+  });
+});
+document.querySelectorAll('.swatch').forEach(sw => {
+  sw.addEventListener('click', () => {
+    annoState.color = sw.dataset.color;
+    document.querySelectorAll('.swatch').forEach(s => s.classList.toggle('active', s===sw));
+  });
+});
+document.querySelector('[data-tool="rect"]').classList.add('active');
+document.querySelector('.swatch').classList.add('active');
+
+document.getElementById('undoBtn').addEventListener('click', () => { annoState.shapes.pop(); redrawAnno(); });
+document.getElementById('clearBtn').addEventListener('click', () => { annoState.shapes = []; redrawAnno(); });
+document.getElementById('annoPrev').addEventListener('click', () => annoNav(-1));
+document.getElementById('annoNext').addEventListener('click', () => annoNav(1));
+document.getElementById('cancelBtn').addEventListener('click', closeAnnotate);
+document.addEventListener('keydown', e => {
+  if(!document.getElementById('annotateModal').classList.contains('open')) return;
+  if(e.key === 'Escape'){ closeAnnotate(); }
+  else if(e.key === 'ArrowRight'){ annoNav(1); e.preventDefault(); }
+  else if(e.key === 'ArrowLeft'){ annoNav(-1); e.preventDefault(); }
+});
+document.getElementById('saveBtn').addEventListener('click', () => {
+  annoSaveCurrent();
+  closeAnnotate();
+});
+
+function flattenImage(imgObj, cb){
+  const im = new Image();
+  im.onload = () => {
+    const cv = document.createElement('canvas');
+    cv.width = im.naturalWidth; cv.height = im.naturalHeight;
+    const cx = cv.getContext('2d');
+    cx.drawImage(im, 0, 0);
+    (imgObj.shapes || []).forEach(s => drawShape(cx, s, im, cv.width));
+    cb(encodeCanvas(cv, imgObj.original));
+  };
+  im.src = imgObj.original;
+}
+
+/* ---------- toast ---------- */
+let toastTimer = null;
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 4000);
+}
+
+/* ---------- export: static report + embedded JSON ---------- */
+function exportHtml(withData){
+  const meta = {
+    proj: document.getElementById('projName').value,
+    tester: document.getElementById('tester').value,
+    date: document.getElementById('testDate').value
+  };
+  let stateJson = null;
+  if(withData){
+    const state = { v:1, meta, cases: cases.map(c => ({
+      title:c.title, step:c.step, expected:c.expected, actual:c.actual, result:c.result,
+      images: c.images.map(i => ({ original:i.original, shapes:i.shapes, comment:i.comment }))
+    }))};
+    stateJson = JSON.stringify(state).replace(/</g, '\\u003c');
+  }
+  const html = buildReport(meta, stateJson);
+  const blob = new Blob([html], { type:'text/html' });
+  const mb = (blob.size/1048576).toFixed(1);
+  showToast(withData
+    ? `作業用として保存しました（${mb} MB / 再編集データ入り）`
+    : `配布用として保存しました（${mb} MB / 元画像・再編集データは含みません）`);
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = (meta.proj || 'test_evidence').replace(/[\\/:*?"<>|]/g,'_') + (withData ? '' : '_配布用') + '.html';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function buildReport(meta, stateJson){
+  const resLabel = { OK:'OK', NG:'NG', PENDING:'保留' };
+  const summaryRows = cases.map((c,i) =>
+    `<tr><td class="mono">#${String(i+1).padStart(2,'0')}</td><td><a href="#case-${i+1}">${escapeHtml(c.title)}</a></td><td><span class="badge ${c.result}">${resLabel[c.result]}</span></td><td class="mono">${c.images.length}</td></tr>`
+  ).join('');
+
+  const caseSections = cases.map((c,ci) => {
+    const tb = (label,val) => val ? `<div class="tb"><div class="tl">${label}</div><div class="tv">${escapeHtml(val)}</div></div>` : '';
+    const figs = c.images.map((img,ii) =>
+      `<figure><img src="${img.flattened}" onclick="Z(this)" title="クリックで拡大"><figcaption>図${ci+1}-${ii+1}${img.comment ? '：'+escapeHtml(img.comment) : ''}</figcaption></figure>`
+    ).join('');
+    return `<section class="case" id="case-${ci+1}">
+      <h2><span class="mono">#${String(ci+1).padStart(2,'0')}</span> ${escapeHtml(c.title)} <span class="badge ${c.result}">${resLabel[c.result]}</span></h2>
+      ${tb('手順', c.step)}${tb('期待結果', c.expected)}${tb('総評・備考', c.actual)}
+      ${c.images.length ? `<div class="figs">${figs}</div>` : ''}
+    </section>`;
+  }).join('');
+
+  return `<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>${escapeHtml(meta.proj || 'テストエビデンス')}</title>
+<style>
+  body{ max-width:1000px; margin:32px auto 80px; padding:0 24px; font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",Arial,sans-serif; color:#1e2430; line-height:1.6; }
+  h1{ font-size:22px; border-bottom:2px solid #1f3a5f; padding-bottom:10px; margin-bottom:4px; }
+  .sub{ font-size:13px; color:#6b7280; margin-bottom:26px; }
+  table.summary{ border-collapse:collapse; width:100%; margin-bottom:34px; font-size:13.5px; }
+  table.summary th, table.summary td{ border:1px solid #d8dce1; padding:7px 10px; text-align:left; }
+  table.summary th{ background:#f1f2f4; font-size:12px; }
+  .mono{ font-family:Menlo,Consolas,monospace; font-size:12px; color:#6b7280; }
+  .badge{ display:inline-block; font-size:12px; font-weight:700; padding:2px 10px; border-radius:10px; }
+  .badge.OK{ background:#e2f3ea; color:#1c7c4c; }
+  .badge.NG{ background:#f9e4e2; color:#b0392f; }
+  .badge.PENDING{ background:#f7eed7; color:#a6791f; }
+  section.case{ border:1px solid #d8dce1; border-radius:8px; padding:18px 20px; margin-bottom:26px; }
+  section.case h2{ font-size:16px; margin:0 0 12px; display:flex; align-items:center; gap:10px; }
+  .tb{ margin-bottom:10px; }
+  .tl{ font-size:11px; color:#6b7280; margin-bottom:2px; }
+  .tv{ font-size:13.5px; white-space:pre-wrap; background:#fafafa; border:1px solid #eceef0; border-radius:4px; padding:8px 10px; }
+  .figs{ display:grid; grid-template-columns:repeat(auto-fill, minmax(300px,1fr)); gap:14px; margin-top:14px; }
+  figure{ margin:0; border:1px solid #d8dce1; border-radius:6px; overflow:hidden; background:#fff; }
+  figure img{ width:100%; display:block; cursor:zoom-in; }
+  figcaption{ font-size:12px; padding:6px 9px; background:#f7f7f7; border-top:1px solid #eceef0; }
+  #lb{ display:none; position:fixed; inset:0; background:rgba(10,12,16,.92); z-index:50; align-items:center; justify-content:center; cursor:zoom-out; padding:24px; gap:14px; }
+  #lbFig{ margin:0; display:flex; flex-direction:column; align-items:center; gap:8px; max-width:calc(100% - 130px); max-height:100%; cursor:default; }
+  #lbImg{ max-width:100%; max-height:calc(100vh - 120px); box-shadow:0 0 0 1px #444; }
+  #lbCap{ color:#e6e6e6; font-size:13px; text-align:center; max-width:80vw; }
+  #lbCount{ position:fixed; top:14px; right:18px; color:#aaa; font-size:12px; }
+  #lbHint{ position:fixed; bottom:12px; left:50%; transform:translateX(-50%); color:#888; font-size:11px; }
+  .lbnav{ background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.25); color:#fff; font-size:26px; line-height:1; width:44px; height:64px; border-radius:8px; cursor:pointer; flex:0 0 auto; }
+  .lbnav:hover{ background:rgba(255,255,255,.18); }
+  @media print{
+    body{ margin:0; max-width:100%; }
+    section.case{ break-before:page; border:none; padding:0; }
+    figure{ break-inside:avoid; }
+    #lb{ display:none !important; }
+  }
+</style>
+</head>
+<body>
+<h1>${escapeHtml(meta.proj || 'テストエビデンス')}</h1>
+<div class="sub">${[meta.tester ? '実施者: '+escapeHtml(meta.tester) : null, meta.date ? '実施日: '+escapeHtml(meta.date) : null].filter(Boolean).join('　/　')}</div>
+<table class="summary">
+  <tr><th>No.</th><th>テストケース</th><th>結果</th><th>画像</th></tr>
+  ${summaryRows}
+</table>
+${caseSections}
+<div id="lb" onclick="lbClose()">
+  <button id="lbPrev" class="lbnav" onclick="event.stopPropagation(); N(-1)">&#8249;</button>
+  <figure id="lbFig" onclick="event.stopPropagation()">
+    <img id="lbImg">
+    <figcaption id="lbCap"></figcaption>
+  </figure>
+  <button id="lbNext" class="lbnav" onclick="event.stopPropagation(); N(1)">&#8250;</button>
+  <div id="lbCount"></div>
+  <div id="lbHint">← → で前後の画像 ／ Esc・背景クリックで閉じる</div>
+</div>
+<script>
+var LBI = -1;
+function lbImgs(){ return Array.prototype.slice.call(document.querySelectorAll('.figs img')); }
+function Z(el){
+  LBI = lbImgs().indexOf(el);
+  lbShow();
+}
+function lbShow(){
+  var imgs = lbImgs();
+  if(LBI < 0 || LBI >= imgs.length) return;
+  var el = imgs[LBI];
+  document.getElementById('lbImg').src = el.src;
+  var cap = el.parentNode.querySelector('figcaption');
+  document.getElementById('lbCap').textContent = cap ? cap.textContent : '';
+  document.getElementById('lbCount').textContent = (LBI + 1) + ' / ' + imgs.length;
+  document.getElementById('lbPrev').style.visibility = LBI > 0 ? 'visible' : 'hidden';
+  document.getElementById('lbNext').style.visibility = LBI < imgs.length - 1 ? 'visible' : 'hidden';
+  document.getElementById('lb').style.display = 'flex';
+}
+function N(d){
+  var imgs = lbImgs();
+  var ni = LBI + d;
+  if(ni < 0 || ni >= imgs.length) return;
+  LBI = ni;
+  lbShow();
+}
+function lbClose(){ document.getElementById('lb').style.display = 'none'; }
+document.addEventListener('keydown', function(e){
+  if(document.getElementById('lb').style.display !== 'flex') return;
+  if(e.key === 'ArrowRight'){ N(1); e.preventDefault(); }
+  else if(e.key === 'ArrowLeft'){ N(-1); e.preventDefault(); }
+  else if(e.key === 'Escape'){ lbClose(); }
+});
+<\/script>
+${stateJson ? `<script type="application/json" id="__evidence_data__">${stateJson}<\/script>` : ''}
+</body>
+</html>`;
+}
+
+/* ---------- import ---------- */
+function importHtml(file){
+  file.text().then(text => {
+    const doc = new DOMParser().parseFromString(text, 'text/html');
+    const el = doc.getElementById('__evidence_data__');
+    if(!el){ alert('再編集用データが見つかりません。「配布用保存」のファイルは読み込めないため、「作業用保存」したHTMLを選んでください。'); return; }
+    let st;
+    try{ st = JSON.parse(el.textContent); }catch(e){ alert('データの読み取りに失敗しました。'); return; }
+    document.getElementById('projName').value = (st.meta && st.meta.proj) || '';
+    document.getElementById('tester').value = (st.meta && st.meta.tester) || '';
+    document.getElementById('testDate').value = (st.meta && st.meta.date) || '';
+    cases = []; caseSeq = 0; imgSeq = 0;
+    let pending = 0;
+    (st.cases || []).forEach(sc => {
+      caseSeq++;
+      const c = { id:caseSeq, collapsed:false, title:sc.title||'', step:sc.step||'', expected:sc.expected||'', actual:sc.actual||'', result:sc.result||'PENDING', images:[] };
+      cases.push(c);
+      (sc.images || []).forEach(si => {
+        imgSeq++;
+        const io = { id:imgSeq, original:si.original, shapes:si.shapes||[], comment:si.comment||'', flattened:si.original };
+        c.images.push(io);
+        if(io.shapes.length){
+          pending++;
+          flattenImage(io, d => { io.flattened = d; if(--pending === 0) render(); });
+        }
+      });
+    });
+    activePasteCaseId = cases.length ? cases[cases.length-1].id : null;
+    render();
+    showToast(`読み込みました（ケース ${cases.length} 件）`);
+  });
+}
+
+/* ---------- unload guard ---------- */
+function hasContent(){
+  return cases.some(c => c.images.length || c.step || c.expected || c.actual);
+}
+window.addEventListener('beforeunload', e => {
+  if(hasContent()){ e.preventDefault(); e.returnValue = ''; }
+});
+
+/* ---------- init ---------- */
+document.getElementById('testDate').value = new Date().toISOString().slice(0,10);
+addCase();
+updateHeader();
+</script>
+
+</body>
+</html>
