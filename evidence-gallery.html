@@ -1,0 +1,1567 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>作業証跡ギャラリー エディタ</title>
+<style>
+  :root{
+    --ink:#1C2530; --ink-soft:#3A4553; --paper:#EDF0F2; --paper-raised:#FFFFFF;
+    --accent:#FF7A00; --accent-soft:#FFE3C2; --done:#2E7D6B; --done-soft:#DCEEE9; --border:#D8DCE0;
+    --font-display:"Bahnschrift","Arial Narrow","Segoe UI Condensed",sans-serif;
+    --font-body:"Segoe UI","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
+    --font-mono:"Consolas","Cascadia Mono","Courier New",monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{font-family:var(--font-body);background:var(--paper);color:var(--ink);}
+  .topbar{display:flex;align-items:center;gap:12px;background:var(--ink);color:#fff;padding:10px 16px;flex-wrap:wrap;position:sticky;top:0;z-index:10;}
+  .brand{font-family:var(--font-display);font-weight:700;font-size:20px;letter-spacing:.5px;display:flex;align-items:center;gap:8px;}
+  .brand-mark{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;background:var(--accent);color:var(--ink);font-family:var(--font-mono);font-weight:700;border-radius:3px;font-size:14px;}
+  .title-input{font-family:var(--font-display);font-size:16px;font-weight:600;min-width:220px;max-width:360px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.25);border-radius:4px;color:#fff;padding:6px 8px;}
+  .actions{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap;}
+  button, .btnfile{font-family:var(--font-body);font-size:13px;font-weight:600;padding:8px 12px;border-radius:4px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.06);color:#fff;cursor:pointer;transition:background .15s;}
+  button:hover, .btnfile:hover{background:rgba(255,255,255,.16);}
+  button.primary{background:var(--accent);border-color:var(--accent);color:var(--ink);}
+  button.primary:hover{background:#ff8a1a;}
+  .btnfile{display:inline-block;}
+
+  .hint{max-width:960px;margin:16px auto 0;font-size:12px;color:var(--ink-soft);background:var(--paper-raised);border:1px solid var(--border);border-radius:6px;padding:10px 14px;}
+  .main{max-width:960px;margin:0 auto;padding:16px;padding-bottom:80px;}
+
+  .section-card{background:var(--paper-raised);border:1px solid var(--border);border-radius:8px;margin-bottom:20px;overflow:hidden;}
+  .section-card.active-section{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft);}
+  .paste-badge{font-size:11px;color:var(--ink-soft);padding:6px 14px 0;font-family:var(--font-mono);}
+  .section-card.active-section .paste-badge{color:var(--accent);font-weight:700;}
+  .section-head{display:flex;align-items:center;gap:8px;background:var(--ink-soft);padding:10px 14px;}
+  .section-name{flex:1;background:transparent;border:none;border-bottom:1px dashed rgba(255,255,255,.4);color:#fff;font-family:var(--font-display);font-size:16px;font-weight:600;padding:4px 2px;}
+  .section-name:focus{outline:none;border-bottom-color:var(--accent);}
+  .section-head button{font-size:11px;padding:5px 9px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);color:#fff;}
+  .section-head button:hover{background:rgba(255,255,255,.2);}
+  .section-head .del{color:#ffb4a8;}
+
+  .dropzone{margin:14px;border:2px dashed var(--border);border-radius:6px;padding:16px;text-align:center;color:var(--ink-soft);font-size:13px;cursor:pointer;background:var(--paper);}
+  .dropzone.dragover{border-color:var(--accent);background:var(--accent-soft);color:var(--ink);}
+  .dropzone input{display:none;}
+
+  .gallery{display:flex;flex-wrap:wrap;gap:14px;padding:0 14px 14px;}
+  .img-card{border:1px solid var(--border);border-radius:6px;background:var(--paper);overflow:hidden;display:flex;flex-direction:column;}
+  .img-card .thumb-wrap{background:#e4e7e9;display:flex;align-items:center;justify-content:center;min-height:80px;}
+  .img-card img{width:100%;height:auto;display:block;max-height:320px;object-fit:contain;background:#fff;}
+  .img-card .caption-input{border:none;border-top:1px solid var(--border);padding:6px 8px;font-size:12px;width:100%;font-family:var(--font-body);background:#fff;}
+  .img-card .caption-input:focus{outline:2px solid var(--accent-soft);}
+  .img-card .card-controls{display:flex;align-items:center;gap:4px;padding:6px 8px;border-top:1px solid var(--border);background:#fff;flex-wrap:wrap;}
+  .width-btns{display:flex;gap:3px;}
+  .width-btns button{font-size:10px;padding:3px 6px;background:var(--paper);border:1px solid var(--border);color:var(--ink-soft);}
+  .width-btns button.active{background:var(--accent);border-color:var(--accent);color:var(--ink);font-weight:700;}
+  .card-controls .spacer{flex:1;}
+  .card-controls button{font-size:11px;padding:4px 7px;background:var(--paper);border:1px solid var(--border);color:var(--ink-soft);}
+  .card-controls .del{color:#B23A2E;}
+
+  #addSection{display:block;width:100%;max-width:960px;margin:0 auto 40px;padding:14px;border:2px dashed var(--border);background:transparent;color:var(--ink-soft);font-size:14px;border-radius:8px;}
+  #addSection:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft);}
+
+  .drag-grip{cursor:grab;color:#9aa4ad;font-size:13px;user-select:none;padding:0 4px;}
+  .drag-grip:active{cursor:grabbing;}
+  .drop-target{outline:2px dashed var(--accent);outline-offset:-2px;}
+  .img-card.selected{outline:3px solid var(--accent);outline-offset:-3px;}
+  .sel-box{position:absolute;top:6px;left:6px;z-index:2;width:18px;height:18px;accent-color:var(--accent);cursor:pointer;}
+  .width-resizer{position:absolute;top:0;right:0;width:8px;height:100%;cursor:ew-resize;z-index:2;}
+  .width-resizer:hover{background:var(--accent-soft);}
+  .width-current{font-family:var(--font-mono);font-size:10px;color:var(--ink-soft);padding:0 3px;}
+  .ctx-menu{position:fixed;z-index:300;background:#fff;border:1px solid var(--border);border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,.18);min-width:150px;padding:4px;}
+  .ctx-menu.hidden{display:none;}
+  .ctx-item{font-size:13px;padding:7px 12px;border-radius:4px;cursor:pointer;color:var(--ink);}
+  .ctx-item:hover{background:var(--accent-soft);}
+  .ctx-item.danger{color:#B23A2E;}
+  .ctx-item.danger:hover{background:#FBE4E0;}
+  .bulk-bar{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:250;background:var(--ink);color:#fff;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.3);padding:10px 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .bulk-bar.hidden{display:none;}
+  .bulk-label{font-size:13px;font-weight:600;}
+  .bulk-bar button{font-size:12px;padding:6px 10px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.3);color:#fff;}
+  .bulk-bar button:hover{background:rgba(255,255,255,.25);}
+  .bulk-bar .bulk-del{background:#B23A2E;border-color:#B23A2E;}
+  .bulk-bar .bulk-del:hover{background:#c9483b;}
+  .autosave-status{font-family:var(--font-mono);font-size:11px;color:rgba(255,255,255,.65);white-space:nowrap;align-self:center;}
+  .restore-banner{position:fixed;top:64px;left:50%;transform:translateX(-50%);z-index:400;background:var(--ink);color:#fff;border:1px solid var(--accent);border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.35);padding:12px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;max-width:92vw;}
+  .restore-banner.hidden{display:none;}
+  .restore-banner button{font-size:12px;padding:6px 10px;}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:100;}
+  .modal.hidden{display:none;}
+  .modal-inner{width:92vw;height:90vh;background:#fff;border-radius:8px;position:relative;overflow:hidden;}
+  .modal-close{position:absolute;top:10px;right:10px;z-index:2;background:var(--ink);color:#fff;}
+  #previewFrame{width:100%;height:100%;border:none;}
+
+  /* ==== 追加UI（トースト / 統計 / 圧縮設定） ==== */
+  #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(10px);background:#12151a;color:#fff;font-size:13px;padding:10px 16px;border-radius:6px;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:500;box-shadow:0 4px 14px rgba(0,0,0,.3);max-width:80vw;text-align:center;}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .stats{display:flex;gap:6px;align-items:center;font-family:var(--font-mono);font-size:11px;}
+  .stats .st{background:rgba(255,255,255,.14);padding:2px 8px;border-radius:10px;white-space:nowrap;}
+  .stats .st.warn{background:#8a4412;color:#ffdcbb;}
+  .sel-label{display:flex;align-items:center;gap:4px;font-size:11px;color:rgba(255,255,255,.8);white-space:nowrap;}
+  .sel-label select{font-size:11px;padding:4px 5px;border-radius:4px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.06);color:#fff;}
+  .sel-label select option{color:#000;}
+
+  /* ==== 注釈エディタ ==== */
+  .img-card .thumb-wrap{position:relative;cursor:zoom-in;}
+  .thumb-wrap .anno-hint{position:absolute;right:5px;bottom:5px;background:rgba(0,0,0,.6);color:#fff;font-size:10px;padding:2px 6px;border-radius:3px;pointer-events:none;}
+  .img-card.has-anno .thumb-wrap .anno-hint{background:var(--accent);color:var(--ink);font-weight:700;}
+  .anno-modal{position:fixed;inset:0;background:rgba(15,18,24,.94);z-index:600;display:flex;flex-direction:column;}
+  .anno-modal.hidden{display:none;}
+  .anno-toolbar{display:flex;align-items:center;gap:8px;padding:10px 16px;background:#12151a;flex-wrap:wrap;}
+  .anno-toolbar button{background:#232833;color:#e8e6e2;border:1px solid #363c47;padding:7px 11px;border-radius:5px;font-size:12.5px;cursor:pointer;font-weight:600;}
+  .anno-toolbar button:hover{background:#2e3542;}
+  .anno-toolbar button.active{background:var(--accent);border-color:var(--accent);color:var(--ink);}
+  .anno-toolbar button:disabled{opacity:.35;cursor:default;}
+  .anno-toolbar button:disabled:hover{background:#232833;}
+  .anno-toolbar .sep{width:1px;height:20px;background:#363c47;margin:0 4px;}
+  .anno-toolbar .spacer{flex:1;}
+  .anno-toolbar .pos{font-family:var(--font-mono);font-size:12px;color:#aeb6c2;min-width:52px;text-align:center;}
+  .anno-toolbar .tip{font-size:11px;color:#7c8698;}
+  .anno-toolbar .swatch{width:22px;height:22px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0;}
+  .anno-toolbar .swatch.active{border-color:#fff;}
+  .anno-canvas-wrap{flex:1;display:flex;align-items:center;justify-content:center;overflow:auto;padding:16px;}
+  #annoCanvas{background:#000;max-width:100%;max-height:100%;cursor:crosshair;box-shadow:0 0 0 1px #333;}
+  .anno-save{background:#2f8f5b !important;border-color:#2f8f5b !important;color:#fff !important;}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="brand"><span class="brand-mark">◫</span>証跡ギャラリー</div>
+  <input id="projectTitle" class="title-input" value="作業証跡" placeholder="証跡タイトル">
+  <span id="stats" class="stats"></span>
+  <span id="autosaveStatus" class="autosave-status"></span>
+  <div class="actions">
+    <label class="sel-label" title="取り込む画像の縮小サイズ。ブラウザに記憶されます">縮小
+      <select id="shrinkSel">
+        <option value="2000">長辺2000px</option>
+        <option value="1600" selected>長辺1600px</option>
+        <option value="1200">長辺1200px</option>
+        <option value="800">長辺800px</option>
+        <option value="0">なし（原寸）</option>
+      </select>
+    </label>
+    <label class="sel-label" title="保存形式。画面キャプチャの文字を優先するならPNG、サイズを優先するならJPEG">形式
+      <select id="fmtSel">
+        <option value="png" selected>PNG（文字くっきり）</option>
+        <option value="jpeg92">JPEG 高画質</option>
+        <option value="jpeg85">JPEG 標準（軽い）</option>
+      </select>
+    </label>
+    <button id="btnSaveJson">JSON保存</button>
+    <label class="btnfile" title="JSONファイル、またはこのツールで書き出したHTMLを読み込みます">ファイル読込<input type="file" id="fileLoadJson" accept=".json,.html,.htm,application/json,text/html" hidden></label>
+    <button id="btnPreview">プレビュー（印刷確認）</button>
+    <button id="btnExport" class="primary">HTMLエクスポート</button>
+  </div>
+</div>
+
+<div id="annoModal" class="anno-modal hidden">
+  <div class="anno-toolbar">
+    <button data-tool="rect" title="範囲を四角で囲む">四角</button>
+    <button data-tool="arrow" title="矢印で指し示す">矢印</button>
+    <button data-tool="pen" title="フリーハンド">ペン</button>
+    <button data-tool="text" title="文字を書き込む">テキスト</button>
+    <button data-tool="mosaic" title="個人情報・社名などを塗りつぶす">モザイク</button>
+    <span class="sep"></span>
+    <button class="swatch" style="background:#ff3b30" data-color="#ff3b30" title="赤"></button>
+    <button class="swatch" style="background:#ffd60a" data-color="#ffd60a" title="黄"></button>
+    <button class="swatch" style="background:#3a6ea5" data-color="#3a6ea5" title="青"></button>
+    <button class="swatch" style="background:#34c759" data-color="#34c759" title="緑"></button>
+    <span class="sep"></span>
+    <button id="annoUndo" title="直前の書き込みを取り消す（Ctrl+Z）">元に戻す</button>
+    <button id="annoClear" title="この画像の書き込みをすべて消す">全消去</button>
+    <span class="sep"></span>
+    <button id="annoPrev" title="この画像を保存して前の画像へ（←キー）">‹ 前へ</button>
+    <span id="annoPos" class="pos"></span>
+    <button id="annoNext" title="この画像を保存して次の画像へ（→キー）">次へ ›</button>
+    <span class="tip">←→キーでも移動（移動時に自動保存）</span>
+    <span class="spacer"></span>
+    <button id="annoCancel" title="この画像の未保存の書き込みを破棄して閉じます">キャンセル (Esc)</button>
+    <button id="annoSave" class="anno-save">保存して閉じる</button>
+  </div>
+  <div class="anno-canvas-wrap"><canvas id="annoCanvas"></canvas></div>
+</div>
+
+<div id="toast"></div>
+
+<div class="hint">画像ごとに幅（100% / 50% / 33% / 25%、またはカード右端をドラッグで自由調整）を選べます。横長のPC画面キャプチャは<b>100%</b>、縦長のプロパティ画面は<b>33%前後</b>、比較したい2枚は両方<b>50%</b>で自動的に横並びになります。<b>Alt+PrintScreen → Ctrl+V</b>で直接貼り付け可能（貼り付け先はオレンジ枠のセクション）。画像左上のチェックで<b>複数選択→一括で幅変更・削除</b>、⠿をドラッグで並び替え（<b>他のセクションへ移動</b>も可能。空のセクションへは点線の枠へドロップ）、<b>サムネイルをクリックすると注釈エディタ</b>が開きます（四角で囲む・矢印・ペン・テキスト・<b>モザイク</b>／←→で前後の画像へ移動）。モザイクは元のピクセルを残さず塗り潰すので、社名・氏名・IPの伏せ字に使えます。右クリックで注釈編集・複製・削除メニュー。<b>Ctrl+S</b>でJSON保存、<b>Ctrl+Z / Ctrl+Y</b>で元に戻す・やり直しができます。取り込む画像の<b>縮小サイズ・保存形式</b>は右上で選べます（選択はこのブラウザに記憶されます。画面の文字を読ませたいならPNG、枚数が多くサイズを抑えたいならJPEG）。ツールバー右上に<b>推定ファイルサイズ</b>を常時表示します。<b>エクスポートしたHTMLは「ファイル読込」でそのまま読み戻せます</b>ので、配布したHTMLさえあれば再編集できます。エクスポート後のHTMLは画像を<b>クリックで拡大</b>（←→で送り、Escで閉じる）できます。</div>
+
+<div class="main" id="main"></div>
+<button id="addSection">＋ セクションを追加（例：手順3-1 ログイン確認）</button>
+
+<div id="restoreBanner" class="restore-banner hidden">
+  <span id="restoreMsg"></span>
+  <button id="restoreYes" class="primary">復元する</button>
+  <button id="restoreNo">破棄する</button>
+</div>
+
+<div id="previewModal" class="modal hidden">
+  <div class="modal-inner">
+    <button id="closePreview" class="modal-close">✕ 閉じる</button>
+    <iframe id="previewFrame"></iframe>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var uid = function(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); };
+
+  // ==== image store ====
+  // Base64 payloads live here, NOT inside `project`. Undo snapshots stringify `project`
+  // only, so adding screenshots no longer makes every snapshot/keystroke cost megabytes.
+  // Entries are never evicted: an undo that resurrects a deleted image must still find it.
+  var imageStore = {};
+  function putImage(dataUrl){
+    var key = "im" + uid();
+    imageStore[key] = dataUrl;
+    return key;
+  }
+  function getImage(ref){ return (ref && imageStore[ref]) || ""; }
+
+  // ==== toast ====
+  // alert() は作業を止めてしまうし、autosaveStatus は小さすぎて操作結果が伝わらない。
+  var toastEl = document.getElementById("toast"), toastTimer = null;
+  function showToast(msg){
+    if (!toastEl) return;
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ toastEl.classList.remove("show"); }, 4000);
+  }
+
+  // ==== 取り込み設定（縮小サイズ・保存形式） ====
+  // 以前は長辺1600px・PNG固定だった。現場によって「A4に貼るだけなので800pxで十分」
+  // 「文字が読めないと証跡にならないので原寸」と要求が割れるため選べるようにし、
+  // 選択はブラウザに記憶する（開くたび既定に戻ると気付かず違う画質で作ってしまう）。
+  var SETTINGS_KEY = "evidenceGallerySettings_v1";
+  var shrinkSel = document.getElementById("shrinkSel");
+  var fmtSel = document.getElementById("fmtSel");
+  function saveSettings(){
+    try{ localStorage.setItem(SETTINGS_KEY, JSON.stringify({ shrink: shrinkSel.value, fmt: fmtSel.value })); }
+    catch(e){ /* プライベートウィンドウ等。記憶されないだけなので無視 */ }
+  }
+  function loadSettings(){
+    var s = null;
+    try{ s = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "null"); }catch(e){}
+    if (!s || typeof s !== "object") return;
+    [[shrinkSel, s.shrink], [fmtSel, s.fmt]].forEach(function(pair){
+      var el = pair[0], v = pair[1];
+      if (v == null) return;
+      if (!Array.prototype.some.call(el.options, function(o){ return o.value === String(v); })) return;
+      el.value = String(v);
+    });
+  }
+  loadSettings();
+  shrinkSel.addEventListener("change", saveSettings);
+  fmtSel.addEventListener("change", saveSettings);
+  function getFmt(){
+    var v = fmtSel.value;
+    if (v === "jpeg92") return { mime:"image/jpeg", q:0.92 };
+    if (v === "jpeg85") return { mime:"image/jpeg", q:0.85 };
+    return { mime:"image/png", q:undefined };
+  }
+
+  // ==== downscaling / re-encoding ====
+  // Screenshots came in at full resolution, so a dozen 1920x1080 captures turned the
+  // exported HTML into a multi-megabyte file. Cap the long edge at the size chosen above
+  // and keep the original whenever re-encoding would not actually be smaller
+  // (already-optimised PNGs often grow when re-encoded).
+  // cb は成功時 dataURL / 失敗時 null で必ず一度だけ呼ばれる。
+  function preprocessImage(dataUrl, cb){
+    if (typeof dataUrl !== "string" || dataUrl.indexOf("data:image/") !== 0){ cb(null); return; }
+    var maxEdge = Number(shrinkSel.value) || 0;
+    var fmt = getFmt();
+    var img = new Image();
+    var settled = false;
+    function fin(v){ if (settled) return; settled = true; cb(v); }
+    img.onload = function(){
+      var w = img.naturalWidth, h = img.naturalHeight;
+      if (!w || !h){ fin(null); return; }
+      var needShrink = maxEdge > 0 && Math.max(w, h) > maxEdge;
+      var wantJpeg = fmt.mime === "image/jpeg";
+      var alreadyJpeg = dataUrl.indexOf("data:image/jpeg") === 0;
+      if (!needShrink && (!wantJpeg || alreadyJpeg)){ fin(dataUrl); return; }
+      var scale = needShrink ? maxEdge / Math.max(w, h) : 1;
+      try{
+        var canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(w * scale));
+        canvas.height = Math.max(1, Math.round(h * scale));
+        var ctx = canvas.getContext("2d");
+        if (wantJpeg){ ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, canvas.width, canvas.height); }
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        var out = wantJpeg ? canvas.toDataURL("image/jpeg", fmt.q) : canvas.toDataURL("image/png");
+        fin((needShrink || out.length < dataUrl.length) ? out : dataUrl);
+      }catch(e){ fin(dataUrl); }
+    };
+    img.onerror = function(){ fin(null); };
+    img.src = dataUrl;
+  }
+
+  var project = {
+    projectId: uid(),
+    title: "作業証跡",
+    sections: [
+      { id: uid(), name: "セクション1", images: [] }
+    ]
+  };
+  var activeSectionId = project.sections[0].id;
+
+  // ==== Undo / Redo ====
+  var undoStack = [], redoStack = [], pendingFieldSnapshot = null;
+  function pushUndoRaw(json){
+    undoStack.push(json);
+    if (undoStack.length > 30) undoStack.shift();
+    redoStack.length = 0;
+  }
+  function snapshot(){ pushUndoRaw(JSON.stringify(project)); markDirty(); }
+  function afterRestore(){
+    pendingFieldSnapshot = null;
+    if (!getSection(activeSectionId)) activeSectionId = project.sections[0] ? project.sections[0].id : null;
+    pruneSelection();
+    titleInput.value = project.title || "";
+    render();
+  }
+  function doUndo(){
+    if (!undoStack.length) return;
+    redoStack.push(JSON.stringify(project));
+    project = JSON.parse(undoStack.pop());
+    afterRestore();
+  }
+  function doRedo(){
+    if (!redoStack.length) return;
+    undoStack.push(JSON.stringify(project));
+    project = JSON.parse(redoStack.pop());
+    afterRestore();
+  }
+  document.addEventListener("focusin", function(e){
+    var t = e.target;
+    if (t && (t.tagName==="INPUT"||t.tagName==="TEXTAREA") && !t.classList.contains("no-undo")){
+      pendingFieldSnapshot = JSON.stringify(project);
+    }
+  });
+  document.addEventListener("input", function(e){
+    var t = e.target;
+    if (t && t.classList && t.classList.contains("no-undo")) return;
+    markDirty();
+    if (pendingFieldSnapshot !== null){
+      pushUndoRaw(pendingFieldSnapshot);
+      pendingFieldSnapshot = null;
+    }
+  });
+
+  // ==== multi-select ====
+  var selectedIds = {};
+  function selectedCount(){ return Object.keys(selectedIds).length; }
+  function pruneSelection(){
+    var alive = {};
+    project.sections.forEach(function(s){ s.images.forEach(function(im){ if (selectedIds[im.id]) alive[im.id]=true; }); });
+    selectedIds = alive;
+  }
+  function clearSelection(){ selectedIds = {}; render(); }
+  function forEachSelected(fn){
+    project.sections.forEach(function(s){
+      for (var i=s.images.length-1;i>=0;i--){
+        if (selectedIds[s.images[i].id]) fn(s, s.images[i], i);
+      }
+    });
+  }
+
+  // ==== drag & drop ====
+  var dragCtx = null;
+  document.addEventListener("dragend", function(){ dragCtx = null; });
+  function reorder(arr, from, to){
+    if (from === to) return;
+    var item = arr.splice(from, 1)[0];
+    arr.splice(to, 0, item);
+  }
+  // Images can be dragged into any section, not just reordered inside their own —
+  // "this screenshot actually belongs to 手順3-2" is the common case when tidying up.
+  function moveImageAcross(fromSecId, fromIdx, toSecId, toIdx){
+    var from = getSection(fromSecId), to = getSection(toSecId);
+    if (!from || !to) return;
+    if (from === to){ reorder(from.images, fromIdx, toIdx); return; }
+    var item = from.images.splice(fromIdx, 1)[0];
+    if (!item) return;
+    to.images.splice(Math.max(0, Math.min(toIdx, to.images.length)), 0, item);
+  }
+
+  function deepCopyImage(img){
+    var o = JSON.parse(JSON.stringify(img)); o.id = uid(); return o;
+  }
+  function deepCopySection(sec){
+    var o = JSON.parse(JSON.stringify(sec)); o.id = uid();
+    o.name = o.name + " (コピー)";
+    o.images.forEach(function(im){ im.id = uid(); });
+    return o;
+  }
+
+  // ==== context menu ====
+  var ctxMenu = document.createElement("div");
+  ctxMenu.className = "ctx-menu hidden";
+  document.body.appendChild(ctxMenu);
+  function closeCtxMenu(){ ctxMenu.classList.add("hidden"); }
+  document.addEventListener("click", closeCtxMenu);
+  document.addEventListener("scroll", closeCtxMenu, true);
+  function openCtxMenu(x, y, items){
+    ctxMenu.innerHTML = "";
+    items.forEach(function(it){
+      var d = document.createElement("div");
+      d.className = "ctx-item" + (it.danger ? " danger" : "");
+      d.textContent = it.label;
+      d.addEventListener("click", function(e){ e.stopPropagation(); closeCtxMenu(); it.fn(); });
+      ctxMenu.appendChild(d);
+    });
+    ctxMenu.classList.remove("hidden");
+    var mw = ctxMenu.offsetWidth, mh = ctxMenu.offsetHeight;
+    ctxMenu.style.left = Math.min(x, window.innerWidth - mw - 8) + "px";
+    ctxMenu.style.top = Math.min(y, window.innerHeight - mh - 8) + "px";
+  }
+
+  // ==== keyboard ====
+  document.addEventListener("keydown", function(e){
+    // 注釈モーダルを開いている間は、そちらのキー操作（Ctrl+Z＝直前の書き込みを取消）が優先。
+    if (annoIsOpen()) return;
+    if (e.key === "Escape"){ closeCtxMenu(); if (selectedCount()) clearSelection(); return; }
+    var mod = e.ctrlKey || e.metaKey;
+    if (!mod) return;
+    var k = (e.key || "").toLowerCase();
+    if (k === "s"){ e.preventDefault(); doSaveJson(); }
+    else if (k === "z" && !e.shiftKey){ e.preventDefault(); doUndo(); }
+    else if (k === "y" || (k === "z" && e.shiftKey)){ e.preventDefault(); doRedo(); }
+  });
+
+  var $ = function(sel){ return document.querySelector(sel); };
+  var main = $("#main");
+  var titleInput = $("#projectTitle");
+
+  function getSection(id){
+    for (var i=0;i<project.sections.length;i++) if (project.sections[i].id===id) return project.sections[i];
+    return null;
+  }
+
+  var PASTE_BADGE_ON  = "貼り付け先：このセクション（Ctrl+V で画像を貼り付けできます）";
+  var PASTE_BADGE_OFF = "クリックするとこのセクションを貼り付け先にできます";
+
+  // Switching the paste target used to call render(), which rebuilt every card — so the
+  // click that focused a caption in an inactive section destroyed that very input and
+  // the first keystroke went nowhere. Repaint just the highlight and the badge instead.
+  function setActiveSection(id){
+    if (activeSectionId === id) return;
+    activeSectionId = id;
+    Array.prototype.forEach.call(main.querySelectorAll(".section-card"), function(c){
+      var on = (c.dataset.sectionId === id);
+      c.classList.toggle("active-section", on);
+      var badge = c.querySelector(".paste-badge");
+      if (badge) badge.textContent = on ? PASTE_BADGE_ON : PASTE_BADGE_OFF;
+    });
+  }
+
+  function render(){
+    // Emptying #main collapses the document height and the browser clamps the scroll
+    // position to 0, so every width change / move / delete used to jump to the top.
+    var keepScroll = window.pageYOffset;
+    main.innerHTML = "";
+    project.sections.forEach(function(section, sIdx){
+      main.appendChild(renderSection(section, sIdx));
+    });
+    renderBulkBar();
+    updateStats();
+    window.scrollTo(0, keepScroll);
+  }
+
+  // 出来上がりのファイルサイズは印刷・メール添付の可否を左右するのに、
+  // エクスポートするまで分からなかった。常時ざっくり表示しておく。
+  function updateStats(){
+    var el = document.getElementById("stats");
+    if (!el) return;
+    var imgs = 0, bytes = 0, seen = {};
+    project.sections.forEach(function(s){
+      s.images.forEach(function(im){
+        imgs++;
+        [im.ref, im.flatRef].forEach(function(k){
+          if (k && !seen[k]){ seen[k] = 1; bytes += (imageStore[k] || "").length * 0.75; }
+        });
+      });
+    });
+    var mb = bytes / 1048576;
+    var warn = mb >= 8;
+    el.innerHTML = "";
+    [["セクション " + project.sections.length, false],
+     ["画像 " + imgs, false],
+     ["推定 " + (mb > 0 && mb < 0.1 ? "0.1未満" : mb.toFixed(1)) + " MB", warn]
+    ].forEach(function(p){
+      var sp = document.createElement("span");
+      sp.className = "st" + (p[1] ? " warn" : "");
+      sp.textContent = p[0];
+      el.appendChild(sp);
+    });
+    el.title = warn ? "メール添付には大きすぎる可能性があります。上の「縮小」を下げるかJPEGを選んでください。" : "";
+  }
+
+  function renderSection(section, sIdx){
+    var card = document.createElement("div");
+    card.className = "section-card" + (section.id===activeSectionId ? " active-section" : "");
+    card.dataset.sectionId = section.id;
+    card.addEventListener("click", function(){ setActiveSection(section.id); });
+
+    var head = document.createElement("div"); head.className = "section-head";
+    var grip = document.createElement("span");
+    grip.className = "drag-grip"; grip.textContent = "⠿"; grip.title = "ドラッグで並び替え";
+    grip.draggable = true;
+    grip.addEventListener("dragstart", function(e){
+      dragCtx = { type: "section", from: sIdx };
+      e.dataTransfer.setData("text/plain", "section");
+      e.dataTransfer.effectAllowed = "move";
+    });
+    grip.addEventListener("click", function(e){ e.stopPropagation(); });
+    head.appendChild(grip);
+    card.addEventListener("dragover", function(e){
+      if (dragCtx && dragCtx.type === "section"){ e.preventDefault(); card.classList.add("drop-target"); }
+    });
+    card.addEventListener("dragleave", function(){ card.classList.remove("drop-target"); });
+    card.addEventListener("drop", function(e){
+      if (!dragCtx || dragCtx.type !== "section") return;
+      e.preventDefault(); e.stopPropagation(); card.classList.remove("drop-target");
+      snapshot();
+      reorder(project.sections, dragCtx.from, sIdx);
+      dragCtx = null; render();
+    });
+    var nameInput = document.createElement("input");
+    nameInput.className = "section-name"; nameInput.value = section.name;
+    nameInput.addEventListener("input", function(){ section.name = nameInput.value; });
+    head.appendChild(nameInput);
+
+    var up = document.createElement("button"); up.textContent = "↑";
+    up.addEventListener("click", function(e){ e.stopPropagation(); moveSection(sIdx, -1); });
+    var down = document.createElement("button"); down.textContent = "↓";
+    down.addEventListener("click", function(e){ e.stopPropagation(); moveSection(sIdx, 1); });
+    var dup = document.createElement("button"); dup.textContent = "⧉ 複製";
+    dup.addEventListener("click", function(e){
+      e.stopPropagation();
+      snapshot();
+      var copy = deepCopySection(section);
+      project.sections.splice(sIdx+1, 0, copy);
+      activeSectionId = copy.id;
+      render();
+    });
+    var del = document.createElement("button"); del.className = "del"; del.textContent = "セクション削除";
+    del.addEventListener("click", function(e){
+      e.stopPropagation();
+      if (project.sections.length<=1){ alert("最後の1セクションは削除できません。"); return; }
+      if (!confirm("「" + section.name + "」を削除しますか？（中の画像も削除されます）")) return;
+      snapshot();
+      project.sections.splice(sIdx,1);
+      if (activeSectionId===section.id) activeSectionId = project.sections[0].id;
+      render();
+    });
+    head.appendChild(up); head.appendChild(down); head.appendChild(dup); head.appendChild(del);
+    card.appendChild(head);
+
+    var pasteBadge = document.createElement("div"); pasteBadge.className = "paste-badge";
+    pasteBadge.textContent = (section.id===activeSectionId) ? PASTE_BADGE_ON : PASTE_BADGE_OFF;
+    card.appendChild(pasteBadge);
+
+    var dz = document.createElement("div"); dz.className = "dropzone";
+    dz.textContent = "クリックして画像を選択、ドラッグ＆ドロップ、または貼り付け（Ctrl+V／複数選択可）";
+    var fileInput = document.createElement("input");
+    fileInput.type = "file"; fileInput.accept = "image/*"; fileInput.multiple = true;
+    dz.appendChild(fileInput);
+    dz.addEventListener("click", function(e){ e.stopPropagation(); setActiveSection(section.id); fileInput.click(); });
+    dz.addEventListener("dragover", function(e){ e.preventDefault(); dz.classList.add("dragover"); });
+    dz.addEventListener("dragleave", function(){ dz.classList.remove("dragover"); });
+    dz.addEventListener("drop", function(e){
+      e.preventDefault(); e.stopPropagation(); dz.classList.remove("dragover");
+      // The dropzone doubles as the target for an image dragged in from another section,
+      // which is the only way to reach a section that has no cards to drop onto yet.
+      if (dragCtx && dragCtx.type === "image"){
+        snapshot();
+        moveImageAcross(dragCtx.sectionId, dragCtx.from, section.id, section.images.length);
+        dragCtx = null; setActiveSection(section.id); render();
+        return;
+      }
+      setActiveSection(section.id);
+      handleFiles(section, e.dataTransfer.files);
+    });
+    fileInput.addEventListener("change", function(){
+      handleFiles(section, fileInput.files);
+      fileInput.value = "";
+    });
+    card.appendChild(dz);
+
+    var gallery = document.createElement("div"); gallery.className = "gallery";
+    // Dropping on the empty space beside the cards appends to the end of this section.
+    gallery.addEventListener("dragover", function(e){
+      if (dragCtx && dragCtx.type === "image") e.preventDefault();
+    });
+    gallery.addEventListener("drop", function(e){
+      if (!dragCtx || dragCtx.type !== "image") return;
+      e.preventDefault(); e.stopPropagation();
+      snapshot();
+      moveImageAcross(dragCtx.sectionId, dragCtx.from, section.id, section.images.length);
+      dragCtx = null; setActiveSection(section.id); render();
+    });
+    section.images.forEach(function(img, iIdx){
+      gallery.appendChild(renderImageCard(section, img, iIdx));
+    });
+    card.appendChild(gallery);
+
+    return card;
+  }
+
+  // ---- Paste from clipboard (e.g. Alt+PrintScreen -> Ctrl+V) ----
+  // 貼り付けも handleFiles に流す。以前は1枚ごとに snapshot() していたので、
+  // 複数枚を含むクリップボードでは Undo 履歴が枚数分積まれていた。
+  document.addEventListener("paste", function(e){
+    var cd = e.clipboardData || window.clipboardData;
+    var items = cd ? cd.items : null;
+    if (!items) return;
+    var target = getSection(activeSectionId) || project.sections[0];
+    if (!target) return;
+    var files = [];
+    for (var i=0;i<items.length;i++){
+      if (items[i].kind === "file" && items[i].type && items[i].type.indexOf("image") === 0){
+        var blob = items[i].getAsFile();   // 環境によっては null が返る
+        if (blob) files.push(blob);
+      }
+    }
+    if (!files.length) return;
+    e.preventDefault();
+    handleFiles(target, files);
+  });
+
+  // Collect every file before committing. Reading and downscaling are both async and
+  // finish out of order (a big capture takes longer than a small one), so appending as
+  // each one lands would scramble the order the user picked — and would push one undo
+  // entry per file instead of one per drop.
+  function handleFiles(section, files){
+    var list = Array.prototype.filter.call(files, function(f){ return f && /^image\//.test(f.type); });
+    if (!list.length) return;
+    var secId = section.id;
+    var results = new Array(list.length), pending = list.length, failed = 0;
+    function done(i, url){
+      results[i] = url;
+      if (!url) failed++;
+      if (--pending) return;
+      var sec = getSection(secId);   // 読み込み中にセクションが消えている可能性
+      var added = 0;
+      if (sec){
+        var usable = results.filter(Boolean);
+        if (usable.length){
+          snapshot();
+          usable.forEach(function(u){
+            sec.images.push({ id: uid(), ref: putImage(u), flatRef: null, shapes: [], caption: "", width: 50 });
+            added++;
+          });
+          render();
+        }
+      }
+      if (failed) showToast(added + " 枚を追加しました（" + failed + " 件は読み込めませんでした）");
+      else if (added > 1) showToast(added + " 枚を追加しました");
+    }
+    list.forEach(function(file, i){
+      var reader = new FileReader();
+      var settled = false;
+      function fin(v){ if (settled) return; settled = true; done(i, v); }
+      reader.onload = function(){ preprocessImage(reader.result, fin); };
+      reader.onerror = function(){ fin(null); };
+      reader.onabort = function(){ fin(null); };
+      try{ reader.readAsDataURL(file); }catch(err){ fin(null); }
+    });
+  }
+
+  // ドロップゾーンを少し外すと、ブラウザ既定動作でその画像ファイルへ画面遷移してしまい
+  // 作業内容が丸ごと消える。ページ全域で既定動作を止め、外した分は貼り付け先セクションへ回す。
+  function hasFileDrag(e){
+    var t = e.dataTransfer && e.dataTransfer.types;
+    return !!t && Array.prototype.indexOf.call(t, "Files") !== -1;
+  }
+  document.addEventListener("dragover", function(e){ if (hasFileDrag(e)) e.preventDefault(); });
+  document.addEventListener("drop", function(e){
+    var files = e.dataTransfer && e.dataTransfer.files;
+    if (!files || !files.length) return;
+    e.preventDefault();
+    if (dragCtx) return;                       // カードの並び替え中
+    var secEl = e.target.closest ? e.target.closest(".section-card") : null;
+    var sec = secEl ? getSection(secEl.dataset.sectionId) : null;
+    sec = sec || getSection(activeSectionId) || project.sections[0];
+    if (!sec) return;
+    setActiveSection(sec.id);
+    handleFiles(sec, files);
+  });
+
+  function imageCtxItems(section, img, iIdx){
+    return [
+      { label: "注釈を編集", fn: function(){ openAnnotate(section.id, img.id); } },
+      { label: (img.shapes || []).length ? "注釈をすべて消す" : "注釈なし", danger: false, fn: function(){
+          if (!(img.shapes || []).length) return;
+          snapshot(); img.shapes = []; img.flatRef = null; render();
+      } },
+      { label: "画像を複製", fn: function(){ snapshot(); section.images.splice(iIdx+1, 0, deepCopyImage(img)); render(); } },
+      { label: "画像を削除", danger: true, fn: function(){ snapshot(); section.images.splice(iIdx,1); pruneSelection(); render(); } }
+    ];
+  }
+
+  function renderImageCard(section, img, iIdx){
+    var card = document.createElement("div"); card.className = "img-card";
+    if (selectedIds[img.id]) card.classList.add("selected");
+    card.style.flexBasis = "calc(" + img.width + "% - 14px)";
+    card.style.flexGrow = "0";
+    card.style.position = "relative";
+
+    card.addEventListener("contextmenu", function(e){
+      e.preventDefault(); e.stopPropagation();
+      openCtxMenu(e.clientX, e.clientY, imageCtxItems(section, img, iIdx));
+    });
+    card.addEventListener("dragover", function(e){
+      if (dragCtx && dragCtx.type === "image"){
+        e.preventDefault(); card.classList.add("drop-target");
+      }
+    });
+    card.addEventListener("dragleave", function(){ card.classList.remove("drop-target"); });
+    card.addEventListener("drop", function(e){
+      if (!dragCtx || dragCtx.type !== "image") return;
+      e.preventDefault(); e.stopPropagation(); card.classList.remove("drop-target");
+      snapshot();
+      moveImageAcross(dragCtx.sectionId, dragCtx.from, section.id, iIdx);
+      dragCtx = null; setActiveSection(section.id); render();
+    });
+
+    var selBox = document.createElement("input");
+    selBox.type = "checkbox"; selBox.className = "sel-box no-undo";
+    selBox.checked = !!selectedIds[img.id];
+    selBox.title = "選択（複数選択して一括操作）";
+    selBox.addEventListener("click", function(e){ e.stopPropagation(); });
+    selBox.addEventListener("change", function(){
+      if (selBox.checked) selectedIds[img.id] = true; else delete selectedIds[img.id];
+      render();
+    });
+    card.appendChild(selBox);
+
+    var nShapes = (img.shapes || []).length;
+    if (nShapes) card.classList.add("has-anno");
+    var thumbWrap = document.createElement("div"); thumbWrap.className = "thumb-wrap";
+    thumbWrap.title = "クリックで注釈（囲む・矢印・モザイクなど）";
+    var el = document.createElement("img");
+    el.src = getImage(img.flatRef || img.ref);   // 書き込み済みなら焼き込み後を表示
+    el.alt = img.caption || "";
+    el.draggable = false;
+    thumbWrap.appendChild(el);
+    var annoHint = document.createElement("span"); annoHint.className = "anno-hint";
+    annoHint.textContent = nShapes ? ("注釈 " + nShapes) : "クリックで注釈";
+    thumbWrap.appendChild(annoHint);
+    thumbWrap.addEventListener("click", function(e){
+      e.stopPropagation();
+      setActiveSection(section.id);
+      openAnnotate(section.id, img.id);
+    });
+    card.appendChild(thumbWrap);
+
+    var resizer = document.createElement("div");
+    resizer.className = "width-resizer"; resizer.title = "ドラッグで幅を調整";
+    resizer.addEventListener("mousedown", function(e){
+      e.preventDefault(); e.stopPropagation();
+      var gallery = card.parentElement;
+      var gw = gallery.getBoundingClientRect().width;
+      var startX = e.clientX;
+      var startW = img.width;
+      // 掴んだ瞬間に snapshot() していたので、幅を変えずに離しただけで Undo 履歴が
+      // 1つ埋まり、直前の操作が Ctrl+Z の1回では戻らなくなっていた。
+      var moved = false;
+      function onMove(ev){
+        var deltaPct = ((ev.clientX - startX) / gw) * 100;
+        var w = Math.round(Math.min(100, Math.max(15, startW + deltaPct)));
+        if (w === img.width) return;
+        if (!moved){ moved = true; snapshot(); }
+        img.width = w;
+        card.style.flexBasis = "calc(" + w + "% - 14px)";
+        var pctLabel = card.querySelector(".width-current");
+        if (pctLabel) pctLabel.textContent = w + "%";
+      }
+      function onUp(){
+        document.removeEventListener("mousemove", onMove);
+        document.removeEventListener("mouseup", onUp);
+        if (moved) render();
+      }
+      document.addEventListener("mousemove", onMove);
+      document.addEventListener("mouseup", onUp);
+    });
+    card.appendChild(resizer);
+
+    var caption = document.createElement("input");
+    caption.className = "caption-input"; caption.placeholder = "キャプション（例：変更前 / エラー画面）";
+    caption.value = img.caption || "";
+    caption.addEventListener("input", function(){ img.caption = caption.value; });
+    card.appendChild(caption);
+
+    var controls = document.createElement("div"); controls.className = "card-controls";
+
+    var grip = document.createElement("span");
+    grip.className = "drag-grip"; grip.textContent = "⠿"; grip.title = "ドラッグで並び替え（他のセクションへも移動できます）";
+    grip.draggable = true;
+    grip.addEventListener("dragstart", function(e){
+      dragCtx = { type: "image", sectionId: section.id, from: iIdx };
+      e.dataTransfer.setData("text/plain", "image");
+      e.dataTransfer.effectAllowed = "move";
+    });
+    controls.appendChild(grip);
+
+    var widthBtns = document.createElement("div"); widthBtns.className = "width-btns";
+    [100,50,33,25].forEach(function(w){
+      var b = document.createElement("button");
+      b.textContent = w + "%";
+      if (img.width === w) b.className = "active";
+      b.addEventListener("click", function(){ snapshot(); img.width = w; render(); });
+      widthBtns.appendChild(b);
+    });
+    controls.appendChild(widthBtns);
+
+    var pct = document.createElement("span");
+    pct.className = "width-current"; pct.textContent = img.width + "%";
+    pct.title = "現在の幅（右端のバーをドラッグでも調整できます）";
+    controls.appendChild(pct);
+
+    var spacer = document.createElement("div"); spacer.className = "spacer";
+    controls.appendChild(spacer);
+
+    var up = document.createElement("button"); up.textContent = "←";
+    up.title = "順番を前へ";
+    up.addEventListener("click", function(){ moveImage(section, iIdx, -1); });
+    var down = document.createElement("button"); down.textContent = "→";
+    down.title = "順番を後ろへ";
+    down.addEventListener("click", function(){ moveImage(section, iIdx, 1); });
+    var dup = document.createElement("button"); dup.textContent = "⧉";
+    dup.title = "この画像を複製";
+    dup.addEventListener("click", function(){
+      snapshot();
+      section.images.splice(iIdx+1, 0, deepCopyImage(img));
+      render();
+    });
+    var del = document.createElement("button"); del.className = "del"; del.textContent = "削除";
+    del.addEventListener("click", function(){
+      snapshot();
+      section.images.splice(iIdx,1); pruneSelection(); render();
+    });
+    controls.appendChild(up); controls.appendChild(down); controls.appendChild(dup); controls.appendChild(del);
+    card.appendChild(controls);
+
+    return card;
+  }
+
+
+  // ==== 注釈（画像への書き込み） ====
+  // 画面キャプチャは「どこを見てほしいか」「どこを隠すべきか」が本体。別ツールで加工して
+  // から貼り直す運用だと元画像との対応が失われ、あとからの直しも効かない。書き込みは
+  // 図形の配列として project 側に持ち（＝Undo でき、あとから編集し直せる）、表示・出力用に
+  // 焼き込んだ画像を imageStore へ別に置く。モザイクは社名・氏名・IPを隠す用途で必須。
+  var SHAPE_TYPES = { rect:1, arrow:1, pen:1, text:1, mosaic:1 };
+  function shapeNum(v, d){ var n = Number(v); return isFinite(n) ? n : d; }
+  function safeColor(v){ return (typeof v === "string" && /^#[0-9a-f]{3,8}$/i.test(v)) ? v : "#ff3b30"; }
+  function normalizeShapes(arr){
+    if (!Array.isArray(arr)) return [];
+    var out = [];
+    arr.forEach(function(sh){
+      if (!sh || typeof sh !== "object" || !SHAPE_TYPES[sh.type]) return;
+      var color = safeColor(sh.color);
+      if (sh.type === "rect" || sh.type === "mosaic"){
+        out.push({ type:sh.type, x:shapeNum(sh.x,0), y:shapeNum(sh.y,0), w:shapeNum(sh.w,0), h:shapeNum(sh.h,0), color:color });
+      } else if (sh.type === "arrow"){
+        out.push({ type:"arrow", x1:shapeNum(sh.x1,0), y1:shapeNum(sh.y1,0), x2:shapeNum(sh.x2,0), y2:shapeNum(sh.y2,0), color:color });
+      } else if (sh.type === "pen"){
+        var pts = (Array.isArray(sh.points) ? sh.points : [])
+          .filter(function(pt){ return pt && isFinite(Number(pt.x)) && isFinite(Number(pt.y)); })
+          .map(function(pt){ return { x:Number(pt.x), y:Number(pt.y) }; });
+        if (pts.length) out.push({ type:"pen", points:pts, color:color });
+      } else {
+        var t = String(sh.text == null ? "" : sh.text).slice(0, 500);
+        if (t) out.push({ type:"text", x:shapeNum(sh.x,0), y:shapeNum(sh.y,0), text:t, color:color, size:Math.max(6, shapeNum(sh.size,24)) });
+      }
+    });
+    return out;
+  }
+
+  function drawShape(c, sh, baseImg, cw){
+    c.strokeStyle = sh.color; c.fillStyle = sh.color;
+    c.lineWidth = Math.max(3, cw * 0.004);
+    if (sh.type === "rect"){
+      c.save(); c.globalAlpha = 0.15; c.fillRect(sh.x, sh.y, sh.w, sh.h); c.restore();
+      c.strokeRect(sh.x, sh.y, sh.w, sh.h);
+    } else if (sh.type === "arrow"){
+      var head = Math.max(12, cw * 0.015);
+      var ang = Math.atan2(sh.y2 - sh.y1, sh.x2 - sh.x1);
+      c.beginPath(); c.moveTo(sh.x1, sh.y1); c.lineTo(sh.x2, sh.y2); c.stroke();
+      c.beginPath();
+      c.moveTo(sh.x2, sh.y2);
+      c.lineTo(sh.x2 - head * Math.cos(ang - Math.PI/6), sh.y2 - head * Math.sin(ang - Math.PI/6));
+      c.lineTo(sh.x2 - head * Math.cos(ang + Math.PI/6), sh.y2 - head * Math.sin(ang + Math.PI/6));
+      c.closePath(); c.fill();
+    } else if (sh.type === "pen"){
+      c.beginPath();
+      sh.points.forEach(function(pt, i){ if (i === 0) c.moveTo(pt.x, pt.y); else c.lineTo(pt.x, pt.y); });
+      c.stroke();
+    } else if (sh.type === "text"){
+      c.font = "bold " + sh.size + "px sans-serif";
+      c.save(); c.strokeStyle = "rgba(0,0,0,.65)"; c.lineWidth = 4; c.strokeText(sh.text, sh.x, sh.y); c.restore();
+      c.fillText(sh.text, sh.x, sh.y);
+    } else if (sh.type === "mosaic"){
+      if (!baseImg || sh.w < 2 || sh.h < 2) return;
+      var block = Math.max(8, cw * 0.012);
+      var tw = Math.max(1, Math.round(sh.w / block));
+      var th = Math.max(1, Math.round(sh.h / block));
+      var tmp = document.createElement("canvas"); tmp.width = tw; tmp.height = th;
+      // 一度小さく描いてから引き伸ばす＝元のピクセルは残らない（黒塗りと同等に安全）
+      tmp.getContext("2d").drawImage(baseImg, sh.x, sh.y, sh.w, sh.h, 0, 0, tw, th);
+      c.save(); c.imageSmoothingEnabled = false;
+      c.drawImage(tmp, 0, 0, tw, th, sh.x, sh.y, sh.w, sh.h);
+      c.restore();
+    }
+  }
+
+  function flattenToDataUrl(baseImg, shapes, likeDataUrl){
+    var cv = document.createElement("canvas");
+    cv.width = baseImg.naturalWidth; cv.height = baseImg.naturalHeight;
+    var cx = cv.getContext("2d");
+    cx.drawImage(baseImg, 0, 0);
+    shapes.forEach(function(sh){ drawShape(cx, sh, baseImg, cv.width); });
+    // 元がJPEGならJPEGのまま（PNGに変えると容量が跳ね上がる）
+    return (likeDataUrl && likeDataUrl.indexOf("data:image/jpeg") === 0)
+      ? cv.toDataURL("image/jpeg", 0.92)
+      : cv.toDataURL("image/png");
+  }
+
+  // 読み込み直後は焼き込み画像が無い。図形を持つものだけ作り直す。デコードは非同期なので
+  // 全部揃ってから1回だけ再描画する（1枚ずつ描くと読み込み中に画面がちらつく）。
+  function reflattenAll(done){
+    var targets = [];
+    project.sections.forEach(function(s){
+      s.images.forEach(function(im){ if ((im.shapes || []).length && !im.flatRef) targets.push(im); });
+    });
+    if (!targets.length){ if (done) done(); return; }
+    var pending = targets.length;
+    targets.forEach(function(im){
+      var image = new Image();
+      var settled = false;
+      function fin(){ if (settled) return; settled = true; if (--pending === 0 && done) done(); }
+      image.onload = function(){
+        try{ im.flatRef = putImage(flattenToDataUrl(image, im.shapes, getImage(im.ref))); }catch(e){}
+        fin();
+      };
+      image.onerror = fin;
+      image.src = getImage(im.ref);
+    });
+  }
+
+  var annoState = { sectionId:null, imgId:null, tool:"rect", color:"#ff3b30", shapes:[], base:null, drawing:false, sx:0, sy:0, pen:null };
+  function annoEl(id){ return document.getElementById(id); }
+  function annoIsOpen(){ var m = annoEl("annoModal"); return !!m && !m.classList.contains("hidden"); }
+  function annoFindImage(secId, imgId){
+    var sec = getSection(secId);
+    if (!sec) return null;
+    for (var i = 0; i < sec.images.length; i++) if (sec.images[i].id === imgId) return sec.images[i];
+    return null;
+  }
+  function annoIndex(){
+    var sec = getSection(annoState.sectionId);
+    if (!sec) return -1;
+    for (var i = 0; i < sec.images.length; i++) if (sec.images[i].id === annoState.imgId) return i;
+    return -1;
+  }
+  function annoRedraw(){
+    var cv = annoEl("annoCanvas"), cx = cv.getContext("2d");
+    cx.clearRect(0, 0, cv.width, cv.height);
+    if (annoState.base) cx.drawImage(annoState.base, 0, 0);
+    annoState.shapes.forEach(function(sh){ drawShape(cx, sh, annoState.base, cv.width); });
+  }
+  function annoUpdateNav(){
+    var sec = getSection(annoState.sectionId);
+    var idx = annoIndex();
+    annoEl("annoPos").textContent = (idx + 1) + " / " + (sec ? sec.images.length : 0);
+    annoEl("annoPrev").disabled = idx <= 0;
+    annoEl("annoNext").disabled = !sec || idx < 0 || idx >= sec.images.length - 1;
+  }
+  function openAnnotate(secId, imgId){
+    var img = annoFindImage(secId, imgId);
+    if (!img) return;
+    var image = new Image();
+    image.onerror = function(){ showToast("この画像を開けませんでした"); };
+    image.onload = function(){
+      var cv = annoEl("annoCanvas");
+      cv.width = image.naturalWidth; cv.height = image.naturalHeight;
+      annoState.sectionId = secId; annoState.imgId = imgId;
+      annoState.base = image;
+      annoState.shapes = normalizeShapes(img.shapes);
+      annoEl("annoModal").classList.remove("hidden");
+      annoRedraw();
+      annoUpdateNav();
+    };
+    image.src = getImage(img.ref);
+  }
+  // 書き込みがあるときだけ焼き込み画像を作り直す。図形が0なら flatRef を捨てて原本に戻す。
+  function annoCommit(){
+    var img = annoFindImage(annoState.sectionId, annoState.imgId);
+    if (!img || !annoState.base) return false;
+    if (JSON.stringify(img.shapes || []) === JSON.stringify(annoState.shapes)) return false;
+    snapshot();
+    img.shapes = JSON.parse(JSON.stringify(annoState.shapes));
+    img.flatRef = img.shapes.length
+      ? putImage(flattenToDataUrl(annoState.base, img.shapes, getImage(img.ref)))
+      : null;
+    return true;
+  }
+  function annoNav(dir){
+    var sec = getSection(annoState.sectionId);
+    var idx = annoIndex();
+    if (!sec || idx < 0) return;
+    var next = idx + dir;
+    if (next < 0 || next >= sec.images.length) return;
+    annoCommit();
+    openAnnotate(annoState.sectionId, sec.images[next].id);
+  }
+  function annoClose(){
+    annoEl("annoModal").classList.add("hidden");
+    annoState.drawing = false;
+    annoState.base = null;
+    render();
+  }
+  function annoCoords(e){
+    var cv = annoEl("annoCanvas");
+    var r = cv.getBoundingClientRect();
+    return { x: (e.clientX - r.left) * (cv.width / r.width), y: (e.clientY - r.top) * (cv.height / r.height) };
+  }
+  (function(){
+    var cv = annoEl("annoCanvas");
+    cv.addEventListener("pointerdown", function(e){
+      try{ cv.setPointerCapture(e.pointerId); }catch(err){}
+      var p = annoCoords(e);
+      annoState.drawing = true; annoState.sx = p.x; annoState.sy = p.y;
+      if (annoState.tool === "pen"){
+        annoState.pen = { type:"pen", color:annoState.color, points:[{x:p.x, y:p.y}] };
+        annoState.shapes.push(annoState.pen);
+      } else if (annoState.tool === "text"){
+        annoState.drawing = false;
+        var t = prompt("書き込む文字を入力してください");
+        if (t){
+          annoState.shapes.push({ type:"text", x:p.x, y:p.y, text:String(t).slice(0,500), color:annoState.color, size:Math.max(20, cv.width * 0.025) });
+          annoRedraw();
+        }
+      }
+    });
+    cv.addEventListener("pointermove", function(e){
+      if (!annoState.drawing) return;
+      var p = annoCoords(e);
+      if (annoState.tool === "pen"){
+        annoState.pen.points.push({x:p.x, y:p.y});
+        annoRedraw();
+      } else if (annoState.tool === "rect" || annoState.tool === "arrow" || annoState.tool === "mosaic"){
+        annoRedraw();
+        var preview = (annoState.tool === "arrow")
+          ? { type:"arrow", x1:annoState.sx, y1:annoState.sy, x2:p.x, y2:p.y, color:annoState.color }
+          : { type:annoState.tool, x:Math.min(annoState.sx,p.x), y:Math.min(annoState.sy,p.y), w:Math.abs(p.x-annoState.sx), h:Math.abs(p.y-annoState.sy), color:annoState.color };
+        drawShape(cv.getContext("2d"), preview, annoState.base, cv.width);
+      }
+    });
+    cv.addEventListener("pointerup", function(e){
+      if (!annoState.drawing) return;
+      annoState.drawing = false;
+      var p = annoCoords(e);
+      if (annoState.tool === "rect" || annoState.tool === "mosaic"){
+        annoState.shapes.push({ type:annoState.tool, x:Math.min(annoState.sx,p.x), y:Math.min(annoState.sy,p.y), w:Math.abs(p.x-annoState.sx), h:Math.abs(p.y-annoState.sy), color:annoState.color });
+      } else if (annoState.tool === "arrow"){
+        annoState.shapes.push({ type:"arrow", x1:annoState.sx, y1:annoState.sy, x2:p.x, y2:p.y, color:annoState.color });
+      }
+      annoRedraw();
+    });
+    cv.addEventListener("pointercancel", function(){ annoState.drawing = false; annoRedraw(); });
+
+    Array.prototype.forEach.call(document.querySelectorAll(".anno-toolbar [data-tool]"), function(b){
+      b.addEventListener("click", function(){
+        annoState.tool = b.dataset.tool;
+        Array.prototype.forEach.call(document.querySelectorAll(".anno-toolbar [data-tool]"), function(o){ o.classList.toggle("active", o === b); });
+      });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll(".anno-toolbar .swatch"), function(b){
+      b.addEventListener("click", function(){
+        annoState.color = b.dataset.color;
+        Array.prototype.forEach.call(document.querySelectorAll(".anno-toolbar .swatch"), function(o){ o.classList.toggle("active", o === b); });
+      });
+    });
+    document.querySelector('.anno-toolbar [data-tool="rect"]').classList.add("active");
+    document.querySelector(".anno-toolbar .swatch").classList.add("active");
+
+    annoEl("annoUndo").addEventListener("click", function(){ annoState.shapes.pop(); annoRedraw(); });
+    annoEl("annoClear").addEventListener("click", function(){ annoState.shapes = []; annoRedraw(); });
+    annoEl("annoPrev").addEventListener("click", function(){ annoNav(-1); });
+    annoEl("annoNext").addEventListener("click", function(){ annoNav(1); });
+    annoEl("annoCancel").addEventListener("click", annoClose);
+    annoEl("annoSave").addEventListener("click", function(){
+      var changed = annoCommit();
+      annoClose();
+      if (changed) showToast("注釈を保存しました");
+    });
+    // モーダルが開いている間はこちらのキー操作が優先（全体の Ctrl+Z とは別物）
+    document.addEventListener("keydown", function(e){
+      if (!annoIsOpen()) return;
+      if (e.key === "Escape"){ annoClose(); }
+      else if (e.key === "ArrowRight"){ annoNav(1); e.preventDefault(); }
+      else if (e.key === "ArrowLeft"){ annoNav(-1); e.preventDefault(); }
+      else if ((e.ctrlKey || e.metaKey) && (e.key || "").toLowerCase() === "z"){ annoState.shapes.pop(); annoRedraw(); e.preventDefault(); }
+    });
+  })();
+
+  // ==== bulk action bar ====
+  var bulkBar = document.createElement("div");
+  bulkBar.className = "bulk-bar hidden";
+  document.body.appendChild(bulkBar);
+  function renderBulkBar(){
+    var n = selectedCount();
+    if (!n){ bulkBar.classList.add("hidden"); return; }
+    bulkBar.classList.remove("hidden");
+    bulkBar.innerHTML = "";
+    var label = document.createElement("span");
+    label.className = "bulk-label"; label.textContent = n + " 枚選択中：幅を一括変更 ";
+    bulkBar.appendChild(label);
+    [100,50,33,25].forEach(function(w){
+      var b = document.createElement("button");
+      b.textContent = w + "%";
+      b.addEventListener("click", function(){
+        snapshot();
+        forEachSelected(function(sec, im){ im.width = w; });
+        render();
+      });
+      bulkBar.appendChild(b);
+    });
+    var delBtn = document.createElement("button");
+    delBtn.className = "bulk-del"; delBtn.textContent = "一括削除";
+    delBtn.addEventListener("click", function(){
+      if (!confirm(n + "枚の画像を削除しますか？")) return;
+      snapshot();
+      forEachSelected(function(sec, im, i){ sec.images.splice(i,1); });
+      selectedIds = {};
+      render();
+    });
+    bulkBar.appendChild(delBtn);
+    var clr = document.createElement("button");
+    clr.textContent = "選択解除";
+    clr.addEventListener("click", clearSelection);
+    bulkBar.appendChild(clr);
+  }
+
+  function moveSection(idx, dir){
+    var n = idx+dir; if (n<0||n>=project.sections.length) return;
+    snapshot();
+    var t = project.sections[idx]; project.sections[idx]=project.sections[n]; project.sections[n]=t;
+    render();
+  }
+  function moveImage(section, idx, dir){
+    var n = idx+dir; if (n<0||n>=section.images.length) return;
+    snapshot();
+    var t = section.images[idx]; section.images[idx]=section.images[n]; section.images[n]=t;
+    render();
+  }
+
+  $("#addSection").addEventListener("click", function(){
+    snapshot();
+    var s = { id: uid(), name: "セクション" + (project.sections.length+1), images: [] };
+    project.sections.push(s);
+    activeSectionId = s.id;
+    render();
+  });
+
+  titleInput.addEventListener("input", function(){ project.title = titleInput.value; });
+
+  // Inline the base64 payloads again for anything that leaves the app (JSON file, export HTML).
+  // The on-disk format is unchanged: images carry `src`, exactly as before.
+  function materializeProject(){
+    var p = JSON.parse(JSON.stringify(project));
+    p.sections.forEach(function(s){
+      (s.images || []).forEach(function(im){
+        // src = 見た目どおり（＝注釈を焼き込んだもの）。読み込み側が古くても正しく表示される。
+        im.src = getImage(im.flatRef || im.ref);
+        // 注釈を付けた画像だけ、あとで書き直せるように原本も添える。
+        if ((im.shapes || []).length) im.srcOriginal = getImage(im.ref);
+        else delete im.shapes;
+        delete im.ref; delete im.flatRef;
+      });
+    });
+    return p;
+  }
+
+  function doSaveJson(){
+    var blob = new Blob([JSON.stringify(materializeProject(), null, 2)], {type:"application/json"});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a"); a.href = url; a.download = (project.title || "evidence") + ".json";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    dirty = false;
+    setStatus("JSON保存済み " + hhmm(new Date()));
+    showToast("JSONを保存しました（" + (blob.size/1048576).toFixed(1) + " MB）");
+  }
+  $("#btnSaveJson").addEventListener("click", doSaveJson);
+
+  // Build a fully-validated project in a scratch object, moving `src` payloads into the
+  // image store as we go. Nothing touches the live `project` until this returns cleanly —
+  // previously a half-valid file was assigned first and blew up mid-way, leaving the app
+  // wedged on broken state with only an alert to show for it.
+  // 読み込むファイルは他人が作ったものかもしれない。画像は data URL の形をしたものだけ
+  // 受け入れる（javascript: などが混ざった値を握り続けても何の役にも立たない）。
+  var DATA_URL_RE = /^data:image\/[a-z0-9.+-]+;base64,[A-Za-z0-9+/=]*$/i;
+  function safeDataUrl(v){ return (typeof v === "string" && DATA_URL_RE.test(v)) ? v : null; }
+
+  function normalizeLoaded(data){
+    if (!data || typeof data !== "object") throw new Error("invalid");
+    if (!Array.isArray(data.sections)) throw new Error("invalid");
+    var out = {
+      projectId: typeof data.projectId === "string" ? data.projectId : uid(),
+      title: typeof data.title === "string" ? data.title : "作業証跡",
+      sections: []
+    };
+    data.sections.forEach(function(s){
+      if (!s || typeof s !== "object") return;
+      var sec = {
+        id: typeof s.id === "string" ? s.id : uid(),
+        name: typeof s.name === "string" ? s.name : "セクション",
+        images: []
+      };
+      if (Array.isArray(s.images)){
+        s.images.forEach(function(im){
+          if (!im || typeof im !== "object") return;
+          // 原本があるならそれを正とし、図形も一緒に復元する。原本が無いファイル
+          // （配布用・旧形式）は src をそのまま原本扱いにし、図形は捨てる
+          // （焼き込み済みの画像に同じ図形を重ね描きしてしまうため）。
+          var origSrc = safeDataUrl(im.srcOriginal);
+          var flatSrc = safeDataUrl(im.src);
+          var ref = null, shapes = [];
+          if (origSrc){ ref = putImage(origSrc); shapes = normalizeShapes(im.shapes); }
+          else if (flatSrc) ref = putImage(flatSrc);
+          else if (typeof im.ref === "string" && imageStore[im.ref]) ref = im.ref;
+          if (!ref) return;  // an image with no payload is not an image
+          var w = Number(im.width);
+          sec.images.push({
+            id: typeof im.id === "string" ? im.id : uid(),
+            ref: ref,
+            flatRef: null,          // 読み込み後に図形から作り直す
+            shapes: shapes,
+            caption: typeof im.caption === "string" ? im.caption : "",
+            width: (isFinite(w) && w >= 15 && w <= 100) ? Math.round(w) : 50
+          });
+        });
+      }
+      out.sections.push(sec);
+    });
+    if (!out.sections.length) throw new Error("invalid");
+    return out;
+  }
+
+  // エクスポートしたHTMLには元から再編集用のJSONを埋め込んでいるのに、読み戻す口が
+  // なかった。配った証跡を手直しするたびにJSONを別管理する必要があり、そのJSONを
+  // なくすと詰んでいた。JSONでもHTMLでも同じ入口で受け取る。
+  function extractProjectData(text){
+    if (/^\s*[{[]/.test(text)) return JSON.parse(text);
+    // DOMParser の text/html はブラウジングコンテキストを持たないため、
+    // 中のスクリプトも画像も実行・取得されない。JSONだけを取り出す。
+    var doc = new DOMParser().parseFromString(text, "text/html");
+    var el = doc.getElementById("ev-data");
+    if (!el) throw new Error("no data");
+    return JSON.parse(el.textContent);
+  }
+
+  $("#fileLoadJson").addEventListener("change", function(e){
+    var file = e.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(){
+      var next;
+      try{
+        next = normalizeLoaded(extractProjectData(String(reader.result)));
+      }catch(err){
+        alert("読み込みに失敗しました。このツールで保存したJSON、またはエクスポートしたHTMLを選んでください。");
+        return;
+      }
+      snapshot();
+      project = next;
+      selectedIds = {};
+      activeSectionId = project.sections[0].id;
+      titleInput.value = project.title || "";
+      render();
+      reflattenAll(render);
+      showToast("読み込みました（セクション " + project.sections.length + " 件）");
+    };
+    reader.onerror = function(){ alert("ファイルを読み込めませんでした。"); };
+    reader.readAsText(file);
+    e.target.value = "";
+  });
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+    });
+  }
+
+  function buildExportHtml(){
+    var dataJson = JSON.stringify(materializeProject());
+    var parts = [];
+    parts.push('<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8">');
+    parts.push('<meta name="viewport" content="width=device-width, initial-scale=1.0">');
+    parts.push('<title>' + escapeHtml(project.title || "作業証跡") + '</title>');
+    parts.push('<style>'); parts.push(EXPORT_CSS); parts.push('</style></head><body>');
+    // Escape every "<", not just a literal lower-case end tag. The HTML parser closes a
+    // script block on the end tag case-insensitively and accepts "/" or whitespace after
+    // the tag name, so an upper-case or spaced variant typed into a caption used to
+    // truncate the export and let whatever followed run as markup.
+    // (Careful: writing that end tag out in full — even inside this comment — would close
+    // this very script block. That is exactly the bug being fixed.)
+    // "<" parses back to "<" via JSON.parse, so the payload is unchanged.
+    parts.push('<script id="ev-data" type="application/json">' + dataJson.replace(/</g,'\\u003c') + '<' + '/script>');
+    parts.push('<div id="evApp"></div>');
+    parts.push('<script>' + EXPORT_JS + '</' + 'script>');
+    parts.push('</body></html>');
+    return parts.join("\n");
+  }
+
+  var EXPORT_CSS = [
+    "@page{ size:A4; margin:14mm 12mm; }",
+    ":root{--ink:#1C2530;--ink-soft:#3A4553;--paper:#EDF0F2;--paper-raised:#FFFFFF;--accent:#FF7A00;--border:#D8DCE0;",
+    "--font-display:'Bahnschrift','Arial Narrow','Segoe UI Condensed',sans-serif;",
+    "--font-body:'Segoe UI','Hiragino Kaku Gothic ProN','Yu Gothic',sans-serif;",
+    "--font-mono:'Consolas','Cascadia Mono','Courier New',monospace;}",
+    "*{box-sizing:border-box;}body{margin:0;font-family:var(--font-body);background:var(--paper);color:var(--ink);}",
+    ".ev-header{background:var(--ink);color:#fff;padding:16px 22px;}",
+    ".ev-title{font-family:var(--font-display);font-size:22px;font-weight:700;}",
+    ".ev-print-btn{background:var(--accent);color:var(--ink);border:none;font-weight:700;font-size:13px;padding:8px 16px;border-radius:4px;cursor:pointer;float:right;}",
+    ".ev-main{max-width:1000px;margin:0 auto;padding:20px;}",
+    ".ev-section{background:var(--paper-raised);border:1px solid var(--border);border-radius:8px;margin-bottom:24px;padding:16px 18px;}",
+    ".ev-section h2{font-family:var(--font-display);font-size:18px;margin:0 0 12px;border-bottom:2px solid var(--ink);padding-bottom:6px;}",
+    ".ev-gallery{display:flex;flex-wrap:wrap;gap:14px;}",
+    ".ev-img-card{border:1px solid var(--border);border-radius:6px;overflow:hidden;background:#fff;}",
+    ".ev-img-card img{width:100%;height:auto;display:block;cursor:zoom-in;}",
+    ".ev-caption{font-size:12px;color:var(--ink-soft);padding:6px 8px;border-top:1px solid var(--border);background:var(--paper);}",
+    "#ev-lb{display:none;position:fixed;inset:0;background:rgba(10,12,16,.93);z-index:500;align-items:center;justify-content:center;gap:14px;padding:24px;cursor:zoom-out;}",
+    "#ev-lb.open{display:flex;}",
+    "#ev-lb figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:8px;max-width:calc(100% - 130px);max-height:100%;cursor:default;}",
+    "#ev-lb figure img{max-width:100%;max-height:calc(100vh - 130px);box-shadow:0 0 0 1px #444;background:#fff;}",
+    "#ev-lb .cap{color:#e6e6e6;font-size:13px;text-align:center;max-width:80vw;}",
+    "#ev-lb .nav{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.25);color:#fff;font-size:26px;line-height:1;width:44px;height:64px;border-radius:8px;cursor:pointer;flex:0 0 auto;}",
+    "#ev-lb .nav:hover{background:rgba(255,255,255,.2);}",
+    "#ev-lb .count{position:fixed;top:14px;right:18px;color:#aaa;font-size:12px;font-family:var(--font-mono);}",
+    "#ev-lb .hint{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);color:#888;font-size:11px;}",
+    "@media print{",
+    "  .no-print{display:none !important;}",
+    "  #ev-lb{display:none !important;}",
+    "  body{background:#fff;}",
+    "  .ev-header{position:static;background:#fff !important;color:#000 !important;border-bottom:2px solid #000;}",
+    "  .ev-main{max-width:none;padding:0;}",
+    "  .ev-section{border:none;border-radius:0;padding:0;margin-bottom:18px;page-break-inside:avoid;}",
+    "  .ev-section h2{border-bottom-color:#000;}",
+    "  .ev-img-card{page-break-inside:avoid;border-color:#000;}",
+    "  .ev-caption{border-top-color:#000;}",
+    "}"
+  ].join("\n");
+
+  var EXPORT_JS = [
+    "(function(){",
+    "  var raw = document.getElementById('ev-data').textContent;",
+    "  var project = JSON.parse(raw);",
+    "  var app = document.getElementById('evApp');",
+    "",
+    "  var header = document.createElement('div'); header.className = 'ev-header';",
+    "  var printBtn = document.createElement('button'); printBtn.className = 'ev-print-btn no-print'; printBtn.textContent = '印刷する';",
+    "  printBtn.addEventListener('click', function(){ window.print(); });",
+    "  header.appendChild(printBtn);",
+    "  var titleEl = document.createElement('div'); titleEl.className = 'ev-title'; titleEl.textContent = project.title || '作業証跡';",
+    "  header.appendChild(titleEl);",
+    "  app.appendChild(header);",
+    "",
+    "  var main = document.createElement('div'); main.className = 'ev-main';",
+    "  var flat = [];",
+    "  project.sections.forEach(function(section){",
+    "    var sec = document.createElement('div'); sec.className = 'ev-section';",
+    "    var h2 = document.createElement('h2'); h2.textContent = section.name; sec.appendChild(h2);",
+    "    var gallery = document.createElement('div'); gallery.className = 'ev-gallery';",
+    "    section.images.forEach(function(img){",
+    "      var card = document.createElement('div'); card.className = 'ev-img-card';",
+    "      card.style.flexBasis = 'calc(' + img.width + '% - 14px)';",
+    "      card.style.flexGrow = '0';",
+    "      var el = document.createElement('img'); el.src = img.src;",
+    "      el.alt = img.caption || (section.name + ' の画像');",
+    "      (function(i){ el.addEventListener('click', function(){ lbShow(i); }); })(flat.length);",
+    "      flat.push({ src: img.src, caption: img.caption || '', section: section.name });",
+    "      card.appendChild(el);",
+    "      if (img.caption){",
+    "        var cap = document.createElement('div'); cap.className = 'ev-caption'; cap.textContent = img.caption;",
+    "        card.appendChild(cap);",
+    "      }",
+    "      gallery.appendChild(card);",
+    "    });",
+    "    sec.appendChild(gallery);",
+    "    main.appendChild(sec);",
+    "  });",
+    "  app.appendChild(main);",
+    "",
+    "  // ---- クリックで拡大 ----",
+    "  // 印刷を前提に縮めて並べているので、画面で見返すときに細部が読めない。",
+    "  var lb = document.createElement('div'); lb.id = 'ev-lb'; lb.className = 'no-print';",
+    "  var lbPrev = document.createElement('button'); lbPrev.className = 'nav'; lbPrev.innerHTML = '&#8249;'; lbPrev.title = '前の画像';",
+    "  var lbNext = document.createElement('button'); lbNext.className = 'nav'; lbNext.innerHTML = '&#8250;'; lbNext.title = '次の画像';",
+    "  var lbFig = document.createElement('figure');",
+    "  var lbImg = document.createElement('img'); lbImg.alt = '';",
+    "  var lbCap = document.createElement('figcaption'); lbCap.className = 'cap';",
+    "  lbFig.appendChild(lbImg); lbFig.appendChild(lbCap);",
+    "  var lbCount = document.createElement('div'); lbCount.className = 'count';",
+    "  var lbHint = document.createElement('div'); lbHint.className = 'hint';",
+    "  lbHint.textContent = '\\u2190 \\u2192 \\u3067\\u524d\\u5f8c\\u306e\\u753b\\u50cf \\uff0f Esc\\u30fb\\u80cc\\u666f\\u30af\\u30ea\\u30c3\\u30af\\u3067\\u9589\\u3058\\u308b';",
+    "  lb.appendChild(lbPrev); lb.appendChild(lbFig); lb.appendChild(lbNext); lb.appendChild(lbCount); lb.appendChild(lbHint);",
+    "  document.body.appendChild(lb);",
+    "  var lbIdx = -1;",
+    "  function lbShow(i){",
+    "    if (i < 0 || i >= flat.length) return;",
+    "    lbIdx = i;",
+    "    lbImg.src = flat[i].src;",
+    "    lbImg.alt = flat[i].caption || flat[i].section;",
+    "    lbCap.textContent = flat[i].caption ? (flat[i].section + '： ' + flat[i].caption) : flat[i].section;",
+    "    lbCount.textContent = (i + 1) + ' / ' + flat.length;",
+    "    lbPrev.style.visibility = i > 0 ? 'visible' : 'hidden';",
+    "    lbNext.style.visibility = i < flat.length - 1 ? 'visible' : 'hidden';",
+    "    lb.classList.add('open');",
+    "  }",
+    "  function lbClose(){ lb.classList.remove('open'); }",
+    "  lbPrev.addEventListener('click', function(e){ e.stopPropagation(); lbShow(lbIdx - 1); });",
+    "  lbNext.addEventListener('click', function(e){ e.stopPropagation(); lbShow(lbIdx + 1); });",
+    "  lbFig.addEventListener('click', function(e){ e.stopPropagation(); });",
+    "  lb.addEventListener('click', lbClose);",
+    "  document.addEventListener('keydown', function(e){",
+    "    if (!lb.classList.contains('open')) return;",
+    "    if (e.key === 'Escape'){ lbClose(); }",
+    "    else if (e.key === 'ArrowRight'){ lbShow(lbIdx + 1); e.preventDefault(); }",
+    "    else if (e.key === 'ArrowLeft'){ lbShow(lbIdx - 1); e.preventDefault(); }",
+    "  });",
+    "})();"
+  ].join("\n");
+
+  $("#btnExport").addEventListener("click", function(){
+    var html = buildExportHtml();
+    var blob = new Blob([html], {type:"text/html"});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a"); a.href = url; a.download = (project.title || "evidence") + ".html";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast("HTMLを書き出しました（" + (blob.size/1048576).toFixed(1) + " MB / このHTMLはそのまま読み戻せます）");
+  });
+
+  $("#btnPreview").addEventListener("click", function(){
+    var html = buildExportHtml();
+    $("#previewFrame").srcdoc = html;
+    $("#previewModal").classList.remove("hidden");
+  });
+  $("#closePreview").addEventListener("click", function(){ $("#previewModal").classList.add("hidden"); });
+
+  // ==== autosave (IndexedDB) + unload guard ====
+  // Everything used to live in memory only, so one stray Ctrl+W threw away the whole
+  // session. Autosave keeps a rolling copy; the unload prompt still fires because an
+  // autosave is not the user's own JSON file. IndexedDB (not localStorage) because
+  // screenshots blow past the ~5MB localStorage quota immediately.
+  var DB_NAME = "evidenceGalleryAutosave", DB_STORE = "snapshots", DB_KEY = "current";
+  var dbHandle = null, dbBroken = false, autosaveTimer = null, dirty = false;
+  var statusEl = $("#autosaveStatus");
+
+  function hhmm(d){
+    return String(d.getHours()).padStart(2,"0") + ":" + String(d.getMinutes()).padStart(2,"0");
+  }
+  function setStatus(msg){ if (statusEl) statusEl.textContent = msg; }
+
+  function withDb(cb){
+    if (dbBroken){ cb(null); return; }
+    if (dbHandle){ cb(dbHandle); return; }
+    var req;
+    try { req = indexedDB.open(DB_NAME, 1); }
+    catch(e){ dbBroken = true; cb(null); return; }
+    req.onupgradeneeded = function(){
+      var db = req.result;
+      if (!db.objectStoreNames.contains(DB_STORE)) db.createObjectStore(DB_STORE);
+    };
+    req.onsuccess = function(){ dbHandle = req.result; cb(dbHandle); };
+    req.onerror = function(){ dbBroken = true; cb(null); };
+  }
+
+  function markDirty(){
+    dirty = true;
+    if (autosaveTimer) clearTimeout(autosaveTimer);
+    autosaveTimer = setTimeout(runAutosave, 1500);
+  }
+
+  function runAutosave(){
+    autosaveTimer = null;
+    withDb(function(db){
+      if (!db){ setStatus("自動保存は利用できません"); return; }
+      try{
+        var tx = db.transaction(DB_STORE, "readwrite");
+        // Structured clone, so no JSON.stringify of the base64 payloads here.
+        tx.objectStore(DB_STORE).put({ savedAt: Date.now(), project: project, images: imageStore }, DB_KEY);
+        tx.oncomplete = function(){ setStatus("自動保存 " + hhmm(new Date())); };
+        tx.onerror = function(){ setStatus("自動保存に失敗しました"); };
+        tx.onabort  = function(){ setStatus("自動保存に失敗しました"); };
+      }catch(e){ setStatus("自動保存に失敗しました"); }
+    });
+  }
+
+  function clearAutosave(){
+    withDb(function(db){
+      if (!db) return;
+      try{ db.transaction(DB_STORE, "readwrite").objectStore(DB_STORE).delete(DB_KEY); }catch(e){}
+    });
+  }
+
+  var restoreBanner = $("#restoreBanner");
+  function hideRestoreBanner(){ restoreBanner.classList.add("hidden"); }
+
+  function applyRestore(rec){
+    imageStore = rec.images || {};
+    project = rec.project;
+    selectedIds = {};
+    activeSectionId = project.sections[0] ? project.sections[0].id : null;
+    titleInput.value = project.title || "";
+    undoStack.length = 0; redoStack.length = 0; pendingFieldSnapshot = null;
+    dirty = true;
+    render();
+    setStatus("前回のデータを復元しました");
+  }
+
+  function checkForAutosave(){
+    withDb(function(db){
+      if (!db) return;
+      var rq;
+      try{
+        rq = db.transaction(DB_STORE, "readonly").objectStore(DB_STORE).get(DB_KEY);
+      }catch(e){ return; }
+      rq.onsuccess = function(){
+        var rec = rq.result;
+        if (!rec || !rec.project || !Array.isArray(rec.project.sections)) return;
+        var imgs = 0;
+        rec.project.sections.forEach(function(s){ imgs += (s.images || []).length; });
+        if (!imgs) return;  // nothing worth offering
+        $("#restoreMsg").textContent =
+          "前回の作業データが残っています（" + hhmm(new Date(rec.savedAt)) + " 時点 / 画像 " + imgs + " 枚）。";
+        restoreBanner.classList.remove("hidden");
+        $("#restoreYes").onclick = function(){ hideRestoreBanner(); applyRestore(rec); };
+        $("#restoreNo").onclick = function(){
+          if (!confirm("前回の自動保存データを削除します。よろしいですか？（この操作は取り消せません）")) return;
+          hideRestoreBanner(); clearAutosave(); setStatus("");
+        };
+      };
+    });
+  }
+
+  window.addEventListener("beforeunload", function(e){
+    if (!dirty) return;
+    e.preventDefault();
+    e.returnValue = "";
+    return "";
+  });
+
+  render();
+  checkForAutosave();
+})();
+</script>
+</body>
+</html>

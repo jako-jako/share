@@ -62,6 +62,7 @@
   .step-preview{margin-top:6px;border:1px dashed var(--border);border-radius:4px;padding:8px 10px;font-size:13px;background:var(--paper);min-height:20px;}
   .step-preview:empty::before{content:"（プレビュー）";color:#9aa4ad;}
   .step-preview ul,.step-preview ol{margin:6px 0 6px 20px;padding:0;}
+  .step-preview li>ul,.step-preview li>ol{margin:2px 0 2px 18px;}
   .step-preview li{margin-bottom:2px;}
   .step-preview code{background:#fff;padding:1px 4px;border-radius:3px;font-family:var(--font-mono);font-size:12px;border:1px solid var(--border);}
   .step-preview pre{background:var(--ink);color:#fff;padding:8px 10px;border-radius:4px;overflow-x:auto;font-family:var(--font-mono);font-size:12px;margin:6px 0;}
@@ -89,7 +90,38 @@
   .modal-inner{width:92vw;height:90vh;background:#fff;border-radius:8px;position:relative;overflow:hidden;}
   .modal-close{position:absolute;top:10px;right:10px;z-index:2;background:var(--ink);color:#fff;}
   #previewFrame{width:100%;height:100%;border:none;}
+  .mode-bar{background:var(--paper-raised);border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:6px;padding:10px 12px;margin-bottom:16px;font-size:12px;color:var(--ink-soft);display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .mode-label{font-weight:700;color:var(--ink);}
+  .mode-select{font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:4px;background:#fff;color:var(--ink);font-family:var(--font-body);}
+  .stamp-labels{display:flex;align-items:center;gap:6px;}
+  .stamp-labels input{font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:4px;width:100px;font-family:var(--font-body);}
+  .mode-note{flex-basis:100%;font-size:11px;color:var(--ink-soft);}
+  .drag-grip{cursor:grab;color:#B9C2CC;font-size:12px;user-select:none;padding:0 2px;}
+  .drag-grip:active{cursor:grabbing;}
+  .drag-handle{cursor:grab;}
+  .drop-target{outline:2px dashed var(--accent);outline-offset:-2px;}
+  .step-card.flash{animation:flashbg 1.6s ease;}
+  @keyframes flashbg{0%{background:var(--accent-soft);}100%{background:var(--paper-raised);}}
+  .ctx-menu{position:fixed;z-index:300;background:#fff;border:1px solid var(--border);border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,.18);min-width:170px;padding:4px;}
+  .ctx-menu.hidden{display:none;}
+  .ctx-item{font-size:13px;padding:7px 12px;border-radius:4px;cursor:pointer;color:var(--ink);}
+  .ctx-item:hover{background:var(--accent-soft);}
+  .ctx-item.danger{color:#B23A2E;}
+  .ctx-item.danger:hover{background:#FBE4E0;}
+  .search-bar{position:fixed;top:56px;right:16px;z-index:200;width:340px;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.2);padding:10px;}
+  .search-bar.hidden{display:none;}
+  .search-bar input{width:100%;font-size:13px;padding:7px 9px;border:1px solid var(--border);border-radius:4px;font-family:var(--font-body);}
+  .search-bar input:focus{outline:2px solid var(--accent-soft);border-color:var(--accent);}
+  #searchResults{max-height:300px;overflow-y:auto;margin-top:6px;}
+  .search-hit{font-size:12px;padding:7px 8px;border-radius:4px;cursor:pointer;color:var(--ink-soft);border-bottom:1px solid var(--paper);}
+  .search-hit:hover{background:var(--accent-soft);color:var(--ink);}
+  .search-none{font-size:12px;color:var(--ink-soft);padding:8px;}
   .hint{font-size:12px;color:var(--ink-soft);background:var(--paper-raised);border:1px solid var(--border);border-radius:6px;padding:10px 12px;margin-bottom:16px;}
+
+  .autosave-status{font-family:var(--font-mono);font-size:11px;color:rgba(255,255,255,.65);white-space:nowrap;align-self:center;}
+  .restore-banner{position:fixed;top:64px;left:50%;transform:translateX(-50%);z-index:400;background:var(--ink);color:#fff;border:1px solid var(--accent);border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.35);padding:12px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;max-width:92vw;}
+  .restore-banner.hidden{display:none;}
+  .restore-banner button{font-size:12px;padding:6px 10px;}
 
   .table-block{margin-top:10px;border:1px solid var(--border);border-radius:6px;padding:10px;background:var(--paper);}
   .table-block-controls{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px;font-size:12px;color:var(--ink-soft);}
@@ -103,6 +135,25 @@
   .table-grid tr:first-child input{font-weight:700;}
   .add-table-btn{font-size:12px;padding:6px 10px;border:1px dashed var(--ink-soft);color:var(--ink-soft);background:transparent;border-radius:4px;}
   .add-table-btn:hover{background:#fff;}
+
+  /* ==== 追加UI（トースト / 統計 / 圧縮設定 / 画像の貼り付け先 / 置換） ==== */
+  #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(10px);background:#12151a;color:#fff;font-size:13px;padding:10px 16px;border-radius:6px;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:500;box-shadow:0 4px 14px rgba(0,0,0,.3);max-width:80vw;text-align:center;}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .stats{display:flex;gap:6px;align-items:center;font-family:var(--font-mono);font-size:11px;}
+  .stats .st{background:rgba(255,255,255,.14);padding:2px 8px;border-radius:10px;white-space:nowrap;}
+  .stats .st.warn{background:#8a4412;color:#ffdcbb;}
+  .sel-label{display:flex;align-items:center;gap:4px;font-size:11px;color:rgba(255,255,255,.8);white-space:nowrap;}
+  .sel-label select{font-size:11px;padding:4px 5px;border-radius:4px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.06);color:#fff;}
+  .sel-label select option{color:#000;}
+  .step-card.paste-target{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft);}
+  .step-image.dragover{outline:2px dashed var(--accent);outline-offset:3px;}
+  .paste-hint{font-family:var(--font-mono);font-size:10px;color:var(--ink-soft);}
+  .step-card.paste-target .paste-hint{color:var(--accent);font-weight:700;}
+  .search-bar .replace-row{display:flex;gap:6px;margin-top:8px;}
+  .search-bar .replace-row input{flex:1;}
+  .search-bar .replace-row button{font-size:11px;padding:6px 10px;background:var(--paper);border:1px solid var(--border);color:var(--ink-soft);white-space:nowrap;}
+  .search-bar .replace-row button:hover{background:var(--accent-soft);color:var(--ink);}
+  .search-more{font-size:11px;color:#B23A2E;padding:6px 8px;}
 </style>
 </head>
 <body>
@@ -114,9 +165,27 @@
       <input id="metaSystem" class="sys-input" placeholder="対象システム名">
       <input id="metaVersion" class="ver-input" placeholder="版数 (例: v1.0)">
     </div>
+    <span id="stats" class="stats"></span>
+    <span id="autosaveStatus" class="autosave-status"></span>
     <div class="actions">
+      <label class="sel-label" title="取り込む画像の縮小サイズ。ブラウザに記憶されます">縮小
+        <select id="shrinkSel">
+          <option value="2000">長辺2000px</option>
+          <option value="1600" selected>長辺1600px</option>
+          <option value="1200">長辺1200px</option>
+          <option value="800">長辺800px</option>
+          <option value="0">なし（原寸）</option>
+        </select>
+      </label>
+      <label class="sel-label" title="保存形式。画面キャプチャの文字を優先するならPNG、サイズを優先するならJPEG">形式
+        <select id="fmtSel">
+          <option value="png" selected>PNG（文字くっきり）</option>
+          <option value="jpeg92">JPEG 高画質</option>
+          <option value="jpeg85">JPEG 標準（軽い）</option>
+        </select>
+      </label>
       <button id="btnSaveJson" title="作業中のデータをファイルとして保存">JSON保存</button>
-      <label class="btnfile">JSON読込<input type="file" id="fileLoadJson" accept="application/json" hidden></label>
+      <label class="btnfile" title="JSONファイル、またはこのツールで書き出したHTMLを読み込みます">ファイル読込<input type="file" id="fileLoadJson" accept=".json,.html,.htm,application/json,text/html" hidden></label>
       <button id="btnPreview">プレビュー（印刷確認）</button>
       <button id="btnExport" class="primary">HTMLエクスポート</button>
     </div>
@@ -131,6 +200,12 @@
   </div>
 </div>
 
+<div id="restoreBanner" class="restore-banner hidden">
+  <span id="restoreMsg"></span>
+  <button id="restoreYes" class="primary">復元する</button>
+  <button id="restoreNo">破棄する</button>
+</div>
+
 <div id="previewModal" class="modal hidden">
   <div class="modal-inner">
     <button id="closePreview" class="modal-close">✕ 閉じる</button>
@@ -138,56 +213,199 @@
   </div>
 </div>
 
+<div id="toast"></div>
+
 <script>
 (function(){
   "use strict";
   var uid = function(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); };
 
+  // ==== image store ====
+  // Base64 payloads live here, NOT inside `project`. Undo snapshots stringify `project`
+  // only, so adding screenshots no longer makes every snapshot/keystroke cost megabytes.
+  // Entries are never evicted: an undo that resurrects a deleted image must still find it.
+  var imageStore = {};
+  function putImage(dataUrl){
+    var key = "im" + uid();
+    imageStore[key] = dataUrl;
+    return key;
+  }
+  function getImage(ref){ return (ref && imageStore[ref]) || ""; }
+
+  // ==== toast ====
+  // alert() は作業を止めてしまうし、autosaveStatus は小さすぎて操作結果が伝わらない。
+  var toastEl = document.getElementById("toast"), toastTimer = null;
+  function showToast(msg){
+    if (!toastEl) return;
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ toastEl.classList.remove("show"); }, 4000);
+  }
+
+  // ==== 取り込み設定（縮小サイズ・保存形式） ====
+  // 以前は長辺1600px・PNG固定だった。現場によって要求が割れるため選べるようにし、
+  // 選択はブラウザに記憶する（開くたび既定に戻ると気付かず違う画質で作ってしまう）。
+  var SETTINGS_KEY = "manualEditorSettings_v1";
+  var shrinkSel = document.getElementById("shrinkSel");
+  var fmtSel = document.getElementById("fmtSel");
+  function saveSettings(){
+    try{ localStorage.setItem(SETTINGS_KEY, JSON.stringify({ shrink: shrinkSel.value, fmt: fmtSel.value })); }
+    catch(e){ /* プライベートウィンドウ等。記憶されないだけなので無視 */ }
+  }
+  function loadSettings(){
+    var s = null;
+    try{ s = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "null"); }catch(e){}
+    if (!s || typeof s !== "object") return;
+    [[shrinkSel, s.shrink], [fmtSel, s.fmt]].forEach(function(pair){
+      var el = pair[0], v = pair[1];
+      if (v == null) return;
+      if (!Array.prototype.some.call(el.options, function(o){ return o.value === String(v); })) return;
+      el.value = String(v);
+    });
+  }
+  loadSettings();
+  shrinkSel.addEventListener("change", saveSettings);
+  fmtSel.addEventListener("change", saveSettings);
+  function getFmt(){
+    var v = fmtSel.value;
+    if (v === "jpeg92") return { mime:"image/jpeg", q:0.92 };
+    if (v === "jpeg85") return { mime:"image/jpeg", q:0.85 };
+    return { mime:"image/png", q:undefined };
+  }
+
+  // ==== downscaling / re-encoding ====
+  // Screenshots came in at full resolution, so a handful of 1920x1080 captures turned the
+  // exported HTML into a multi-megabyte file. Cap the long edge at the size chosen above
+  // and keep the original whenever re-encoding would not actually be smaller
+  // (already-optimised PNGs often grow when re-encoded).
+  // cb は成功時 dataURL / 失敗時 null で必ず一度だけ呼ばれる。
+  function preprocessImage(dataUrl, cb){
+    if (typeof dataUrl !== "string" || dataUrl.indexOf("data:image/") !== 0){ cb(null); return; }
+    var maxEdge = Number(shrinkSel.value) || 0;
+    var fmt = getFmt();
+    var img = new Image();
+    var settled = false;
+    function fin(v){ if (settled) return; settled = true; cb(v); }
+    img.onload = function(){
+      var w = img.naturalWidth, h = img.naturalHeight;
+      if (!w || !h){ fin(null); return; }
+      var needShrink = maxEdge > 0 && Math.max(w, h) > maxEdge;
+      var wantJpeg = fmt.mime === "image/jpeg";
+      var alreadyJpeg = dataUrl.indexOf("data:image/jpeg") === 0;
+      if (!needShrink && (!wantJpeg || alreadyJpeg)){ fin(dataUrl); return; }
+      var scale = needShrink ? maxEdge / Math.max(w, h) : 1;
+      try{
+        var canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(w * scale));
+        canvas.height = Math.max(1, Math.round(h * scale));
+        var ctx = canvas.getContext("2d");
+        if (wantJpeg){ ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, canvas.width, canvas.height); }
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        var out = wantJpeg ? canvas.toDataURL("image/jpeg", fmt.q) : canvas.toDataURL("image/png");
+        fin((needShrink || out.length < dataUrl.length) ? out : dataUrl);
+      }catch(e){ fin(dataUrl); }
+    };
+    img.onerror = function(){ fin(null); };
+    img.src = dataUrl;
+  }
+
   // ---- lightweight Markdown (bold/italic/inline-code/code-block/lists), no external deps ----
   function escapeHtmlMd(s){
     return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
   }
+  function parseListItem(line){
+    var m = String(line).match(/^([ \t]*)([-*]|\d+\.)[ \t]+(.*)$/);
+    if (!m) return null;
+    var indentRaw = m[1].replace(/\t/g, "    ");
+    return { level: Math.floor(indentRaw.length / 2), ordered: /\d/.test(m[2]), text: m[3] };
+  }
+  function buildList(items, start, level){
+    var ordered = items[start].ordered;
+    var html = ordered ? "<ol>" : "<ul>";
+    var i = start;
+    while (i < items.length && items[i].level >= level){
+      if (items[i].level > level){
+        var sub = buildList(items, i, items[i].level);
+        html = html.replace(/<\/li>$/, "") + sub.html + "</li>";
+        i = sub.next; continue;
+      }
+      if (items[i].ordered !== ordered) break;
+      html += "<li>" + items[i].text + "</li>";
+      i++;
+    }
+    html += ordered ? "</ol>" : "</ul>";
+    return { html: html, next: i };
+  }
+  function renderLists(lines, i){
+    var items = [];
+    while (i < lines.length){
+      var it = parseListItem(lines[i]);
+      if (!it) break;
+      items.push(it); i++;
+    }
+    if (!items.length) return null;
+    var base = items[0].level;
+    items.forEach(function(it){ it.level = Math.max(0, it.level - base); });
+    // buildList() stops at a marker change ("- foo" followed by "1. bar"). Keep restarting
+    // from where it stopped, otherwise every item after the switch is silently dropped.
+    var html = "", consumed = 0, guard = items.length + 2;
+    while (consumed < items.length && guard-- > 0){
+      var res = buildList(items, consumed, items[consumed].level);
+      html += res.html;
+      if (res.next <= consumed) break;
+      consumed = res.next;
+    }
+    return { html: html, next: i };
+  }
+  // Only strip a first line that is plausibly a language tag. The old check accepted any
+  // single word, so a fence whose first line was "ls" silently lost that line.
+  var LANG_TAG = /^(bash|sh|shell|zsh|fish|powershell|pwsh|ps1|cmd|bat|batch|sql|json|yaml|yml|toml|xml|html|css|js|jsx|javascript|ts|tsx|typescript|java|kt|py|python|rb|ruby|go|rust|rs|c|cpp|cs|php|perl|ini|conf|properties|dockerfile|diff|patch|text|plain|txt|log|md|markdown)$/i;
+
   function mdToHtml(src){
     if (!src) return "";
     var blocks = [];
-    var withPlaceholders = String(src).replace(/```([\s\S]*?)```/g, function(_, code){
-      var idx = blocks.length; blocks.push(code);
+    var withPlaceholders = String(src).replace(/```([\s\S]*?)```/g, function(m, code, offset, whole){
+      // A fence alone on its line becomes a <pre> block; one written mid-sentence becomes
+      // inline code. Only the former used to be handled, so the latter leaked the raw
+      // "CODEBLOCK0" placeholder into the visible text.
+      var head = whole.slice(0, offset), tail = whole.slice(offset + m.length);
+      var idx = blocks.length;
+      blocks.push({ code: code, block: /(^|\n)[ \t]*$/.test(head) && /^[ \t]*(\n|$)/.test(tail) });
       return "\u0000CODEBLOCK" + idx + "\u0000";
     });
     var escaped = escapeHtmlMd(withPlaceholders);
     escaped = escaped.replace(/`([^`]+)`/g, function(_, c){ return "<code>" + c + "</code>"; });
-    escaped = escaped.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+    escaped = escaped.replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>");
     escaped = escaped.replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, "$1<em>$2</em>");
+    // Expand inline fences after the emphasis passes, so their contents stay literal.
+    escaped = escaped.replace(/\u0000CODEBLOCK(\d+)\u0000/g, function(m, idx){
+      var b = blocks[parseInt(idx,10)];
+      if (!b || b.block) return m;
+      return "<code>" + escapeHtmlMd(b.code) + "</code>";
+    });
     var lines = escaped.split("\n");
     var out = []; var i = 0;
     while (i < lines.length){
       var line = lines[i];
       var codeMatch = line.trim().match(/^\u0000CODEBLOCK(\d+)\u0000$/);
       if (codeMatch){
-        var codeLines = blocks[parseInt(codeMatch[1],10)].split("\n");
-        if (codeLines.length>1 && /^[a-zA-Z0-9_-]{1,20}$/.test(codeLines[0].trim())) codeLines.shift();
+        var codeLines = blocks[parseInt(codeMatch[1],10)].code.split("\n");
+        if (codeLines.length>1 && LANG_TAG.test(codeLines[0].trim())) codeLines.shift();
         var codeText = codeLines.join("\n").replace(/^\n+|\n+$/g,"");
         out.push("<pre><code>" + escapeHtmlMd(codeText) + "</code></pre>");
         i++; continue;
       }
-      if (/^\s*[-*]\s+/.test(line)){
-        var items = [];
-        while (i < lines.length && /^\s*[-*]\s+/.test(lines[i])){
-          items.push("<li>" + lines[i].replace(/^\s*[-*]\s+/, "") + "</li>"); i++;
-        }
-        out.push("<ul>" + items.join("") + "</ul>"); continue;
-      }
-      if (/^\s*\d+\.\s+/.test(line)){
-        var oitems = [];
-        while (i < lines.length && /^\s*\d+\.\s+/.test(lines[i])){
-          oitems.push("<li>" + lines[i].replace(/^\s*\d+\.\s+/, "") + "</li>"); i++;
-        }
-        out.push("<ol>" + oitems.join("") + "</ol>"); continue;
+      if (parseListItem(line)){
+        var listRes = renderLists(lines, i);
+        out.push(listRes.html); i = listRes.next; continue;
       }
       if (line.trim() === ""){ i++; continue; }
       var para = [line]; i++;
       while (i < lines.length && lines[i].trim() !== "" &&
-             !/^\s*[-*]\s+/.test(lines[i]) && !/^\s*\d+\.\s+/.test(lines[i]) &&
+             !parseListItem(lines[i]) &&
              !/^\u0000CODEBLOCK/.test(lines[i].trim())){
         para.push(lines[i]); i++;
       }
@@ -219,12 +437,233 @@
     title: "本番作業手順書",
     meta: { system: "", version: "" },
     sheets: [
-      { id: uid(), name: "シート1", steps: [
-        { id: uid(), text: "", hasCheckbox: true, image: null, note: "", table: null }
+      { id: uid(), name: "シート1", checkMode: "check", stampLabels: { a:"作業者", b:"確認者" }, steps: [
+        { id: uid(), text: "", hasCheckbox: true, imageRef: null, note: "", table: null }
       ]}
     ]
   };
   var activeSheetId = project.sheets[0].id;
+
+  // ==== Undo / Redo ====
+  var undoStack = [], redoStack = [], pendingFieldSnapshot = null;
+  function pushUndoRaw(json){
+    undoStack.push(json);
+    if (undoStack.length > 30) undoStack.shift();
+    redoStack.length = 0;
+  }
+  function snapshot(){ pushUndoRaw(JSON.stringify(project)); markDirty(); }
+  function afterRestore(){
+    pendingFieldSnapshot = null;
+    if (!getSheet(activeSheetId)) activeSheetId = project.sheets[0] ? project.sheets[0].id : null;
+    projectTitleInput.value = project.title || "";
+    metaSystemInput.value = (project.meta && project.meta.system) || "";
+    metaVersionInput.value = (project.meta && project.meta.version) || "";
+    renderAll();
+  }
+  function doUndo(){
+    if (!undoStack.length) return;
+    redoStack.push(JSON.stringify(project));
+    project = JSON.parse(undoStack.pop());
+    afterRestore();
+  }
+  function doRedo(){
+    if (!redoStack.length) return;
+    undoStack.push(JSON.stringify(project));
+    project = JSON.parse(redoStack.pop());
+    afterRestore();
+  }
+  document.addEventListener("focusin", function(e){
+    var t = e.target;
+    if (t && (t.tagName==="INPUT"||t.tagName==="TEXTAREA"||t.tagName==="SELECT") && !t.classList.contains("no-undo")){
+      pendingFieldSnapshot = JSON.stringify(project);
+    }
+  });
+  document.addEventListener("input", function(e){
+    var t = e.target;
+    if (t && t.classList && t.classList.contains("no-undo")) return;
+    markDirty();
+    if (pendingFieldSnapshot !== null){
+      pushUndoRaw(pendingFieldSnapshot);
+      pendingFieldSnapshot = null;
+    }
+  });
+
+  // ==== shared list reorder (for drag & drop) ====
+  var dragCtx = null;
+  document.addEventListener("dragend", function(){ dragCtx = null; });
+  // 手順は同じシート内でしか動かせず、「この手順は事後作業シートに移したい」を
+  // やるには手打ちで作り直すしかなかった。シートをまたいだ移動を許す。
+  function moveStepAcross(fromSheetId, fromIdx, toSheetId, toIdx){
+    var from = getSheet(fromSheetId), to = getSheet(toSheetId);
+    if (!from || !to) return false;
+    if (from === to){
+      if (fromIdx === toIdx) return false;
+      reorder(from.steps, fromIdx, toIdx);
+      return true;
+    }
+    var item = from.steps.splice(fromIdx, 1)[0];
+    if (!item) return false;
+    to.steps.splice(Math.max(0, Math.min(toIdx, to.steps.length)), 0, item);
+    return true;
+  }
+
+  function reorder(arr, from, to){
+    if (from === to) return;
+    var item = arr.splice(from, 1)[0];
+    arr.splice(to, 0, item);
+  }
+  function deepCopyStep(step){
+    var s = JSON.parse(JSON.stringify(step));
+    s.id = uid();
+    return s;
+  }
+  function deepCopySheet(sheet){
+    var s = JSON.parse(JSON.stringify(sheet));
+    s.id = uid();
+    s.name = s.name + " (コピー)";
+    s.steps.forEach(function(st){ st.id = uid(); });
+    return s;
+  }
+
+  // ==== context menu ====
+  var ctxMenu = document.createElement("div");
+  ctxMenu.className = "ctx-menu hidden";
+  document.body.appendChild(ctxMenu);
+  function closeCtxMenu(){ ctxMenu.classList.add("hidden"); }
+  document.addEventListener("click", closeCtxMenu);
+  document.addEventListener("scroll", closeCtxMenu, true);
+  function openCtxMenu(x, y, items){
+    ctxMenu.innerHTML = "";
+    items.forEach(function(it){
+      var d = document.createElement("div");
+      d.className = "ctx-item" + (it.danger ? " danger" : "");
+      d.textContent = it.label;
+      d.addEventListener("click", function(e){ e.stopPropagation(); closeCtxMenu(); it.fn(); });
+      ctxMenu.appendChild(d);
+    });
+    ctxMenu.classList.remove("hidden");
+    var mw = ctxMenu.offsetWidth, mh = ctxMenu.offsetHeight;
+    ctxMenu.style.left = Math.min(x, window.innerWidth - mw - 8) + "px";
+    ctxMenu.style.top = Math.min(y, window.innerHeight - mh - 8) + "px";
+  }
+
+  // ==== search (Ctrl+F) ====
+  var searchBar = document.createElement("div");
+  searchBar.className = "search-bar hidden";
+  searchBar.innerHTML = '<input class="no-undo" id="searchInput" placeholder="手順を検索（Escで閉じる）">'
+    + '<div class="replace-row"><input class="no-undo" id="replaceInput" placeholder="置換後の文字列"><button id="replaceAllBtn">全置換</button></div>'
+    + '<div id="searchResults"></div>';
+  document.body.appendChild(searchBar);
+  var searchInput = searchBar.querySelector("#searchInput");
+  var replaceInput = searchBar.querySelector("#replaceInput");
+  var searchResults = searchBar.querySelector("#searchResults");
+  function openSearch(){
+    searchBar.classList.remove("hidden");
+    searchInput.focus(); searchInput.select();
+    runSearch();
+  }
+  function closeSearch(){ searchBar.classList.add("hidden"); }
+  function stepMatches(step, q){
+    if ((step.text||"").toLowerCase().indexOf(q)>=0) return true;
+    if ((step.note||"").toLowerCase().indexOf(q)>=0) return true;
+    if (step.table && step.table.rows){
+      for (var r=0;r<step.table.rows.length;r++)
+        for (var cIdx=0;cIdx<step.table.rows[r].length;cIdx++)
+          if (String(step.table.rows[r][cIdx]||"").toLowerCase().indexOf(q)>=0) return true;
+    }
+    return false;
+  }
+  function runSearch(){
+    var q = searchInput.value.trim().toLowerCase();
+    searchResults.innerHTML = "";
+    if (!q) return;
+    var count = 0, total = 0;
+    project.sheets.forEach(function(sheet){
+      sheet.steps.forEach(function(step, idx){
+        if (!stepMatches(step, q)) return;
+        total++;
+        // 一覧は50件で打ち切る。打ち切ったことを黙っていると「該当なし」と
+        // 誤解されるので、残り件数を必ず出す。
+        if (count >= 50) return;
+        count++;
+        var d = document.createElement("div");
+        d.className = "search-hit";
+        var excerpt = (step.text||"").replace(/\n/g," ").slice(0, 60);
+        d.textContent = sheet.name + "  /  No." + String(idx+1).padStart(2,"0") + "  " + excerpt;
+        d.addEventListener("click", function(){
+          activeSheetId = sheet.id;
+          renderAll();
+          var card = editorMain.querySelector('[data-step-id="' + step.id + '"]');
+          if (card){
+            if (typeof card.scrollIntoView === "function"){
+              try { card.scrollIntoView({behavior:"smooth", block:"center"}); } catch(e){}
+            }
+            card.classList.add("flash");
+            setTimeout(function(){ card.classList.remove("flash"); }, 1600);
+          }
+        });
+        searchResults.appendChild(d);
+      });
+    });
+    if (!count){
+      var none = document.createElement("div");
+      none.className = "search-none"; none.textContent = "該当なし";
+      searchResults.appendChild(none);
+    } else if (total > count){
+      var more = document.createElement("div");
+      more.className = "search-more";
+      more.textContent = "ほか " + (total - count) + " 件あります（先頭 " + count + " 件のみ表示）。語句を絞ってください。";
+      searchResults.appendChild(more);
+    }
+  }
+  searchInput.addEventListener("input", runSearch);
+
+  // 「システム名が変わった」「サーバ名を一括で直す」は手順書では日常茶飯事。
+  // 1件ずつ手で直すと必ず取りこぼす。
+  function replaceAll(){
+    var q = searchInput.value;
+    var r = replaceInput.value;
+    if (!q){ showToast("検索文字列を入力してください"); return; }
+    var re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
+    function hits(v){ var m = String(v == null ? "" : v).match(re); return m ? m.length : 0; }
+    var n = 0;
+    project.sheets.forEach(function(sh){
+      sh.steps.forEach(function(st){
+        n += hits(st.text) + hits(st.note);
+        if (st.table && st.table.rows) st.table.rows.forEach(function(row){ row.forEach(function(c){ n += hits(c); }); });
+      });
+    });
+    if (!n){ showToast("置換対象が見つかりませんでした"); return; }
+    if (!confirm(n + " 件を「" + r + "」に置換します。よろしいですか？（Ctrl+Z で戻せます）")) return;
+    snapshot();
+    function rep(v){ return String(v == null ? "" : v).replace(re, r); }
+    project.sheets.forEach(function(sh){
+      sh.steps.forEach(function(st){
+        st.text = rep(st.text);
+        st.note = rep(st.note);
+        if (st.table && st.table.rows){
+          st.table.rows = st.table.rows.map(function(row){ return row.map(rep); });
+        }
+      });
+    });
+    renderAll();
+    runSearch();
+    showToast(n + " 件置換しました");
+  }
+  searchBar.querySelector("#replaceAllBtn").addEventListener("click", replaceAll);
+  replaceInput.addEventListener("keydown", function(e){ if (e.key === "Enter"){ e.preventDefault(); replaceAll(); } });
+
+  // ==== keyboard shortcuts ====
+  document.addEventListener("keydown", function(e){
+    if (e.key === "Escape"){ closeSearch(); closeCtxMenu(); return; }
+    var mod = e.ctrlKey || e.metaKey;
+    if (!mod) return;
+    var k = (e.key || "").toLowerCase();
+    if (k === "s"){ e.preventDefault(); doSaveJson(); }
+    else if (k === "z" && !e.shiftKey){ e.preventDefault(); doUndo(); }
+    else if (k === "y" || (k === "z" && e.shiftKey)){ e.preventDefault(); doRedo(); }
+    else if (k === "f"){ e.preventDefault(); openSearch(); }
+  });
 
   var $ = function(sel){ return document.querySelector(sel); };
   var sheetRail = $("#sheetRail");
@@ -239,10 +678,45 @@
   }
 
   function renderRail(){
+    var keepScroll = sheetRail.scrollTop;
     sheetRail.innerHTML = "";
     project.sheets.forEach(function(sheet, idx){
       var tab = document.createElement("div");
       tab.className = "sheet-tab" + (sheet.id===activeSheetId ? " active" : "");
+      tab.dataset.sheetIdx = idx;
+      var grip = document.createElement("span");
+      grip.className = "drag-grip"; grip.textContent = "⠿"; grip.title = "ドラッグで並び替え";
+      grip.draggable = true;
+      grip.addEventListener("dragstart", function(e){
+        dragCtx = { type: "sheet", from: idx };
+        e.dataTransfer.setData("text/plain", "sheet");
+        e.dataTransfer.effectAllowed = "move";
+      });
+      grip.addEventListener("click", function(e){ e.stopPropagation(); });
+      tab.addEventListener("dragover", function(e){
+        if (dragCtx && (dragCtx.type === "sheet" || dragCtx.type === "step")){ e.preventDefault(); tab.classList.add("drop-target"); }
+      });
+      tab.addEventListener("dragleave", function(){ tab.classList.remove("drop-target"); });
+      tab.addEventListener("drop", function(e){
+        e.preventDefault(); tab.classList.remove("drop-target");
+        if (!dragCtx) return;
+        var d = dragCtx; dragCtx = null;
+        if (d.type === "sheet"){
+          snapshot();
+          reorder(project.sheets, d.from, idx);
+          renderAll();
+          return;
+        }
+        if (d.type !== "step") return;
+        // 手順をシート一覧のタブへ落とす＝そのシートの末尾へ移す。
+        // 空のシートや、いま表示していないシートへ移す唯一の経路。
+        if (d.sheetId === sheet.id && d.from === sheet.steps.length - 1) return;
+        snapshot();
+        moveStepAcross(d.sheetId, d.from, sheet.id, sheet.steps.length);
+        renderAll();
+        showToast("「" + sheet.name + "」へ手順を移動しました");
+      });
+      tab.appendChild(grip);
       var nameInput = document.createElement("input");
       nameInput.className = "sheet-name"; nameInput.value = sheet.name;
       nameInput.addEventListener("click", function(e){ e.stopPropagation(); });
@@ -253,30 +727,48 @@
       up.addEventListener("click", function(e){ e.stopPropagation(); moveSheet(idx,-1); });
       var down = document.createElement("button"); down.textContent="↓"; down.title="下へ";
       down.addEventListener("click", function(e){ e.stopPropagation(); moveSheet(idx,1); });
+      var dup = document.createElement("button"); dup.textContent="⧉"; dup.title="シートを複製";
+      dup.addEventListener("click", function(e){
+        e.stopPropagation();
+        snapshot();
+        var copy = deepCopySheet(sheet);
+        project.sheets.splice(idx+1, 0, copy);
+        activeSheetId = copy.id;
+        renderAll();
+      });
       var del = document.createElement("button"); del.textContent="✕"; del.title="削除";
       del.addEventListener("click", function(e){
         e.stopPropagation();
         if (project.sheets.length<=1){ alert("最後の1シートは削除できません。"); return; }
         if (!confirm("「" + sheet.name + "」を削除しますか？")) return;
+        snapshot();
         project.sheets.splice(idx,1);
         if (activeSheetId===sheet.id) activeSheetId = project.sheets[0].id;
         renderAll();
       });
-      actions.appendChild(up); actions.appendChild(down); actions.appendChild(del);
+      actions.appendChild(up); actions.appendChild(down); actions.appendChild(dup); actions.appendChild(del);
       tab.appendChild(actions);
       tab.addEventListener("click", function(){ activeSheetId = sheet.id; renderAll(); });
       sheetRail.appendChild(tab);
     });
+    sheetRail.scrollTop = keepScroll;
   }
 
   function moveSheet(idx, dir){
     var newIdx = idx+dir;
     if (newIdx<0 || newIdx>=project.sheets.length) return;
+    snapshot();
     var tmp = project.sheets[idx]; project.sheets[idx]=project.sheets[newIdx]; project.sheets[newIdx]=tmp;
     renderAll();
   }
 
+  var lastRenderedSheetId = null;
   function renderMain(){
+    // innerHTML="" collapses scrollHeight and clamps scrollTop to 0, so every add /
+    // move / delete used to jump back to the top of the sheet. Restore the position,
+    // but start at the top when the user actually switched sheets.
+    var keepScroll = (lastRenderedSheetId === activeSheetId) ? editorMain.scrollTop : 0;
+    lastRenderedSheetId = activeSheetId;
     editorMain.innerHTML = "";
     var sheet = getSheet(activeSheetId);
     if (!sheet) return;
@@ -288,8 +780,10 @@
     editorMain.appendChild(header);
 
     var hint = document.createElement("div"); hint.className = "hint";
-    hint.innerHTML = "本番環境にはファイルを持ち込めない前提のため、実際のチェックは印刷した紙にペンで行います（画面のチェックは事前レビュー用・将来タブレット等を使う場合の時刻自動記録用）。作業内容欄は <b>Markdown</b> が使えます：<code>**太字**</code>／<code>- 箇条書き</code>／<code>`コード`</code>／<code>```で囲むコードブロック</code>。表が必要な場合はMarkdown記法ではなく、下の「表を追加」ボタンでGUIから作成してください。作業内容はこまめに「JSON保存」してください。";
+    hint.innerHTML = "本番環境にはファイルを持ち込めない前提のため、実際のチェックは印刷した紙にペンで行います（画面のチェックは事前レビュー用・将来タブレット等を使う場合の時刻自動記録用）。作業内容欄は <b>Markdown</b> が使えます：<code>**太字**</code>／<code>- 箇条書き（スペース2つで階層化）</code>／<code>`コード`</code>／<code>```コードブロック```</code>。表はMarkdownではなく「表を追加」ボタンでGUI作成。<b>ショートカット</b>：<code>Ctrl+S</code> JSON保存 / <code>Ctrl+Z</code> 元に戻す / <code>Ctrl+Y</code> やり直し / <code>Ctrl+F</code> 手順検索（<b>全置換</b>も同じパネルから）。手順は<b>番号部分をドラッグ</b>で並び替え。<b>左のシート一覧のタブへドロップすると、そのシートの末尾へ移動</b>します（別シートへの移動・空シートへの移動はこの方法）。<b>右クリック</b>で追加・複製・削除メニューが出ます。画像は手順カードをクリックして貼り付け先にしてから<b>Ctrl+V</b>、または画像欄へ<b>ドラッグ＆ドロップ</b>でも入ります。取り込む画像の<b>縮小サイズ・保存形式</b>は右上で選べます（選択はこのブラウザに記憶されます）。<b>エクスポートしたHTMLは「ファイル読込」でそのまま読み戻せます</b>。エクスポート後のHTMLは画像を<b>クリックで拡大</b>できます。";
     editorMain.appendChild(hint);
+
+    editorMain.appendChild(renderModeBar(sheet));
 
     sheet.steps.forEach(function(step, idx){
       editorMain.appendChild(renderStepCard(sheet, step, idx));
@@ -298,15 +792,179 @@
     var addBtn = document.createElement("button");
     addBtn.id = "addStep"; addBtn.textContent = "＋ 手順を追加";
     addBtn.addEventListener("click", function(){
-      sheet.steps.push({ id: uid(), text: "", hasCheckbox: true, image: null, note: "", table: null });
+      snapshot();
+      sheet.steps.push({ id: uid(), text: "", hasCheckbox: true, imageRef: null, note: "", table: null });
       renderMain();
     });
     editorMain.appendChild(addBtn);
+
+    editorMain.scrollTop = keepScroll;
+    updateStats();
   }
+
+  function renderModeBar(sheet){
+    var bar = document.createElement("div"); bar.className = "mode-bar";
+    var lbl = document.createElement("span"); lbl.className = "mode-label"; lbl.textContent = "このシートの確認方式：";
+    bar.appendChild(lbl);
+
+    var sel = document.createElement("select"); sel.className = "mode-select";
+    [["check","チェックボックス（1名）"],["stamp2","押印欄 2つ（2名作業）"]].forEach(function(o){
+      var op = document.createElement("option"); op.value = o[0]; op.textContent = o[1];
+      if ((sheet.checkMode || "check") === o[0]) op.selected = true;
+      sel.appendChild(op);
+    });
+    sel.addEventListener("change", function(){
+      sheet.checkMode = sel.value;
+      if (!sheet.stampLabels) sheet.stampLabels = { a: "作業者", b: "確認者" };
+      renderMain();
+    });
+    bar.appendChild(sel);
+
+    if ((sheet.checkMode || "check") === "stamp2"){
+      if (!sheet.stampLabels) sheet.stampLabels = { a: "作業者", b: "確認者" };
+      var wrap = document.createElement("span"); wrap.className = "stamp-labels";
+      wrap.appendChild(document.createTextNode("欄の名称："));
+      var inA = document.createElement("input"); inA.value = sheet.stampLabels.a; inA.placeholder = "作業者";
+      inA.addEventListener("input", function(){ sheet.stampLabels.a = inA.value; });
+      var inB = document.createElement("input"); inB.value = sheet.stampLabels.b; inB.placeholder = "確認者";
+      inB.addEventListener("input", function(){ sheet.stampLabels.b = inB.value; });
+      wrap.appendChild(inA); wrap.appendChild(document.createTextNode(" / ")); wrap.appendChild(inB);
+      bar.appendChild(wrap);
+      var note = document.createElement("div"); note.className = "mode-note";
+      note.textContent = "押印方式では、印刷時に各手順へ押印用の枠が2つ並びます（画面上でも同じ枠が表示され、クリックで実施時刻を記録できます）。";
+      bar.appendChild(note);
+    }
+    return bar;
+  }
+
+  function stepCtxItems(sheet, step, idx){
+    function newStep(){ return { id: uid(), text: "", hasCheckbox: true, imageRef: null, note: "", table: null }; }
+    return [
+      { label: "上に手順を追加", fn: function(){ snapshot(); sheet.steps.splice(idx, 0, newStep()); renderMain(); } },
+      { label: "下に手順を追加", fn: function(){ snapshot(); sheet.steps.splice(idx+1, 0, newStep()); renderMain(); } },
+      { label: "手順を複製", fn: function(){ snapshot(); sheet.steps.splice(idx+1, 0, deepCopyStep(step)); renderMain(); } },
+      { label: "手順を削除", danger: true, fn: function(){
+          if (!confirm("この手順を削除しますか？")) return;
+          snapshot(); sheet.steps.splice(idx,1); renderMain();
+      } }
+    ];
+  }
+
+  // ==== 画像の貼り付け先（アクティブな手順） ====
+  var activeStepId = null;
+  var PASTE_HINT_ON  = "貼り付け先：この手順（Ctrl+V で画像を貼り付け）";
+  var PASTE_HINT_OFF = "クリックでこの手順を貼り付け先にできます";
+  // 貼り付け先の切り替えで renderMain() すると、いま触ろうとしたテキストエリアが
+  // 作り直されて最初の1文字が消える。ハイライトと文言だけ差し替える。
+  function setActiveStep(id){
+    if (activeStepId === id) return;
+    activeStepId = id;
+    Array.prototype.forEach.call(editorMain.querySelectorAll(".step-card"), function(c){
+      var on = (c.dataset.stepId === id);
+      c.classList.toggle("paste-target", on);
+      var h = c.querySelector(".paste-hint");
+      if (h) h.textContent = on ? PASTE_HINT_ON : PASTE_HINT_OFF;
+    });
+  }
+  function findStepById(id){
+    for (var i=0;i<project.sheets.length;i++){
+      var steps = project.sheets[i].steps;
+      for (var j=0;j<steps.length;j++) if (steps[j].id === id) return steps[j];
+    }
+    return null;
+  }
+  function setStepImageFromFile(stepId, file){
+    if (!file || !/^image\//.test(file.type)){ showToast("画像ファイルではありません"); return; }
+    var reader = new FileReader();
+    var settled = false;
+    function fin(v){
+      if (settled) return; settled = true;
+      if (!v){ showToast("画像を読み込めませんでした"); return; }
+      var st = findStepById(stepId);       // 読み込み中に手順が消えている可能性
+      if (!st) return;
+      snapshot();
+      var replaced = !!st.imageRef;
+      st.imageRef = putImage(v);
+      renderMain();
+      showToast(replaced ? "画像を差し替えました" : "画像を追加しました");
+    }
+    reader.onload = function(){ preprocessImage(reader.result, fin); };
+    reader.onerror = function(){ fin(null); };
+    reader.onabort = function(){ fin(null); };
+    try{ reader.readAsDataURL(file); }catch(e){ fin(null); }
+  }
+  function activePasteStep(){
+    var sheet = getSheet(activeSheetId);
+    if (!sheet || !sheet.steps.length) return null;
+    for (var j=0;j<sheet.steps.length;j++) if (sheet.steps[j].id === activeStepId) return sheet.steps[j];
+    return sheet.steps[sheet.steps.length-1];   // 別シートの手順が選ばれたままの場合
+  }
+  document.addEventListener("paste", function(e){
+    var ae = document.activeElement;
+    if (ae && (ae.tagName === "TEXTAREA" || ae.tagName === "INPUT")) return;   // 文字の貼り付けは邪魔しない
+    var cd = e.clipboardData || window.clipboardData;
+    var items = cd ? cd.items : null;
+    if (!items) return;
+    var file = null;
+    for (var i=0;i<items.length && !file;i++){
+      if (items[i].kind === "file" && items[i].type && items[i].type.indexOf("image") === 0) file = items[i].getAsFile();
+    }
+    if (!file) return;
+    e.preventDefault();
+    var step = activePasteStep();
+    if (!step){ showToast("先に手順を追加してください"); return; }
+    setActiveStep(step.id);
+    setStepImageFromFile(step.id, file);
+  });
+
+  // ドロップ先を少し外すと、ブラウザ既定動作でその画像ファイルへ画面遷移してしまい
+  // 編集内容が丸ごと消える。ページ全域で既定動作を止め、外した分は貼り付け先の手順へ回す。
+  function hasFileDrag(e){
+    var t = e.dataTransfer && e.dataTransfer.types;
+    return !!t && Array.prototype.indexOf.call(t, "Files") !== -1;
+  }
+  document.addEventListener("dragover", function(e){ if (hasFileDrag(e)) e.preventDefault(); });
+  document.addEventListener("drop", function(e){
+    if (!hasFileDrag(e)) return;
+    e.preventDefault();
+    if (dragCtx) return;                       // カードの並び替え中
+    var cardEl = e.target.closest ? e.target.closest(".step-card") : null;
+    var step = cardEl ? findStepById(cardEl.dataset.stepId) : activePasteStep();
+    if (!step){ showToast("先に手順を追加してください"); return; }
+    setActiveStep(step.id);
+    setStepImageFromFile(step.id, e.dataTransfer.files[0]);
+  });
 
   function renderStepCard(sheet, step, idx){
     var card = document.createElement("div"); card.className = "step-card";
-    var num = document.createElement("div"); num.className="step-num"; num.textContent = String(idx+1).padStart(2,"0");
+    if (step.id === activeStepId) card.classList.add("paste-target");
+    card.dataset.stepId = step.id;
+    card.addEventListener("click", function(){ setActiveStep(step.id); });
+    card.addEventListener("contextmenu", function(e){
+      e.preventDefault();
+      openCtxMenu(e.clientX, e.clientY, stepCtxItems(sheet, step, idx));
+    });
+    card.addEventListener("dragover", function(e){
+      if (dragCtx && dragCtx.type === "step"){ e.preventDefault(); card.classList.add("drop-target"); }
+    });
+    card.addEventListener("dragleave", function(){ card.classList.remove("drop-target"); });
+    card.addEventListener("drop", function(e){
+      e.preventDefault(); e.stopPropagation(); card.classList.remove("drop-target");
+      if (!dragCtx || dragCtx.type !== "step") return;
+      var d = dragCtx; dragCtx = null;
+      if (d.sheetId === sheet.id && d.from === idx) return;   // 動かないなら履歴を消費しない
+      snapshot();
+      moveStepAcross(d.sheetId, d.from, sheet.id, idx);
+      renderAll();
+    });
+    var num = document.createElement("div"); num.className="step-num drag-handle"; num.textContent = String(idx+1).padStart(2,"0");
+    num.title = "ドラッグで並び替え / 右クリックでメニュー";
+    num.draggable = true;
+    num.addEventListener("dragstart", function(e){
+      dragCtx = { type: "step", sheetId: sheet.id, from: idx };
+      e.dataTransfer.setData("text/plain", "step");
+      e.dataTransfer.effectAllowed = "move";
+    });
     card.appendChild(num);
 
     var body = document.createElement("div"); body.className = "step-body";
@@ -324,33 +982,50 @@
     });
     body.appendChild(textarea);
     var mdHint = document.createElement("div"); mdHint.className = "md-hint";
-    mdHint.textContent = "対応記法: **太字** / *斜体* / - 箇条書き / 1. 番号付き / `コード` / ```コードブロック```";
+    mdHint.textContent = "対応記法: **太字** / *斜体* / - 箇条書き（半角スペース2つで階層化） / 1. 番号付き / `コード` / ```コードブロック```";
     body.appendChild(mdHint);
     body.appendChild(preview);
 
+    // 画像は「ファイル選択」しか手段がなく、Alt+PrintScreen で撮った画面を一度ファイルに
+    // 保存してから選び直す必要があった。貼り付けとドラッグ＆ドロップを受けられるようにする。
     var imgWrap = document.createElement("div"); imgWrap.className = "step-image";
-    if (step.image){
-      var img = document.createElement("img"); img.src = step.image;
+    imgWrap.addEventListener("dragover", function(e){
+      if (hasFileDrag(e)){ e.preventDefault(); imgWrap.classList.add("dragover"); }
+    });
+    imgWrap.addEventListener("dragleave", function(){ imgWrap.classList.remove("dragover"); });
+    imgWrap.addEventListener("drop", function(e){
+      if (!hasFileDrag(e)) return;
+      e.preventDefault(); e.stopPropagation();
+      imgWrap.classList.remove("dragover");
+      setActiveStep(step.id);
+      setStepImageFromFile(step.id, e.dataTransfer.files[0]);
+    });
+    if (step.imageRef){
+      var img = document.createElement("img"); img.src = getImage(step.imageRef);
+      img.alt = "手順" + String(idx+1) + "の画像";
       imgWrap.appendChild(img);
+    }
+    var uploadLabel = document.createElement("label");
+    uploadLabel.className = "img-upload";
+    uploadLabel.textContent = step.imageRef ? "画像を差し替え" : "＋ 画像を追加";
+    var fileInput = document.createElement("input");
+    fileInput.type = "file"; fileInput.accept = "image/*"; fileInput.hidden = true;
+    fileInput.addEventListener("change", function(){
+      setStepImageFromFile(step.id, fileInput.files[0]);
+      fileInput.value = "";
+    });
+    uploadLabel.appendChild(fileInput);
+    imgWrap.appendChild(uploadLabel);
+    if (step.imageRef){
       var removeBtn = document.createElement("button");
       removeBtn.className = "img-remove"; removeBtn.textContent = "画像を削除";
-      removeBtn.addEventListener("click", function(){ step.image = null; renderMain(); });
+      removeBtn.addEventListener("click", function(){ snapshot(); step.imageRef = null; renderMain(); });
       imgWrap.appendChild(removeBtn);
-    } else {
-      var uploadLabel = document.createElement("label");
-      uploadLabel.className = "img-upload"; uploadLabel.textContent = "＋ 画像を追加";
-      var fileInput = document.createElement("input");
-      fileInput.type = "file"; fileInput.accept = "image/*"; fileInput.hidden = true;
-      fileInput.addEventListener("change", function(){
-        var file = fileInput.files[0];
-        if (!file) return;
-        var reader = new FileReader();
-        reader.onload = function(){ step.image = reader.result; renderMain(); };
-        reader.readAsDataURL(file);
-      });
-      uploadLabel.appendChild(fileInput);
-      imgWrap.appendChild(uploadLabel);
     }
+    var pasteHint = document.createElement("span");
+    pasteHint.className = "paste-hint";
+    pasteHint.textContent = (step.id === activeStepId) ? PASTE_HINT_ON : PASTE_HINT_OFF;
+    imgWrap.appendChild(pasteHint);
     body.appendChild(imgWrap);
 
     body.appendChild(renderTableBlock(step));
@@ -370,7 +1045,8 @@
     checkInput.type = "checkbox"; checkInput.checked = step.hasCheckbox;
     checkInput.addEventListener("change", function(){ step.hasCheckbox = checkInput.checked; });
     checkLabel.appendChild(checkInput);
-    checkLabel.appendChild(document.createTextNode("この手順にチェック欄をつける（実施チェック用）"));
+    checkLabel.appendChild(document.createTextNode(
+      (sheet.checkMode === "stamp2") ? "この手順に押印欄をつける" : "この手順にチェック欄をつける（実施チェック用）"));
     body.appendChild(checkLabel);
 
     card.appendChild(body);
@@ -380,12 +1056,19 @@
     up.addEventListener("click", function(){ moveStep(sheet, idx, -1); });
     var down = document.createElement("button"); down.textContent="↓";
     down.addEventListener("click", function(){ moveStep(sheet, idx, 1); });
+    var dup = document.createElement("button"); dup.textContent="⧉"; dup.title="この手順を複製";
+    dup.addEventListener("click", function(){
+      snapshot();
+      sheet.steps.splice(idx+1, 0, deepCopyStep(step));
+      renderMain();
+    });
     var del = document.createElement("button"); del.className="del"; del.textContent="✕";
     del.addEventListener("click", function(){
       if (!confirm("この手順を削除しますか？")) return;
+      snapshot();
       sheet.steps.splice(idx,1); renderMain();
     });
-    controls.appendChild(up); controls.appendChild(down); controls.appendChild(del);
+    controls.appendChild(up); controls.appendChild(down); controls.appendChild(dup); controls.appendChild(del);
     card.appendChild(controls);
     return card;
   }
@@ -396,6 +1079,7 @@
       var addBtn = document.createElement("button");
       addBtn.className = "add-table-btn"; addBtn.textContent = "＋ 表を追加";
       addBtn.addEventListener("click", function(){
+        snapshot();
         step.table = { hasHeader: true, rows: [["",""],["",""]] };
         renderMain();
       });
@@ -417,25 +1101,31 @@
 
     var addRowBtn = document.createElement("button"); addRowBtn.textContent = "＋行";
     addRowBtn.addEventListener("click", function(){
+      snapshot();
       var cols = step.table.rows[0] ? step.table.rows[0].length : 2;
       step.table.rows.push(new Array(cols).fill("")); renderMain();
     });
     var delRowBtn = document.createElement("button"); delRowBtn.textContent = "－行";
     delRowBtn.addEventListener("click", function(){
-      if (step.table.rows.length<=1) return; step.table.rows.pop(); renderMain();
+      if (step.table.rows.length<=1) return;
+      snapshot();
+      step.table.rows.pop(); renderMain();
     });
     var addColBtn = document.createElement("button"); addColBtn.textContent = "＋列";
     addColBtn.addEventListener("click", function(){
+      snapshot();
       step.table.rows.forEach(function(r){ r.push(""); }); renderMain();
     });
     var delColBtn = document.createElement("button"); delColBtn.textContent = "－列";
     delColBtn.addEventListener("click", function(){
       if (!step.table.rows[0] || step.table.rows[0].length<=1) return;
+      snapshot();
       step.table.rows.forEach(function(r){ r.pop(); }); renderMain();
     });
     var delTableBtn = document.createElement("button"); delTableBtn.className="del-table"; delTableBtn.textContent = "表を削除";
     delTableBtn.addEventListener("click", function(){
       if (!confirm("この表を削除しますか？")) return;
+      snapshot();
       step.table = null; renderMain();
     });
     controls.appendChild(addRowBtn); controls.appendChild(delRowBtn);
@@ -464,55 +1154,186 @@
   function moveStep(sheet, idx, dir){
     var newIdx = idx+dir;
     if (newIdx<0 || newIdx>=sheet.steps.length) return;
+    snapshot();
     var tmp = sheet.steps[idx]; sheet.steps[idx]=sheet.steps[newIdx]; sheet.steps[newIdx]=tmp;
     renderMain();
   }
 
   function renderAll(){ renderRail(); renderMain(); }
 
+  // 出来上がりのファイルサイズは印刷・メール添付の可否を左右するのに、
+  // エクスポートするまで分からなかった。常時ざっくり表示しておく。
+  function updateStats(){
+    var el = document.getElementById("stats");
+    if (!el) return;
+    var steps = 0, checks = 0, imgs = 0, bytes = 0, seen = {};
+    project.sheets.forEach(function(sh){
+      sh.steps.forEach(function(st){
+        steps++;
+        if (st.hasCheckbox) checks++;
+        if (st.imageRef){
+          imgs++;
+          if (!seen[st.imageRef]){ seen[st.imageRef] = 1; bytes += (imageStore[st.imageRef] || "").length * 0.75; }
+        }
+      });
+    });
+    var mb = bytes / 1048576;
+    var warn = mb >= 8;
+    el.innerHTML = "";
+    [["シート " + project.sheets.length, false],
+     ["手順 " + steps, false],
+     ["チェック " + checks, false],
+     ["画像 " + imgs, false],
+     ["推定 " + (mb > 0 && mb < 0.1 ? "0.1未満" : mb.toFixed(1)) + " MB", warn]
+    ].forEach(function(p){
+      var sp = document.createElement("span");
+      sp.className = "st" + (p[1] ? " warn" : "");
+      sp.textContent = p[0];
+      el.appendChild(sp);
+    });
+    el.title = warn ? "メール添付には大きすぎる可能性があります。上の「縮小」を下げるかJPEGを選んでください。" : "";
+  }
+
   projectTitleInput.addEventListener("input", function(){ project.title = projectTitleInput.value; });
   metaSystemInput.addEventListener("input", function(){ project.meta.system = metaSystemInput.value; });
   metaVersionInput.addEventListener("input", function(){ project.meta.version = metaVersionInput.value; });
 
   $("#addSheet").addEventListener("click", function(){
-    var s = { id: uid(), name: "シート" + (project.sheets.length+1), steps: [] };
+    snapshot();
+    var s = { id: uid(), name: "シート" + (project.sheets.length+1), checkMode: "check", stampLabels: { a:"作業者", b:"確認者" }, steps: [] };
     project.sheets.push(s); activeSheetId = s.id; renderAll();
   });
 
-  $("#btnSaveJson").addEventListener("click", function(){
-    var blob = new Blob([JSON.stringify(project, null, 2)], {type:"application/json"});
+  // Inline the base64 payloads again for anything that leaves the app (JSON file, export HTML).
+  // The on-disk format is unchanged: steps carry `image`, exactly as before.
+  function materializeProject(){
+    var p = JSON.parse(JSON.stringify(project));
+    p.sheets.forEach(function(sh){
+      (sh.steps || []).forEach(function(st){
+        st.image = getImage(st.imageRef) || null;
+        delete st.imageRef;
+      });
+    });
+    return p;
+  }
+
+  function doSaveJson(){
+    var blob = new Blob([JSON.stringify(materializeProject(), null, 2)], {type:"application/json"});
     var url = URL.createObjectURL(blob);
     var a = document.createElement("a"); a.href = url; a.download = (project.title || "manual") + ".json";
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  });
+    dirty = false;
+    setStatus("JSON保存済み " + hhmm(new Date()));
+    showToast("JSONを保存しました（" + (blob.size/1048576).toFixed(1) + " MB）");
+  }
+  $("#btnSaveJson").addEventListener("click", doSaveJson);
+
+  // Rows may be ragged in a hand-edited file; pad them so the +列/-列 buttons
+  // (which key off rows[0].length) stay consistent.
+  function normalizeTable(t){
+    if (!t || typeof t !== "object" || !Array.isArray(t.rows) || !t.rows.length) return null;
+    var cols = 0;
+    t.rows.forEach(function(r){ if (Array.isArray(r) && r.length > cols) cols = r.length; });
+    if (!cols) return null;
+    var rows = [];
+    t.rows.forEach(function(r){
+      if (!Array.isArray(r)) return;
+      var row = [];
+      for (var c=0;c<cols;c++) row.push(r[c] == null ? "" : String(r[c]));
+      rows.push(row);
+    });
+    return rows.length ? { hasHeader: !!t.hasHeader, rows: rows } : null;
+  }
+
+  // Build a fully-validated project in a scratch object, moving `image` payloads into the
+  // image store as we go. Nothing touches the live `project` until this returns cleanly —
+  // previously a half-valid file was assigned first and blew up mid-way (e.g. a sheet with
+  // no `steps` array), leaving the app wedged on broken state with only an alert to show.
+  function normalizeLoaded(data){
+    if (!data || typeof data !== "object") throw new Error("invalid");
+    if (!Array.isArray(data.sheets)) throw new Error("invalid");
+    var meta = (data.meta && typeof data.meta === "object") ? data.meta : {};
+    var out = {
+      manualId: typeof data.manualId === "string" ? data.manualId : uid(),
+      title: typeof data.title === "string" ? data.title : "本番作業手順書",
+      meta: {
+        system: typeof meta.system === "string" ? meta.system : "",
+        version: typeof meta.version === "string" ? meta.version : ""
+      },
+      sheets: []
+    };
+    data.sheets.forEach(function(s){
+      if (!s || typeof s !== "object") return;
+      var labels = (s.stampLabels && typeof s.stampLabels === "object") ? s.stampLabels : {};
+      var sheet = {
+        id: typeof s.id === "string" ? s.id : uid(),
+        name: typeof s.name === "string" ? s.name : "シート",
+        checkMode: (s.checkMode === "stamp2") ? "stamp2" : "check",
+        stampLabels: {
+          a: (typeof labels.a === "string" && labels.a) ? labels.a : "作業者",
+          b: (typeof labels.b === "string" && labels.b) ? labels.b : "確認者"
+        },
+        steps: []
+      };
+      if (Array.isArray(s.steps)){
+        s.steps.forEach(function(st){
+          if (!st || typeof st !== "object") return;
+          var ref = null;
+          if (typeof st.image === "string" && st.image) ref = putImage(st.image);
+          else if (typeof st.imageRef === "string" && imageStore[st.imageRef]) ref = st.imageRef;
+          sheet.steps.push({
+            id: typeof st.id === "string" ? st.id : uid(),
+            text: typeof st.text === "string" ? st.text : "",
+            hasCheckbox: st.hasCheckbox !== false,
+            imageRef: ref,
+            note: typeof st.note === "string" ? st.note : "",
+            table: normalizeTable(st.table)
+          });
+        });
+      }
+      out.sheets.push(sheet);
+    });
+    if (!out.sheets.length) throw new Error("invalid");
+    return out;
+  }
+
+  // エクスポートしたHTMLには元から再編集用のJSONを埋め込んでいるのに、読み戻す口が
+  // なかった。配った手順書を手直しするたびにJSONを別管理する必要があり、
+  // そのJSONをなくすと詰んでいた。JSONでもHTMLでも同じ入口で受け取る。
+  function extractProjectData(text){
+    if (/^\s*[{[]/.test(text)) return JSON.parse(text);
+    // DOMParser の text/html はブラウジングコンテキストを持たないため、
+    // 中のスクリプトも画像も実行・取得されない。JSONだけを取り出す。
+    var doc = new DOMParser().parseFromString(text, "text/html");
+    var el = doc.getElementById("pm-data");
+    if (!el) throw new Error("no data");
+    return JSON.parse(el.textContent);
+  }
 
   $("#fileLoadJson").addEventListener("change", function(e){
     var file = e.target.files[0];
     if (!file) return;
     var reader = new FileReader();
     reader.onload = function(){
+      var next;
       try{
-        var data = JSON.parse(reader.result);
-        if (!data.sheets || !Array.isArray(data.sheets)) throw new Error("invalid");
-        project = data;
-        if (!project.manualId) project.manualId = uid();
-        if (!project.meta) project.meta = { system:"", version:"" };
-        project.sheets.forEach(function(s){
-          s.steps.forEach(function(st){
-            if (st.note===undefined) st.note="";
-            if (st.table===undefined) st.table=null;
-          });
-        });
-        activeSheetId = project.sheets[0] ? project.sheets[0].id : null;
-        projectTitleInput.value = project.title || "";
-        metaSystemInput.value = project.meta.system || "";
-        metaVersionInput.value = project.meta.version || "";
-        renderAll();
+        next = normalizeLoaded(extractProjectData(String(reader.result)));
       }catch(err){
-        alert("JSONファイルの読み込みに失敗しました。形式を確認してください。");
+        alert("読み込みに失敗しました。このツールで保存したJSON、またはエクスポートしたHTMLを選んでください。");
+        return;
       }
+      snapshot();
+      project = next;
+      activeSheetId = project.sheets[0].id;
+      activeStepId = null;
+      projectTitleInput.value = project.title || "";
+      metaSystemInput.value = project.meta.system || "";
+      metaVersionInput.value = project.meta.version || "";
+      renderAll();
+      showToast("読み込みました（シート " + project.sheets.length + " 件）");
     };
+    reader.onerror = function(){ alert("ファイルを読み込めませんでした。"); };
     reader.readAsText(file);
     e.target.value = "";
   });
@@ -524,7 +1345,7 @@
   }
 
   function buildExportHtml(){
-    var dataJson = JSON.stringify(project);
+    var dataJson = JSON.stringify(materializeProject());
     var parts = [];
     parts.push('<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8">');
     parts.push('<meta name="viewport" content="width=device-width, initial-scale=1.0">');
@@ -532,7 +1353,14 @@
     parts.push('<style>');
     parts.push(EXPORT_CSS);
     parts.push('</style></head><body>');
-    parts.push('<script id="pm-data" type="application/json">' + dataJson.replace(/<\/script>/g,'<\\/script>') + '<' + '/script>');
+    // Escape every "<", not just a literal lower-case end tag. The HTML parser closes a
+    // script block on the end tag case-insensitively and accepts "/" or whitespace after
+    // the tag name, so an upper-case or spaced variant typed into a step used to truncate
+    // the export and let whatever followed run as markup.
+    // (Careful: writing that end tag out in full — even inside this comment — would close
+    // this very script block. That is exactly the bug being fixed.)
+    // "<" parses back to "<" via JSON.parse, so the payload is unchanged.
+    parts.push('<script id="pm-data" type="application/json">' + dataJson.replace(/</g,'\\u003c') + '<' + '/script>');
     parts.push('<div id="pmApp"></div>');
     parts.push('<script>' + EXPORT_JS + '</' + 'script>');
     parts.push('</body></html>');
@@ -559,6 +1387,7 @@
     ".pm-progress-bar{height:100%;background:var(--accent);width:0%;transition:width .25s;}",
     ".pm-progress-label{font-family:var(--font-mono);font-size:11px;color:#B9C2CC;margin-top:6px;}",
     ".pm-nav{display:flex;gap:6px;flex-wrap:wrap;background:var(--paper-raised);padding:10px 22px;border-bottom:1px solid var(--border);position:sticky;top:96px;z-index:4;}",
+    "@media (max-width:820px){ .pm-nav{position:static;} }",
     ".pm-nav button{font-family:var(--font-body);font-size:12px;font-weight:600;padding:6px 12px;border-radius:20px;border:1px solid var(--border);background:#fff;color:var(--ink-soft);cursor:pointer;}",
     ".pm-nav button:hover{border-color:var(--accent);color:var(--accent);}",
     ".pm-main{max-width:900px;margin:0 auto;padding:22px;}",
@@ -573,17 +1402,39 @@
     "table.pm-table thead th{background:var(--paper);border:1px solid var(--border);padding:8px 6px;font-family:var(--font-mono);font-size:11px;color:var(--ink-soft);text-align:left;}",
     "table.pm-table td{border:1px solid var(--border);padding:8px 6px;vertical-align:top;}",
     "col.col-no{width:34px;} col.col-check{width:60px;} col.col-time{width:90px;} col.col-note{width:140px;}",
+    "col.col-stamp{width:120px;}",
+    ".pm-stamp-cell{text-align:center;padding:6px 4px !important;}",
+    ".pm-stamp-pair{display:flex;gap:6px;justify-content:center;}",
+    ".pm-stamp-one{display:flex;flex-direction:column;align-items:center;gap:3px;}",
+    ".pm-stamp-caption{font-family:var(--font-mono);font-size:9px;color:var(--ink-soft);letter-spacing:.5px;}",
+    ".stamp-box{display:block;width:46px;height:46px;border:1px solid var(--ink-soft);border-radius:2px;background:#fff;position:relative;cursor:pointer;}",
+    ".stamp-box input{position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;margin:0;}",
+    ".stamp-mark{position:absolute;inset:0;display:none;align-items:center;justify-content:center;color:var(--done);font-weight:700;font-size:20px;}",
+    ".stamp-box.stamped .stamp-mark{display:flex;}",
+    ".stamp-box.stamped{border-color:var(--done);background:var(--done-soft);}",
     ".pm-num{font-family:var(--font-display);font-size:17px;font-weight:700;color:var(--accent);text-align:center;}",
     "tr.done .pm-num{color:var(--done);}",
     ".pm-step-text{font-size:13px;line-height:1.6;}",
     ".pm-step-text p{margin:4px 0;}",
     ".pm-step-text ul,.pm-step-text ol{margin:6px 0 6px 20px;padding:0;}",
+    ".pm-step-text li>ul,.pm-step-text li>ol{margin:2px 0 2px 18px;}",
+    ".pm-step-text ul ul{list-style-type:circle;}",
+    ".pm-step-text ul ul ul{list-style-type:square;}",
     ".pm-step-text li{margin-bottom:2px;}",
     ".pm-step-text code{background:var(--paper);padding:1px 4px;border-radius:3px;font-family:var(--font-mono);font-size:12px;}",
     ".pm-step-text pre{background:var(--ink);color:#fff;padding:8px 10px;border-radius:4px;overflow-x:auto;font-family:var(--font-mono);font-size:12px;margin:6px 0;}",
     ".pm-step-text pre code{background:transparent;padding:0;color:inherit;}",
     "tr.done .pm-step-text{color:var(--ink-soft);}",
-    ".pm-step-text img{max-width:100%;max-height:220px;border:1px solid var(--border);border-radius:4px;margin-top:8px;display:block;}",
+    ".pm-step-text img{max-width:100%;max-height:220px;border:1px solid var(--border);border-radius:4px;margin-top:8px;display:block;cursor:zoom-in;}",
+    "#pm-lb{display:none;position:fixed;inset:0;background:rgba(10,12,16,.93);z-index:500;align-items:center;justify-content:center;gap:14px;padding:24px;cursor:zoom-out;}",
+    "#pm-lb.open{display:flex;}",
+    "#pm-lb figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:8px;max-width:calc(100% - 130px);max-height:100%;cursor:default;}",
+    "#pm-lb figure img{max-width:100%;max-height:calc(100vh - 130px);box-shadow:0 0 0 1px #444;background:#fff;}",
+    "#pm-lb .cap{color:#e6e6e6;font-size:13px;text-align:center;max-width:80vw;}",
+    "#pm-lb .nav{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.25);color:#fff;font-size:26px;line-height:1;width:44px;height:64px;border-radius:8px;cursor:pointer;flex:0 0 auto;}",
+    "#pm-lb .nav:hover{background:rgba(255,255,255,.2);}",
+    "#pm-lb .count{position:fixed;top:14px;right:18px;color:#aaa;font-size:12px;font-family:var(--font-mono);}",
+    "#pm-lb .hint{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);color:#888;font-size:11px;}",
     "table.pm-inline-table{width:100%;border-collapse:collapse;margin-top:8px;font-size:12px;}",
     "table.pm-inline-table th,table.pm-inline-table td{border:1px solid var(--border);padding:4px 6px;text-align:left;}",
     "table.pm-inline-table th{background:var(--paper);font-family:var(--font-mono);}",
@@ -601,6 +1452,7 @@
     ".pm-note-cell{font-size:11px;color:var(--ink-soft);}",
     ".pm-note-cell .blank-line{display:block;border-bottom:1px solid var(--border);height:14px;margin-top:12px;}",
     "@media print{",
+    "  #pm-lb{display:none !important;}",
     "  .no-print{display:none !important;}",
     "  body{background:#fff;}",
     "  .pm-header{position:static;background:#fff !important;color:#000 !important;border-bottom:2px solid #000;padding:0 0 8px;}",
@@ -614,6 +1466,9 @@
     "  table.pm-table td, table.pm-table th{border-color:#000;}",
     "  table.pm-inline-table td, table.pm-inline-table th{border-color:#000;}",
     "  .box{border-color:#000 !important;background:#fff !important;}",
+    "  .stamp-box{border-color:#000 !important;background:#fff !important;}",
+    "  .stamp-mark{display:none !important;}",
+    "  .pm-stamp-caption{color:#000 !important;}",
     "  .pm-time-auto{display:none !important;}",
     "  .pm-time-line{display:block !important;}",
     "  .pm-log-btn{display:none !important;}",
@@ -627,48 +1482,88 @@
 
   var EXPORT_JS = [
     "(function(){",
+    "  var LANG_TAG = /^(bash|sh|shell|zsh|fish|powershell|pwsh|ps1|cmd|bat|batch|sql|json|yaml|yml|toml|xml|html|css|js|jsx|javascript|ts|tsx|typescript|java|kt|py|python|rb|ruby|go|rust|rs|c|cpp|cs|php|perl|ini|conf|properties|dockerfile|diff|patch|text|plain|txt|log|md|markdown)$/i;",
     "  function escapeHtmlMd(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }",
+    "  function parseListItem(line){",
+    "    var m = String(line).match(/^([ \\t]*)([-*]|\\d+\\.)[ \\t]+(.*)$/);",
+    "    if (!m) return null;",
+    "    var indentRaw = m[1].replace(/\\t/g, '    ');",
+    "    return { level: Math.floor(indentRaw.length / 2), ordered: /\\d/.test(m[2]), text: m[3] };",
+    "  }",
+    "  function buildList(items, start, level){",
+    "    var ordered = items[start].ordered;",
+    "    var html = ordered ? '<ol>' : '<ul>';",
+    "    var i = start;",
+    "    while (i < items.length && items[i].level >= level){",
+    "      if (items[i].level > level){",
+    "        var sub = buildList(items, i, items[i].level);",
+    "        html = html.replace(/<\\/li>$/, '') + sub.html + '</li>';",
+    "        i = sub.next; continue;",
+    "      }",
+    "      if (items[i].ordered !== ordered) break;",
+    "      html += '<li>' + items[i].text + '</li>';",
+    "      i++;",
+    "    }",
+    "    html += ordered ? '</ol>' : '</ul>';",
+    "    return { html: html, next: i };",
+    "  }",
+    "  function renderLists(lines, i){",
+    "    var items = [];",
+    "    while (i < lines.length){",
+    "      var it = parseListItem(lines[i]);",
+    "      if (!it) break;",
+    "      items.push(it); i++;",
+    "    }",
+    "    if (!items.length) return null;",
+    "    var base = items[0].level;",
+    "    items.forEach(function(it){ it.level = Math.max(0, it.level - base); });",
+    "    var html = '', consumed = 0, guard = items.length + 2;",
+    "    while (consumed < items.length && guard-- > 0){",
+    "      var res = buildList(items, consumed, items[consumed].level);",
+    "      html += res.html;",
+    "      if (res.next <= consumed) break;",
+    "      consumed = res.next;",
+    "    }",
+    "    return { html: html, next: i };",
+    "  }",
     "  function mdToHtml(src){",
     "    if (!src) return '';",
     "    var blocks = [];",
-    "    var withPlaceholders = String(src).replace(/```([\\s\\S]*?)```/g, function(_, code){",
-    "      var idx = blocks.length; blocks.push(code);",
+    "    var withPlaceholders = String(src).replace(/```([\\s\\S]*?)```/g, function(m, code, offset, whole){",
+    "      var head = whole.slice(0, offset), tail = whole.slice(offset + m.length);",
+    "      var idx = blocks.length;",
+    "      blocks.push({ code: code, block: /(^|\\n)[ \\t]*$/.test(head) && /^[ \\t]*(\\n|$)/.test(tail) });",
     "      return '\\u0000CODEBLOCK' + idx + '\\u0000';",
     "    });",
     "    var escaped = escapeHtmlMd(withPlaceholders);",
     "    escaped = escaped.replace(/`([^`]+)`/g, function(_, c){ return '<code>' + c + '</code>'; });",
-    "    escaped = escaped.replace(/\\*\\*([^*]+)\\*\\*/g, '<strong>$1</strong>');",
+    "    escaped = escaped.replace(/\\*\\*([^*\\n]+)\\*\\*/g, '<strong>$1</strong>');",
     "    escaped = escaped.replace(/(^|[^*])\\*([^*\\n]+)\\*(?!\\*)/g, '$1<em>$2</em>');",
+    "    escaped = escaped.replace(/\\u0000CODEBLOCK(\\d+)\\u0000/g, function(m, idx){",
+    "      var b = blocks[parseInt(idx,10)];",
+    "      if (!b || b.block) return m;",
+    "      return '<code>' + escapeHtmlMd(b.code) + '</code>';",
+    "    });",
     "    var lines = escaped.split('\\n');",
     "    var out = []; var i = 0;",
     "    while (i < lines.length){",
     "      var line = lines[i];",
     "      var codeMatch = line.trim().match(/^\\u0000CODEBLOCK(\\d+)\\u0000$/);",
     "      if (codeMatch){",
-    "        var codeLines = blocks[parseInt(codeMatch[1],10)].split('\\n');",
-    "        if (codeLines.length>1 && /^[a-zA-Z0-9_-]{1,20}$/.test(codeLines[0].trim())) codeLines.shift();",
+    "        var codeLines = blocks[parseInt(codeMatch[1],10)].code.split('\\n');",
+    "        if (codeLines.length>1 && LANG_TAG.test(codeLines[0].trim())) codeLines.shift();",
     "        var codeText = codeLines.join('\\n').replace(/^\\n+|\\n+$/g,'');",
     "        out.push('<pre><code>' + escapeHtmlMd(codeText) + '</code></pre>');",
     "        i++; continue;",
     "      }",
-    "      if (/^\\s*[-*]\\s+/.test(line)){",
-    "        var items = [];",
-    "        while (i < lines.length && /^\\s*[-*]\\s+/.test(lines[i])){",
-    "          items.push('<li>' + lines[i].replace(/^\\s*[-*]\\s+/, '') + '</li>'); i++;",
-    "        }",
-    "        out.push('<ul>' + items.join('') + '</ul>'); continue;",
-    "      }",
-    "      if (/^\\s*\\d+\\.\\s+/.test(line)){",
-    "        var oitems = [];",
-    "        while (i < lines.length && /^\\s*\\d+\\.\\s+/.test(lines[i])){",
-    "          oitems.push('<li>' + lines[i].replace(/^\\s*\\d+\\.\\s+/, '') + '</li>'); i++;",
-    "        }",
-    "        out.push('<ol>' + oitems.join('') + '</ol>'); continue;",
+    "      if (parseListItem(line)){",
+    "        var listRes = renderLists(lines, i);",
+    "        out.push(listRes.html); i = listRes.next; continue;",
     "      }",
     "      if (line.trim() === ''){ i++; continue; }",
     "      var para = [line]; i++;",
     "      while (i < lines.length && lines[i].trim() !== '' &&",
-    "             !/^\\s*[-*]\\s+/.test(lines[i]) && !/^\\s*\\d+\\.\\s+/.test(lines[i]) &&",
+    "             !parseListItem(lines[i]) &&",
     "             !/^\\u0000CODEBLOCK/.test(lines[i].trim())){",
     "        para.push(lines[i]); i++;",
     "      }",
@@ -701,6 +1596,7 @@
     "  var state = {};",
     "  try{ state = JSON.parse(localStorage.getItem(storeKey) || '{}'); }catch(e){ state = {}; }",
     "  var app = document.getElementById('pmApp');",
+    "  var pmFlat = [];",
     "",
     "  function saveState(){ try{ localStorage.setItem(storeKey, JSON.stringify(state)); }catch(e){} }",
     "  function getEntry(sheetId, stepId){ return (state[sheetId] && state[sheetId][stepId]) || null; }",
@@ -717,6 +1613,29 @@
     "      state[sheetId][stepId] = { checked:false, time:null };",
     "    }",
     "    saveState();",
+    "  }",
+    "  function isConfirmed(sheetId, stepId){ var e=getEntry(sheetId,stepId); if(!e || typeof e==='boolean') return false; return !!e.confirmed; }",
+    "  function setConfirmed(sheetId, stepId, val){",
+    "    if(!state[sheetId]) state[sheetId] = {};",
+    "    var e = state[sheetId][stepId];",
+    "    if (!e || typeof e === 'boolean') e = { checked: !!e, time: null };",
+    "    e.confirmed = val;",
+    "    state[sheetId][stepId] = e;",
+    "    saveState();",
+    "  }",
+    "  function buildStampBox(caption, initial, onToggle){",
+    "    var one = document.createElement('div'); one.className = 'pm-stamp-one';",
+    "    var box = document.createElement('label'); box.className = 'stamp-box' + (initial ? ' stamped' : '');",
+    "    var cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = !!initial;",
+    "    var mark = document.createElement('span'); mark.className = 'stamp-mark'; mark.textContent = '✓';",
+    "    cb.addEventListener('change', function(){",
+    "      box.classList.toggle('stamped', cb.checked);",
+    "      onToggle(cb.checked);",
+    "    });",
+    "    box.appendChild(cb); box.appendChild(mark);",
+    "    var cap = document.createElement('div'); cap.className = 'pm-stamp-caption'; cap.textContent = caption;",
+    "    one.appendChild(box); one.appendChild(cap);",
+    "    return one;",
     "  }",
     "  function buildLogText(){",
     "    var lines = [];",
@@ -772,8 +1691,47 @@
     "    progressLabelEl.textContent = '事前レビュー進捗（画面上のみ・印刷には反映されません） ' + p.done + ' / ' + p.total;",
     "  }",
     "",
+    "  // ---- \u30af\u30ea\u30c3\u30af\u3067\u62e1\u5927 ----",
+    "  // \u5370\u5237\u3092\u524d\u63d0\u306b\u7e2e\u3081\u3066\u8f09\u305b\u3066\u3044\u308b\u306e\u3067\u3001\u753b\u9762\u3067\u898b\u8fd4\u3059\u3068\u304d\u306b\u7d30\u90e8\u304c\u8aad\u3081\u306a\u3044\u3002",
+    "  var lb = document.createElement('div'); lb.id = 'pm-lb'; lb.className = 'no-print';",
+    "  var lbPrev = document.createElement('button'); lbPrev.className = 'nav'; lbPrev.innerHTML = '&#8249;';",
+    "  var lbNext = document.createElement('button'); lbNext.className = 'nav'; lbNext.innerHTML = '&#8250;';",
+    "  var lbFig = document.createElement('figure');",
+    "  var lbImg = document.createElement('img'); lbImg.alt = '';",
+    "  var lbCap = document.createElement('figcaption'); lbCap.className = 'cap';",
+    "  lbFig.appendChild(lbImg); lbFig.appendChild(lbCap);",
+    "  var lbCount = document.createElement('div'); lbCount.className = 'count';",
+    "  var lbHint = document.createElement('div'); lbHint.className = 'hint';",
+    "  lbHint.textContent = '\u2190 \u2192 \u3067\u524d\u5f8c\u306e\u753b\u50cf \uff0f Esc\u30fb\u80cc\u666f\u30af\u30ea\u30c3\u30af\u3067\u9589\u3058\u308b';",
+    "  lb.appendChild(lbPrev); lb.appendChild(lbFig); lb.appendChild(lbNext); lb.appendChild(lbCount); lb.appendChild(lbHint);",
+    "  document.body.appendChild(lb);",
+    "  var lbIdx = -1;",
+    "  function lbShow(i){",
+    "    if (i < 0 || i >= pmFlat.length) return;",
+    "    lbIdx = i;",
+    "    lbImg.src = pmFlat[i].src;",
+    "    lbImg.alt = pmFlat[i].cap;",
+    "    lbCap.textContent = pmFlat[i].cap;",
+    "    lbCount.textContent = (i + 1) + ' / ' + pmFlat.length;",
+    "    lbPrev.style.visibility = i > 0 ? 'visible' : 'hidden';",
+    "    lbNext.style.visibility = i < pmFlat.length - 1 ? 'visible' : 'hidden';",
+    "    lb.classList.add('open');",
+    "  }",
+    "  function lbClose(){ lb.classList.remove('open'); }",
+    "  lbPrev.addEventListener('click', function(e){ e.stopPropagation(); lbShow(lbIdx - 1); });",
+    "  lbNext.addEventListener('click', function(e){ e.stopPropagation(); lbShow(lbIdx + 1); });",
+    "  lbFig.addEventListener('click', function(e){ e.stopPropagation(); });",
+    "  lb.addEventListener('click', lbClose);",
+    "  document.addEventListener('keydown', function(e){",
+    "    if (!lb.classList.contains('open')) return;",
+    "    if (e.key === 'Escape'){ lbClose(); }",
+    "    else if (e.key === 'ArrowRight'){ lbShow(lbIdx + 1); e.preventDefault(); }",
+    "    else if (e.key === 'ArrowLeft'){ lbShow(lbIdx - 1); e.preventDefault(); }",
+    "  });",
+    "",
     "  function build(){",
     "    app.innerHTML = '';",
+    "    pmFlat.length = 0;",
     "",
     "    var header = document.createElement('div'); header.className = 'pm-header';",
     "    var titleRow = document.createElement('div'); titleRow.className = 'pm-title-row';",
@@ -823,6 +1781,13 @@
     "    project.sheets.forEach(function(sheet){ main.appendChild(buildSheetSection(sheet)); });",
     "    app.appendChild(main);",
     "",
+    "    // \u30d8\u30c3\u30c0\u30fc\u306e\u9ad8\u3055\u306f\u30bf\u30a4\u30c8\u30eb\u3084\u7248\u6570\u306e\u9577\u3055\u3067\u5909\u308f\u308b\u3002",
+    "    // CSS \u306b top:96px \u3068\u76f4\u66f8\u304d\u3059\u308b\u3068\u3001\u6298\u308a\u8fd4\u3057\u305f\u77ac\u9593\u306b\u30ca\u30d3\u304c\u30d8\u30c3\u30c0\u30fc\u306b\u6f5c\u308a\u8fbc\u3080\u3002",
+    "    function syncNavTop(){ if (getComputedStyle(nav).position === 'sticky') nav.style.top = header.offsetHeight + 'px'; }",
+    "    syncNavTop();",
+    "    setTimeout(syncNavTop, 0);",
+    "    window.addEventListener('resize', syncNavTop);",
+    "",
     "    updateProgress();",
     "  }",
     "",
@@ -851,14 +1816,17 @@
     "    section.appendChild(fillin);",
     "",
     "    var table = document.createElement('table'); table.className = 'pm-table';",
+    "    var stampMode = (sheet.checkMode === 'stamp2');",
+    "    var labels = sheet.stampLabels || { a:'作業者', b:'確認者' };",
     "    var colgroup = document.createElement('colgroup');",
-    "    var colDefs = ['col-no','','col-check','col-time','col-note'];",
+    "    var colDefs = ['col-no','', (stampMode ? 'col-stamp' : 'col-check'),'col-time','col-note'];",
     "    colDefs.forEach(function(c){ var col = document.createElement('col'); if(c) col.className = c; colgroup.appendChild(col); });",
     "    table.appendChild(colgroup);",
     "",
     "    var thead = document.createElement('thead');",
     "    var htr = document.createElement('tr');",
-    "    ['No','作業内容','実施','実施時刻','備考'].forEach(function(t){",
+    "    var checkHeader = stampMode ? (labels.a + ' / ' + labels.b) : '実施';",
+    "    ['No','作業内容',checkHeader,'実施時刻','備考'].forEach(function(t){",
     "      var th = document.createElement('th'); th.textContent = t; htr.appendChild(th);",
     "    });",
     "    thead.appendChild(htr); table.appendChild(thead);",
@@ -885,7 +1853,14 @@
     "    var textDiv = document.createElement('div'); textDiv.className = 'pm-step-text';",
     "    textDiv.innerHTML = mdToHtml(step.text || '');",
     "    tdText.appendChild(textDiv);",
-    "    if (step.image){ var img = document.createElement('img'); img.src = step.image; textDiv.appendChild(img); }",
+    "    if (step.image){",
+    "      var img = document.createElement('img'); img.src = step.image;",
+    "      img.alt = sheet.name + ' \u624b\u9806' + String(idx+1) + ' \u306e\u753b\u50cf';",
+    "      img.title = '\u30af\u30ea\u30c3\u30af\u3067\u62e1\u5927';",
+    "      (function(i){ img.addEventListener('click', function(){ lbShow(i); }); })(pmFlat.length);",
+    "      pmFlat.push({ src: step.image, cap: sheet.name + ' / \u624b\u9806' + String(idx+1).padStart(2,'0') });",
+    "      textDiv.appendChild(img);",
+    "    }",
     "    if (step.table){",
     "      var tableHtml = tableToHtmlStr(step.table);",
     "      if (tableHtml){",
@@ -895,9 +1870,27 @@
     "    }",
     "    tr.appendChild(tdText);",
     "",
-    "    var tdCheck = document.createElement('td'); tdCheck.className = 'pm-check-cell';",
+    "    var stampMode = (sheet.checkMode === 'stamp2');",
+    "    var labels = sheet.stampLabels || { a:'作業者', b:'確認者' };",
+    "    var tdCheck = document.createElement('td');",
+    "    tdCheck.className = stampMode ? 'pm-stamp-cell' : 'pm-check-cell';",
     "    var timeAutoEl, timeLineEl;",
-    "    if (step.hasCheckbox){",
+    "    if (step.hasCheckbox && stampMode){",
+    "      var pair = document.createElement('div'); pair.className = 'pm-stamp-pair';",
+    "      var confirmed = isConfirmed(sheet.id, step.id);",
+    "      pair.appendChild(buildStampBox(labels.a, checked, function(on){",
+    "        setChecked(sheet.id, step.id, on);",
+    "        tr.classList.toggle('done', on);",
+    "        var t = getTime(sheet.id, step.id);",
+    "        tr.classList.toggle('has-time', !!t);",
+    "        timeAutoEl.textContent = t || '';",
+    "        updateProgress();",
+    "      }));",
+    "      pair.appendChild(buildStampBox(labels.b, confirmed, function(on){",
+    "        setConfirmed(sheet.id, step.id, on);",
+    "      }));",
+    "      tdCheck.appendChild(pair);",
+    "    } else if (step.hasCheckbox){",
     "      var label = document.createElement('label'); label.className = 'pm-check no-print-interactive';",
     "      var boxWrap = document.createElement('span'); boxWrap.className = 'box';",
     "      var cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = checked;",
@@ -949,6 +1942,7 @@
     var a = document.createElement("a"); a.href = url; a.download = (project.title || "manual") + ".html";
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    showToast("HTMLを書き出しました（" + (blob.size/1048576).toFixed(1) + " MB / このHTMLはそのまま読み戻せます）");
   });
 
   $("#btnPreview").addEventListener("click", function(){
@@ -958,7 +1952,117 @@
   });
   $("#closePreview").addEventListener("click", function(){ $("#previewModal").classList.add("hidden"); });
 
+  // ==== autosave (IndexedDB) + unload guard ====
+  // Everything used to live in memory only, so one stray Ctrl+W threw away the whole
+  // session. Autosave keeps a rolling copy; the unload prompt still fires because an
+  // autosave is not the user's own JSON file. IndexedDB (not localStorage) because
+  // embedded screenshots blow past the ~5MB localStorage quota immediately.
+  var DB_NAME = "manualEditorAutosave", DB_STORE = "snapshots", DB_KEY = "current";
+  var dbHandle = null, dbBroken = false, autosaveTimer = null, dirty = false;
+  var statusEl = $("#autosaveStatus");
+
+  function hhmm(d){
+    return String(d.getHours()).padStart(2,"0") + ":" + String(d.getMinutes()).padStart(2,"0");
+  }
+  function setStatus(msg){ if (statusEl) statusEl.textContent = msg; }
+
+  function withDb(cb){
+    if (dbBroken){ cb(null); return; }
+    if (dbHandle){ cb(dbHandle); return; }
+    var req;
+    try { req = indexedDB.open(DB_NAME, 1); }
+    catch(e){ dbBroken = true; cb(null); return; }
+    req.onupgradeneeded = function(){
+      var db = req.result;
+      if (!db.objectStoreNames.contains(DB_STORE)) db.createObjectStore(DB_STORE);
+    };
+    req.onsuccess = function(){ dbHandle = req.result; cb(dbHandle); };
+    req.onerror = function(){ dbBroken = true; cb(null); };
+  }
+
+  function markDirty(){
+    dirty = true;
+    if (autosaveTimer) clearTimeout(autosaveTimer);
+    autosaveTimer = setTimeout(runAutosave, 1500);
+  }
+
+  function runAutosave(){
+    autosaveTimer = null;
+    withDb(function(db){
+      if (!db){ setStatus("自動保存は利用できません"); return; }
+      try{
+        var tx = db.transaction(DB_STORE, "readwrite");
+        // Structured clone, so no JSON.stringify of the base64 payloads here.
+        tx.objectStore(DB_STORE).put({ savedAt: Date.now(), project: project, images: imageStore }, DB_KEY);
+        tx.oncomplete = function(){ setStatus("自動保存 " + hhmm(new Date())); };
+        tx.onerror = function(){ setStatus("自動保存に失敗しました"); };
+        tx.onabort  = function(){ setStatus("自動保存に失敗しました"); };
+      }catch(e){ setStatus("自動保存に失敗しました"); }
+    });
+  }
+
+  function clearAutosave(){
+    withDb(function(db){
+      if (!db) return;
+      try{ db.transaction(DB_STORE, "readwrite").objectStore(DB_STORE).delete(DB_KEY); }catch(e){}
+    });
+  }
+
+  var restoreBanner = $("#restoreBanner");
+  function hideRestoreBanner(){ restoreBanner.classList.add("hidden"); }
+
+  function applyRestore(rec){
+    imageStore = rec.images || {};
+    project = rec.project;
+    activeSheetId = project.sheets[0] ? project.sheets[0].id : null;
+    projectTitleInput.value = project.title || "";
+    metaSystemInput.value = (project.meta && project.meta.system) || "";
+    metaVersionInput.value = (project.meta && project.meta.version) || "";
+    undoStack.length = 0; redoStack.length = 0; pendingFieldSnapshot = null;
+    dirty = true;
+    renderAll();
+    setStatus("前回のデータを復元しました");
+  }
+
+  function checkForAutosave(){
+    withDb(function(db){
+      if (!db) return;
+      var rq;
+      try{
+        rq = db.transaction(DB_STORE, "readonly").objectStore(DB_STORE).get(DB_KEY);
+      }catch(e){ return; }
+      rq.onsuccess = function(){
+        var rec = rq.result;
+        if (!rec || !rec.project || !Array.isArray(rec.project.sheets)) return;
+        var steps = 0, filled = 0;
+        rec.project.sheets.forEach(function(s){
+          (s.steps || []).forEach(function(st){
+            steps++;
+            if ((st.text || "").trim() || st.imageRef || st.table) filled++;
+          });
+        });
+        if (!filled) return;  // nothing worth offering
+        $("#restoreMsg").textContent =
+          "前回の作業データが残っています（" + hhmm(new Date(rec.savedAt)) + " 時点 / 手順 " + steps + " 件）。";
+        restoreBanner.classList.remove("hidden");
+        $("#restoreYes").onclick = function(){ hideRestoreBanner(); applyRestore(rec); };
+        $("#restoreNo").onclick = function(){
+          if (!confirm("前回の自動保存データを削除します。よろしいですか？（この操作は取り消せません）")) return;
+          hideRestoreBanner(); clearAutosave(); setStatus("");
+        };
+      };
+    });
+  }
+
+  window.addEventListener("beforeunload", function(e){
+    if (!dirty) return;
+    e.preventDefault();
+    e.returnValue = "";
+    return "";
+  });
+
   renderAll();
+  checkForAutosave();
 })();
 </script>
 </body>
