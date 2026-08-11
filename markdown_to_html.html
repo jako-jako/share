@@ -151,6 +151,30 @@
     flex:none;
   }
   .pane:last-child .pane-label::before{ background:var(--muted); }
+  .stats{
+    margin-left:auto;
+    font-weight:400;
+    letter-spacing:normal;
+    color:var(--muted);
+  }
+  .toolbar{
+    display:flex;
+    gap:4px;
+    padding:6px 10px;
+    background:var(--panel);
+    border-bottom:1px solid var(--border);
+  }
+  .toolbar button{
+    background:transparent;
+    color:var(--text);
+    border:1px solid var(--border);
+    padding:4px 10px;
+    font-size:12.5px;
+    font-weight:600;
+    border-radius:4px;
+    min-width:28px;
+  }
+  .toolbar button:hover{ background:var(--bg); border-color:var(--accent); filter:none; }
   textarea{
     flex:1;
     background:var(--bg);
@@ -183,16 +207,31 @@
       <span class="field-label">ファイル名</span>
       <span class="field-box">
         <input id="filename" type="text" value="document" spellcheck="false">
-        <span class="field-suffix">.html</span>
       </span>
     </label>
-    <button id="downloadBtn">ダウンロード</button>
+    <button id="importMdBtn">Markdownインポート</button>
+    <input id="importMdInput" type="file" accept=".md,.markdown,text/markdown" hidden>
+    <button id="downloadMdBtn">Markdownダウンロード</button>
+    <button id="downloadBtn">HTMLダウンロード</button>
   </div>
 </header>
 
 <main>
   <div class="pane">
-    <div class="pane-label">Markdown 入力</div>
+    <div class="pane-label">
+      <span>Markdown 入力</span>
+      <span id="stats" class="stats"></span>
+    </div>
+    <div class="toolbar" id="toolbar">
+      <button type="button" data-action="heading" title="見出し">H</button>
+      <button type="button" data-action="bold" title="太字"><strong>B</strong></button>
+      <button type="button" data-action="italic" title="斜体"><em>I</em></button>
+      <button type="button" data-action="strike" title="取り消し線"><s>S</s></button>
+      <button type="button" data-action="quote" title="引用">"</button>
+      <button type="button" data-action="list" title="箇条書き">•</button>
+      <button type="button" data-action="code" title="インラインコード">&lt;/&gt;</button>
+      <button type="button" data-action="link" title="リンク">🔗</button>
+    </div>
     <textarea id="editor" spellcheck="false"># ✨ プロジェクト・ノヴァ
 
 > 「デザインとは、単なる見た目や感触ではない。それがどう機能するかだ。」
@@ -332,18 +371,313 @@ const editor = document.getElementById('editor');
 const preview = document.getElementById('preview');
 const filenameInput = document.getElementById('filename');
 const downloadBtn = document.getElementById('downloadBtn');
+const downloadMdBtn = document.getElementById('downloadMdBtn');
+const importMdBtn = document.getElementById('importMdBtn');
+const importMdInput = document.getElementById('importMdInput');
+const statsEl = document.getElementById('stats');
+const toolbar = document.getElementById('toolbar');
+
+function baseName(){
+  return (filenameInput.value.trim() || 'document').replace(/\.(html?|md|markdown)$/i, '');
+}
+
+function triggerDownload(content, filename, mimeType){
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
 
 document.getElementById('docStyle').textContent = docCss('#preview');
+
+// 自動保存(localStorage): タブを閉じてもここから復元できるようにする
+const STORAGE_KEY_CONTENT = 'md_downloader_content_v1';
+const STORAGE_KEY_FILENAME = 'md_downloader_filename_v1';
+
+const savedContent = localStorage.getItem(STORAGE_KEY_CONTENT);
+if(savedContent !== null) editor.value = savedContent;
+const savedFilename = localStorage.getItem(STORAGE_KEY_FILENAME);
+if(savedFilename) filenameInput.value = savedFilename;
+
+function persist(){
+  localStorage.setItem(STORAGE_KEY_CONTENT, editor.value);
+  localStorage.setItem(STORAGE_KEY_FILENAME, filenameInput.value);
+}
+
+function updateStats(){
+  const text = editor.value;
+  const lines = text === '' ? 0 : text.split('\n').length;
+  statsEl.textContent = `${text.length}文字 / ${lines}行`;
+}
 
 function render(){
   preview.innerHTML = marked.parse(editor.value);
 }
-editor.addEventListener('input', render);
-render();
+
+// ダウンロード前に離脱しようとしたら警告する(ダウンロード完了で解除)
+let isDirty = false;
+window.addEventListener('beforeunload', (e) => {
+  if(!isDirty) return;
+  e.preventDefault();
+  e.returnValue = '';
+});
+
+// editor.value をプログラムから書き換えた後にまとめて呼ぶ(render/カウンタ/自動保存を同期させるため)
+function syncAfterEdit(opts){
+  render();
+  updateStats();
+  persist();
+  isDirty = !(opts && opts.dirty === false);
+}
+
+editor.addEventListener('input', syncAfterEdit);
+filenameInput.addEventListener('input', persist);
+syncAfterEdit({ dirty: false });
+
+// Tabキーでインデント挿入・Shift+Tabで解除する(リストの入れ子表現に使うため)
+const INDENT = '  '; // "- " などのマーカー幅に合わせた2スペース
+
+function lineStartAt(text, pos){
+  return text.lastIndexOf('\n', pos - 1) + 1;
+}
+function lineEndAt(text, pos){
+  const idx = text.indexOf('\n', pos);
+  return idx === -1 ? text.length : idx;
+}
+function outdentLine(line){
+  if(line.startsWith(INDENT)) return line.slice(INDENT.length);
+  if(line.startsWith('\t')) return line.slice(1);
+  if(line.startsWith(' ')) return line.slice(1);
+  return line;
+}
+
+// 現在の選択範囲が含む行の範囲を返す(選択末尾がちょうど次の行の先頭に来ている場合、その行は対象に含めない)
+function selectionLineRange(){
+  const { selectionStart, selectionEnd, value } = editor;
+  const blockStart = lineStartAt(value, selectionStart);
+  let endPos = selectionEnd;
+  if(endPos > selectionStart && lineStartAt(value, endPos) === endPos){
+    endPos -= 1;
+  }
+  const blockEnd = lineEndAt(value, endPos);
+  return [blockStart, blockEnd];
+}
+
+editor.addEventListener('keydown', (e) => {
+  if(e.key !== 'Tab') return;
+  e.preventDefault();
+
+  const { selectionStart, selectionEnd, value } = editor;
+
+  if(selectionStart === selectionEnd){
+    if(e.shiftKey){
+      const lineStart = lineStartAt(value, selectionStart);
+      const lineEnd = lineEndAt(value, selectionStart);
+      const line = value.slice(lineStart, lineEnd);
+      const newLine = outdentLine(line);
+      const removed = line.length - newLine.length;
+      if(removed > 0){
+        editor.setRangeText(newLine, lineStart, lineEnd, 'end');
+        editor.selectionStart = editor.selectionEnd = Math.max(lineStart, selectionStart - removed);
+      }
+    } else {
+      editor.setRangeText(INDENT, selectionStart, selectionEnd, 'end');
+    }
+    syncAfterEdit();
+    return;
+  }
+
+  const [blockStart, blockEnd] = selectionLineRange();
+  const lines = value.slice(blockStart, blockEnd).split('\n');
+  const newLines = e.shiftKey ? lines.map(outdentLine) : lines.map(line => INDENT + line);
+  const newBlock = newLines.join('\n');
+
+  editor.setRangeText(newBlock, blockStart, blockEnd, 'select');
+  editor.selectionStart = blockStart;
+  editor.selectionEnd = blockStart + newBlock.length;
+  syncAfterEdit();
+});
+
+// 画像の貼り付け・ドラッグ&ドロップ: 外部ファイル参照はせず、Base64データURIとして
+// Markdown本文に直接埋め込む(.mdファイル単体でも画像込みで完結させるため)
+const MAX_IMAGE_WIDTH = 1600; // 幅がこれを超える画像はJPEGに変換して縮小する
+
+function fileToDataUrl(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+function shrinkIfNeeded(dataUrl){
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      if(img.width <= MAX_IMAGE_WIDTH){
+        resolve(dataUrl);
+        return;
+      }
+      const scale = MAX_IMAGE_WIDTH / img.width;
+      const canvas = document.createElement('canvas');
+      canvas.width = MAX_IMAGE_WIDTH;
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL('image/jpeg', 0.85));
+    };
+    img.onerror = () => reject(new Error('画像のデコードに失敗しました'));
+    img.src = dataUrl;
+  });
+}
+
+function imageFilesFrom(dataTransfer){
+  return Array.from(dataTransfer?.files || []).filter(f => f.type.startsWith('image/'));
+}
+
+async function insertImages(files){
+  let pos = editor.selectionStart;
+  const selEnd = editor.selectionEnd;
+  if(pos !== selEnd){
+    editor.setRangeText('', pos, selEnd, 'end');
+  }
+  for(const file of files){
+    try {
+      const dataUrl = await shrinkIfNeeded(await fileToDataUrl(file));
+      const alt = (file.name || '画像').replace(/\.[^.]+$/, '');
+      const markdown = `![${alt}](${dataUrl})\n`;
+      editor.setRangeText(markdown, pos, pos, 'end');
+      pos += markdown.length;
+    } catch(err){
+      alert('画像の読み込みに失敗しました: ' + (file.name || ''));
+    }
+  }
+  editor.selectionStart = editor.selectionEnd = pos;
+  editor.focus();
+  syncAfterEdit();
+}
+
+function importMarkdownFile(file){
+  const reader = new FileReader();
+  reader.onload = () => {
+    editor.value = reader.result;
+    filenameInput.value = file.name.replace(/\.(md|markdown)$/i, '');
+    syncAfterEdit({ dirty: false });
+  };
+  reader.onerror = () => {
+    alert('ファイルの読み込みに失敗しました: ' + file.name);
+  };
+  reader.readAsText(file);
+}
+
+editor.addEventListener('paste', (e) => {
+  const items = Array.from(e.clipboardData?.items || []);
+  const files = items.filter(i => i.kind === 'file' && i.type.startsWith('image/')).map(i => i.getAsFile());
+  if(files.length === 0) return;
+  e.preventDefault();
+  insertImages(files);
+});
+
+editor.addEventListener('dragover', (e) => {
+  const hasFile = Array.from(e.dataTransfer.items || []).some(i => i.kind === 'file');
+  if(hasFile) e.preventDefault();
+});
+
+// 画像だけでなく.mdファイルのドラッグ&ドロップでもインポートできるようにする
+editor.addEventListener('drop', (e) => {
+  const files = Array.from(e.dataTransfer?.files || []);
+  if(files.length === 0) return;
+  e.preventDefault();
+
+  const images = imageFilesFrom(e.dataTransfer);
+  const mdFiles = files.filter(f => /\.(md|markdown)$/i.test(f.name));
+
+  if(images.length > 0){
+    insertImages(images);
+  } else if(mdFiles.length > 0){
+    importMarkdownFile(mdFiles[0]);
+  } else {
+    alert('画像またはMarkdownファイル(.md)のみ読み込めます');
+  }
+});
+
+// エディタとプレビューのスクロール位置を連動させる
+let syncingScroll = false;
+function syncScroll(source, target){
+  if(syncingScroll) return;
+  syncingScroll = true;
+  const range = source.scrollHeight - source.clientHeight;
+  const ratio = range <= 0 ? 0 : source.scrollTop / range;
+  target.scrollTop = ratio * (target.scrollHeight - target.clientHeight);
+  syncingScroll = false;
+}
+editor.addEventListener('scroll', () => syncScroll(editor, preview));
+preview.addEventListener('scroll', () => syncScroll(preview, editor));
+
+// 簡易ツールバー: 選択範囲を書式で囲む/行頭に記法を付与する
+function wrapSelection(before, after){
+  const { selectionStart, selectionEnd, value } = editor;
+  const selected = value.slice(selectionStart, selectionEnd);
+  editor.setRangeText(before + selected + after, selectionStart, selectionEnd, 'end');
+  if(selected){
+    editor.selectionStart = selectionStart + before.length;
+    editor.selectionEnd = selectionStart + before.length + selected.length;
+  } else {
+    editor.selectionStart = editor.selectionEnd = selectionStart + before.length;
+  }
+  editor.focus();
+  syncAfterEdit();
+}
+
+function prefixLines(prefix){
+  const [blockStart, blockEnd] = selectionLineRange();
+  const lines = editor.value.slice(blockStart, blockEnd).split('\n');
+  const newBlock = lines.map(line => prefix + line).join('\n');
+  editor.setRangeText(newBlock, blockStart, blockEnd, 'select');
+  editor.selectionStart = blockStart;
+  editor.selectionEnd = blockStart + newBlock.length;
+  editor.focus();
+  syncAfterEdit();
+}
+
+function insertLink(){
+  const { selectionStart, selectionEnd, value } = editor;
+  const label = value.slice(selectionStart, selectionEnd) || 'リンクテキスト';
+  const url = 'https://example.com';
+  editor.setRangeText(`[${label}](${url})`, selectionStart, selectionEnd, 'end');
+  const urlStart = selectionStart + label.length + 3; // "[" + label + "](" の直後
+  editor.selectionStart = urlStart;
+  editor.selectionEnd = urlStart + url.length;
+  editor.focus();
+  syncAfterEdit();
+}
+
+const TOOLBAR_ACTIONS = {
+  bold: () => wrapSelection('**', '**'),
+  italic: () => wrapSelection('*', '*'),
+  strike: () => wrapSelection('~~', '~~'),
+  code: () => wrapSelection('`', '`'),
+  heading: () => prefixLines('## '),
+  quote: () => prefixLines('> '),
+  list: () => prefixLines('- '),
+  link: insertLink,
+};
+
+toolbar.addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-action]');
+  if(!btn) return;
+  const action = TOOLBAR_ACTIONS[btn.dataset.action];
+  if(action) action();
+});
 
 downloadBtn.addEventListener('click', () => {
   const bodyHtml = marked.parse(editor.value);
-  const name = (filenameInput.value.trim() || 'document').replace(/\.html?$/i,'');
+  const name = baseName();
 
   const fullHtml = `<!DOCTYPE html>
 <html lang="ja">
@@ -360,15 +694,24 @@ ${bodyHtml}
 </body>
 </html>`;
 
-  const blob = new Blob([fullHtml], { type: 'text/html' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = name + '.html';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  triggerDownload(fullHtml, name + '.html', 'text/html');
+  isDirty = false;
+});
+
+downloadMdBtn.addEventListener('click', () => {
+  triggerDownload(editor.value, baseName() + '.md', 'text/markdown');
+  isDirty = false;
+});
+
+importMdBtn.addEventListener('click', () => {
+  importMdInput.value = '';
+  importMdInput.click();
+});
+
+importMdInput.addEventListener('change', () => {
+  const file = importMdInput.files[0];
+  if(!file) return;
+  importMarkdownFile(file);
 });
 </script>
 
