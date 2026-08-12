@@ -301,6 +301,32 @@
   <h1>Mermaid ビューワー</h1>
   <div class="controls">
     <button id="helpBtn" class="icon-btn" type="button" title="使い方" aria-label="使い方">?</button>
+    <label class="field" for="sampleSelect">
+      <span class="field-label">サンプル</span>
+      <span class="field-box">
+        <select id="sampleSelect">
+          <option value="" selected disabled>選択…</option>
+          <option value="flowchart">フローチャート</option>
+          <option value="sequence">シーケンス図</option>
+          <option value="class">クラス図</option>
+          <option value="state">状態遷移図</option>
+          <option value="er">ER図</option>
+          <option value="gantt">ガントチャート</option>
+          <option value="pie">円グラフ</option>
+          <option value="git">Gitグラフ</option>
+          <option value="mindmap">マインドマップ</option>
+          <option value="timeline">タイムライン</option>
+          <option value="journey">ユーザージャーニー</option>
+          <option value="quadrant">クアドラントチャート</option>
+          <option value="block">ブロック図</option>
+          <option value="kanban">かんばん</option>
+          <option value="c4">C4モデル</option>
+          <option value="packet">パケット図</option>
+          <option value="treemap">ツリーマップ</option>
+          <option value="requirement">要求図</option>
+        </select>
+      </span>
+    </label>
     <label class="field" for="filename">
       <span class="field-label">ファイル名</span>
       <span class="field-box">
@@ -344,6 +370,10 @@
         <li><kbd>Ctrl</kbd>+<kbd>Z</kbd>(Macは<kbd>Cmd</kbd>+<kbd>Z</kbd>) — 元に戻す</li>
         <li><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> — やり直す</li>
       </ul>
+      <h3>サンプル</h3>
+      <ul>
+        <li>「サンプル」プルダウンから、フローチャート/シーケンス図/クラス図など主要な図の種類ごとに、Mermaidの機能を多く使った作例を読み込めます(Ctrl+Zで元の内容に戻せます)</li>
+      </ul>
       <h3>ファイル操作</h3>
       <ul>
         <li>「Mermaidインポート」— .mmd / .mermaid ファイルを読み込み(ドラッグ&ドロップも可)</li>
@@ -366,16 +396,28 @@
       <span id="stats" class="stats"></span>
     </div>
     <textarea id="editor" spellcheck="false">flowchart TD
-    A[要件を整理する] --> B{オフライン動作が必要?}
-    B -- はい --> C[ライブラリをHTMLに埋め込む]
-    B -- いいえ --> D[CDNから読み込む]
-    C --> E[単一HTMLファイルとして配布]
-    D --> E
-    E --> F([完成])
+    Start([要件受付]) --> Analyze{影響範囲は?}
+    Analyze -- 小 --> Quick[軽微修正パス]
+    Analyze -- 大 --> Design[設計レビュー]
 
-    style A fill:#232629,color:#e8e6e2,stroke:#6fd6c4
-    style F fill:#6fd6c4,color:#0d1210,stroke:#6fd6c4
-</textarea>
+    subgraph Design Phase
+        Design --> Review{承認?}
+        Review -- Yes --> Impl[実装]
+        Review -- No --> Design
+    end
+
+    Quick --> Impl
+    Impl --> Test[[テスト実行]]
+    Test --> Gate{品質基準達成?}
+    Gate -- No --> Impl
+    Gate -- Yes --> Deploy[(本番デプロイ)]
+    Deploy --> Done([完了])
+
+    style Start fill:#232629,color:#e8e6e2,stroke:#6fd6c4
+    style Done fill:#6fd6c4,color:#0d1210,stroke:#6fd6c4
+    style Gate fill:#3a1f1f,color:#f0b8b8,stroke:#6b3232
+    classDef phase fill:#1b1d1f,stroke:#6fd6c4,color:#e8e6e2
+    class Design,Review,Impl phase</textarea>
   </div>
   <div class="splitter" id="splitter" role="separator" aria-orientation="vertical" aria-label="ペインの幅を調整" tabindex="0" title="ドラッグで幅を調整 / ダブルクリックで左右均等"></div>
 
@@ -446,6 +488,7 @@ const importBtn = document.getElementById('importBtn');
 const importInput = document.getElementById('importInput');
 const clearBtn = document.getElementById('clearBtn');
 const downloadSrcBtn = document.getElementById('downloadSrcBtn');
+const sampleSelect = document.getElementById('sampleSelect');
 
 // 自動保存(localStorage): タブを閉じてもここから復元できるようにする
 const STORAGE_KEY_CONTENT = 'mermaid_viewer_content_v1';
@@ -697,6 +740,291 @@ filenameInput.addEventListener('input', persist);
 syncAfterEdit({ dirty: false });
 
 // エディタを空にする(Ctrl/Cmd+Zで復元できるが、誤操作防止に確認を挟む)
+// 各種類の図を一つずつ、Mermaidの主要機能を使った複雑めの例で用意しておく(起動時のflowchartと同じ内容も含む)
+const SAMPLES = {
+  flowchart: `flowchart TD
+    Start([要件受付]) --> Analyze{影響範囲は?}
+    Analyze -- 小 --> Quick[軽微修正パス]
+    Analyze -- 大 --> Design[設計レビュー]
+
+    subgraph Design Phase
+        Design --> Review{承認?}
+        Review -- Yes --> Impl[実装]
+        Review -- No --> Design
+    end
+
+    Quick --> Impl
+    Impl --> Test[[テスト実行]]
+    Test --> Gate{品質基準達成?}
+    Gate -- No --> Impl
+    Gate -- Yes --> Deploy[(本番デプロイ)]
+    Deploy --> Done([完了])
+
+    style Start fill:#232629,color:#e8e6e2,stroke:#6fd6c4
+    style Done fill:#6fd6c4,color:#0d1210,stroke:#6fd6c4
+    style Gate fill:#3a1f1f,color:#f0b8b8,stroke:#6b3232
+    classDef phase fill:#1b1d1f,stroke:#6fd6c4,color:#e8e6e2
+    class Design,Review,Impl phase`,
+  sequence: `sequenceDiagram
+    autonumber
+    actor U as ユーザー
+    participant W as Webアプリ
+    participant A as API
+    participant D as DB
+
+    U->>W: ログイン要求
+    activate W
+    W->>A: 認証トークン発行依頼
+    activate A
+    A->>D: ユーザー照合
+    activate D
+    D-->>A: 照合結果
+    deactivate D
+    alt 認証成功
+        A-->>W: トークン発行
+        W-->>U: ダッシュボード表示
+    else 認証失敗
+        A-->>W: エラー
+        W-->>U: エラーメッセージ
+    end
+    deactivate A
+    deactivate W
+
+    loop 5分ごと
+        W->>A: セッション延長
+        A-->>W: OK
+    end
+
+    Note over U,D: 一連の流れはログに記録される`,
+  class: `classDiagram
+    class Shape {
+        <<abstract>>
+        +String color
+        +area() float
+        +draw()
+    }
+    class Circle {
+        +float radius
+        +area() float
+    }
+    class Rectangle {
+        +float width
+        +float height
+        +area() float
+    }
+    class Canvas {
+        -List~Shape~ shapes
+        +addShape(Shape s)
+        +renderAll()
+    }
+    Shape <|-- Circle
+    Shape <|-- Rectangle
+    Canvas o-- "0..*" Shape : contains
+    class Color {
+        <<enumeration>>
+        RED
+        GREEN
+        BLUE
+    }
+    Shape --> Color : uses`,
+  state: `stateDiagram-v2
+    [*] --> Idle
+    Idle --> Processing : start
+    state Processing {
+        [*] --> Validating
+        Validating --> Executing : valid
+        Validating --> Failed : invalid
+        Executing --> Completed
+    }
+    Processing --> Idle : reset
+    Processing --> Error : exception
+    Completed --> [*]
+    Error --> Idle : retry
+    Failed --> Idle : retry
+
+    note right of Processing
+        サブステートで
+        内部進行を表現
+    end note`,
+  er: `erDiagram
+    CUSTOMER ||--o{ ORDER : places
+    CUSTOMER {
+        int id PK
+        string name
+        string email
+    }
+    ORDER ||--|{ LINE_ITEM : contains
+    ORDER {
+        int id PK
+        int customer_id FK
+        date ordered_at
+    }
+    PRODUCT ||--o{ LINE_ITEM : "referenced by"
+    PRODUCT {
+        int id PK
+        string name
+        float price
+    }
+    LINE_ITEM {
+        int order_id FK
+        int product_id FK
+        int quantity
+    }`,
+  gantt: `gantt
+    title リリース計画
+    dateFormat YYYY-MM-DD
+    excludes weekends
+
+    section 要件定義
+    要件整理        :done, req1, 2026-01-05, 5d
+    レビュー        :done, req2, after req1, 2d
+
+    section 開発
+    基盤実装        :active, dev1, after req2, 10d
+    機能実装        :dev2, after dev1, 8d
+
+    section テスト
+    結合テスト      :test1, after dev2, 5d
+    リリース判定    :milestone, after test1, 0d`,
+  pie: `pie showData title 週間工数の内訳
+    "開発" : 42
+    "レビュー" : 15
+    "会議" : 20
+    "調査" : 13
+    "その他" : 10`,
+  git: `gitGraph
+    commit id: "init"
+    branch develop
+    checkout develop
+    commit id: "feat-a"
+    branch feature/x
+    checkout feature/x
+    commit id: "work-1"
+    commit id: "work-2"
+    checkout develop
+    merge feature/x
+    checkout main
+    commit id: "hotfix"
+    checkout develop
+    merge main
+    commit id: "feat-b"
+    checkout main
+    merge develop tag: "v1.0"`,
+  mindmap: `mindmap
+  root((戦略))
+    市場
+      国内
+      海外
+        欧州
+        北米
+    技術
+      フロント
+      バック
+      インフラ
+    組織
+      採用
+      教育
+    リスク
+      競合
+      規制`,
+  timeline: `timeline
+    title プロジェクト年表
+    2024 : キックオフ : 要件定義
+    2025 : 開発開始 : β版リリース : フィードバック収集
+    2026 : 正式リリース : グローバル展開`,
+  journey: `journey
+    title オンライン購入体験
+    section 検索
+      商品を探す: 5: 顧客
+      比較する: 3: 顧客
+    section 購入
+      カートに入れる: 4: 顧客
+      決済する: 2: 顧客, システム
+    section 受取
+      配送通知を受ける: 5: システム
+      商品を受け取る: 5: 顧客`,
+  quadrant: `quadrantChart
+    title 施策の優先度
+    x-axis 低コスト --> 高コスト
+    y-axis 低インパクト --> 高インパクト
+    quadrant-1 積極投資
+    quadrant-2 検討課題
+    quadrant-3 保留
+    quadrant-4 効率化
+    施策A: [0.3, 0.8]
+    施策B: [0.7, 0.7]
+    施策C: [0.2, 0.3]
+    施策D: [0.8, 0.2]`,
+  block: `block-beta
+  columns 3
+  Frontend["フロントエンド"] space Backend["バックエンド"]
+  space:3
+  DB[("データベース")]
+  Frontend --> Backend
+  Backend --> DB`,
+  kanban: `kanban
+  Todo
+    task1[要件整理]
+    task2[設計書作成]
+  InProgress
+    task3[実装中]
+  Done
+    task4[レビュー完了]`,
+  c4: `C4Context
+    title システム構成
+    Person(user, "利用者", "サービスを使う人")
+    System(webapp, "Webアプリ", "主要システム")
+    SystemDb(db, "データベース", "データ保管")
+    Rel(user, webapp, "利用する")
+    Rel(webapp, db, "読み書き")`,
+  packet: `packet-beta
+title パケット構造
+0-15: "送信元ポート"
+16-31: "宛先ポート"
+32-63: "シーケンス番号"`,
+  treemap: `treemap-beta
+    "製品"
+        "モバイル"
+            "iOS": 40
+            "Android": 35
+        "デスクトップ"
+            "Windows": 20
+            "Mac": 5`,
+  requirement: `requirementDiagram
+
+    requirement auth_req {
+    id: 1
+    text: "ユーザーはログインできること"
+    risk: high
+    verifymethod: test
+    }
+
+    functionalRequirement session_req {
+    id: 2
+    text: "セッションは30分で失効すること"
+    risk: medium
+    verifymethod: inspection
+    }
+
+    element login_ui {
+    type: "UI"
+    docref: "spec.md"
+    }
+
+    login_ui - satisfies -> auth_req
+    auth_req - traces -> session_req`,
+};
+
+sampleSelect.addEventListener('change', () => {
+  const key = sampleSelect.value;
+  sampleSelect.selectedIndex = 0; // 選択を戻し、同じサンプルを続けて選び直せるようにする
+  if(!key || !SAMPLES[key]) return;
+  editor.value = SAMPLES[key];
+  filenameInput.value = key;
+  editor.selectionStart = editor.selectionEnd = 0;
+  editor.focus();
+  syncAfterEdit({ dirty: false, commitHistory: true });
+});
 clearBtn.addEventListener('click', () => {
   if(editor.value === '') return;
   if(!confirm('エディタの内容をすべて消去しますか？(Ctrl+Zで元に戻せます)')) return;
