@@ -433,7 +433,66 @@ function syncAfterEdit(opts){
   updateStats();
   persist();
   isDirty = !(opts && opts.dirty === false);
+  if(opts && opts.commitHistory) commitHistoryNow(); else scheduleHistoryPush();
 }
+
+// --- 元に戻す/やり直す (Ctrl/Cmd+Z, Ctrl/Cmd+Shift+Z) ---
+// ツールバー操作やTabインデントは setRangeText で書き換えており、
+// ブラウザ標準のUndo履歴には乗らないため、値のスナップショットで独自に管理する。
+const HISTORY_LIMIT = 100;
+const HISTORY_DEBOUNCE = 500; // 連続入力はこの間隔が空くまでひとつの履歴にまとめる
+function historySnapshot(){
+  return { value: editor.value, start: editor.selectionStart, end: editor.selectionEnd };
+}
+let history = [historySnapshot()];
+let historyIndex = 0;
+let historyTimer = null;
+
+function pushHistory(){
+  const current = historySnapshot();
+  if(current.value === history[historyIndex].value) return;
+  history = history.slice(0, historyIndex + 1);
+  history.push(current);
+  if(history.length > HISTORY_LIMIT) history.shift();
+  historyIndex = history.length - 1;
+}
+
+function scheduleHistoryPush(){
+  clearTimeout(historyTimer);
+  historyTimer = setTimeout(pushHistory, HISTORY_DEBOUNCE);
+}
+
+function commitHistoryNow(){
+  clearTimeout(historyTimer);
+  pushHistory();
+}
+
+function restoreHistorySnapshot(snap){
+  editor.value = snap.value;
+  editor.selectionStart = snap.start;
+  editor.selectionEnd = snap.end;
+  editor.focus();
+  syncAfterEdit();
+}
+
+function undo(){
+  commitHistoryNow();
+  if(historyIndex === 0) return;
+  historyIndex--;
+  restoreHistorySnapshot(history[historyIndex]);
+}
+
+function redo(){
+  if(historyIndex >= history.length - 1) return;
+  historyIndex++;
+  restoreHistorySnapshot(history[historyIndex]);
+}
+
+editor.addEventListener('keydown', (e) => {
+  if(!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== 'z') return;
+  e.preventDefault();
+  if(e.shiftKey) redo(); else undo();
+});
 
 editor.addEventListener('input', syncAfterEdit);
 filenameInput.addEventListener('input', persist);
@@ -488,7 +547,7 @@ editor.addEventListener('keydown', (e) => {
     } else {
       editor.setRangeText(INDENT, selectionStart, selectionEnd, 'end');
     }
-    syncAfterEdit();
+    syncAfterEdit({ commitHistory: true });
     return;
   }
 
@@ -500,7 +559,7 @@ editor.addEventListener('keydown', (e) => {
   editor.setRangeText(newBlock, blockStart, blockEnd, 'select');
   editor.selectionStart = blockStart;
   editor.selectionEnd = blockStart + newBlock.length;
-  syncAfterEdit();
+  syncAfterEdit({ commitHistory: true });
 });
 
 // 画像の貼り付け・ドラッグ&ドロップ: 外部ファイル参照はせず、Base64データURIとして
@@ -559,7 +618,7 @@ async function insertImages(files){
   }
   editor.selectionStart = editor.selectionEnd = pos;
   editor.focus();
-  syncAfterEdit();
+  syncAfterEdit({ commitHistory: true });
 }
 
 function importMarkdownFile(file){
@@ -567,7 +626,7 @@ function importMarkdownFile(file){
   reader.onload = () => {
     editor.value = reader.result;
     filenameInput.value = file.name.replace(/\.(md|markdown)$/i, '');
-    syncAfterEdit({ dirty: false });
+    syncAfterEdit({ dirty: false, commitHistory: true });
   };
   reader.onerror = () => {
     alert('ファイルの読み込みに失敗しました: ' + file.name);
@@ -631,7 +690,7 @@ function wrapSelection(before, after){
     editor.selectionStart = editor.selectionEnd = selectionStart + before.length;
   }
   editor.focus();
-  syncAfterEdit();
+  syncAfterEdit({ commitHistory: true });
 }
 
 function prefixLines(prefix){
@@ -642,7 +701,7 @@ function prefixLines(prefix){
   editor.selectionStart = blockStart;
   editor.selectionEnd = blockStart + newBlock.length;
   editor.focus();
-  syncAfterEdit();
+  syncAfterEdit({ commitHistory: true });
 }
 
 function insertLink(){
@@ -654,7 +713,7 @@ function insertLink(){
   editor.selectionStart = urlStart;
   editor.selectionEnd = urlStart + url.length;
   editor.focus();
-  syncAfterEdit();
+  syncAfterEdit({ commitHistory: true });
 }
 
 const TOOLBAR_ACTIONS = {
