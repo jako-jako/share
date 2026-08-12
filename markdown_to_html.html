@@ -211,6 +211,7 @@
     </label>
     <button id="importMdBtn">Markdownインポート</button>
     <input id="importMdInput" type="file" accept=".md,.markdown,text/markdown" hidden>
+    <button id="clearBtn">クリア</button>
     <button id="downloadMdBtn">Markdownダウンロード</button>
     <button id="downloadBtn">HTMLダウンロード</button>
   </div>
@@ -374,6 +375,7 @@ const downloadBtn = document.getElementById('downloadBtn');
 const downloadMdBtn = document.getElementById('downloadMdBtn');
 const importMdBtn = document.getElementById('importMdBtn');
 const importMdInput = document.getElementById('importMdInput');
+const clearBtn = document.getElementById('clearBtn');
 const statsEl = document.getElementById('stats');
 const toolbar = document.getElementById('toolbar');
 
@@ -771,6 +773,16 @@ importMdInput.addEventListener('change', () => {
   const file = importMdInput.files[0];
   if(!file) return;
   importMarkdownFile(file);
+});
+
+// エディタを空にする(Ctrl/Cmd+Zで復元できるが、誤操作防止に確認を挟む)
+clearBtn.addEventListener('click', () => {
+  if(editor.value === '') return;
+  if(!confirm('エディタの内容をすべて消去しますか？(Ctrl+Zで元に戻せます)')) return;
+  editor.value = '';
+  editor.selectionStart = editor.selectionEnd = 0;
+  editor.focus();
+  syncAfterEdit({ commitHistory: true });
 });
 </script>
 
