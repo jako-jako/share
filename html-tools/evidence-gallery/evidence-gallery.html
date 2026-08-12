@@ -25,6 +25,19 @@
   button.primary{background:var(--accent);border-color:var(--accent);color:var(--ink);}
   button.primary:hover{background:#ff8a1a;}
   .btnfile{display:inline-block;}
+  .help-btn{width:30px;height:30px;padding:0;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:14px;}
+  .help-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:700;padding:20px;}
+  .help-overlay.hidden{display:none;}
+  .help-panel{background:var(--paper-raised);border:1px solid var(--border);border-radius:10px;width:100%;max-width:560px;max-height:85vh;overflow-y:auto;padding:20px 24px 24px;box-shadow:0 12px 40px rgba(0,0,0,.4);color:var(--ink);}
+  .help-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  .help-header h2{margin:0;font-size:16px;color:var(--ink);font-family:var(--font-display);}
+  .help-header .help-btn{background:var(--paper);color:var(--ink);border:1px solid var(--border);}
+  .help-header .help-btn:hover{background:var(--accent-soft);border-color:var(--accent);}
+  .help-body h3{font-size:13px;color:var(--ink-soft);margin:18px 0 6px;letter-spacing:.02em;font-family:var(--font-display);}
+  .help-body h3:first-child{margin-top:0;}
+  .help-body ul{margin:0;padding-left:20px;font-size:13px;line-height:1.7;color:var(--ink);}
+  .help-body li{margin-bottom:4px;}
+  .help-body kbd{background:var(--paper);border:1px solid var(--border);border-radius:4px;padding:1px 6px;font-family:var(--font-mono);font-size:12px;}
 
   .hint{max-width:960px;margin:16px auto 0;font-size:12px;color:var(--ink-soft);background:var(--paper-raised);border:1px solid var(--border);border-radius:6px;padding:10px 14px;}
   .main{max-width:960px;margin:0 auto;padding:16px;padding-bottom:80px;}
@@ -132,6 +145,7 @@
   <span id="stats" class="stats"></span>
   <span id="autosaveStatus" class="autosave-status"></span>
   <div class="actions">
+    <button id="helpBtn" class="help-btn" type="button" title="使い方" aria-label="使い方">?</button>
     <label class="sel-label" title="取り込む画像の縮小サイズ。ブラウザに記憶されます">縮小
       <select id="shrinkSel">
         <option value="2000">長辺2000px</option>
@@ -152,6 +166,52 @@
     <label class="btnfile" title="JSONファイル、またはこのツールで書き出したHTMLを読み込みます">ファイル読込<input type="file" id="fileLoadJson" accept=".json,.html,.htm,application/json,text/html" hidden></label>
     <button id="btnPreview">プレビュー（印刷確認）</button>
     <button id="btnExport" class="primary">HTMLエクスポート</button>
+  </div>
+</div>
+
+<div id="helpOverlay" class="help-overlay hidden">
+  <div class="help-panel" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <div class="help-header">
+      <h2 id="helpTitle">使い方</h2>
+      <button id="helpCloseBtn" class="help-btn" type="button" title="閉じる" aria-label="閉じる">×</button>
+    </div>
+    <div class="help-body">
+      <h3>セクションと画像</h3>
+      <ul>
+        <li>セクションをクリックすると「貼り付け先」になり、その状態で <kbd>Ctrl</kbd>+<kbd>V</kbd> で画像を貼り付けられます</li>
+        <li>ドロップゾーンへのドラッグ&ドロップ、クリックしてのファイル選択でも画像を追加できます</li>
+        <li>画像をクリックすると注釈エディタ（四角・矢印・ペン・テキスト・モザイク）が開きます</li>
+        <li>画像を右クリックすると、注釈の編集・複製・削除ができます</li>
+        <li>⠿ をドラッグすると画像やセクションを並び替え・他セクションへ移動できます</li>
+        <li>画像右端をドラッグ、または幅ボタンで表示幅を変更できます</li>
+      </ul>
+      <h3>複数選択</h3>
+      <ul>
+        <li>画像のチェックボックスで複数選択すると、画面下部のバーで幅の一括変更・一括削除ができます</li>
+      </ul>
+      <h3>注釈エディタ</h3>
+      <ul>
+        <li><kbd>←</kbd> / <kbd>→</kbd> — 変更を自動保存して前後の画像へ移動</li>
+        <li><kbd>Ctrl</kbd>+<kbd>Z</kbd> — 直前の書き込みを取り消し</li>
+        <li><kbd>Esc</kbd> — 未保存の変更を破棄して閉じる</li>
+      </ul>
+      <h3>キーボードショートカット</h3>
+      <ul>
+        <li><kbd>Ctrl</kbd>+<kbd>S</kbd> — JSON保存</li>
+        <li><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd>（または <kbd>Ctrl</kbd>+<kbd>Y</kbd>） — 元に戻す/やり直す</li>
+        <li><kbd>Esc</kbd> — 選択解除・メニューを閉じる</li>
+      </ul>
+      <h3>ファイル操作</h3>
+      <ul>
+        <li>「JSON保存」「ファイル読込」— 作業データをファイルとして保存/読込（このツールが書き出したHTMLも読込可）</li>
+        <li>「プレビュー（印刷確認）」— 書き出し結果を別画面で確認</li>
+        <li>「HTMLエクスポート」— 単体で開けるHTMLファイルとして書き出し</li>
+      </ul>
+      <h3>自動保存</h3>
+      <ul>
+        <li>編集内容はブラウザに自動保存され、閉じてしまっても次回開いたときに復元を確認できます</li>
+      </ul>
+    </div>
   </div>
 </div>
 
@@ -1455,6 +1515,17 @@
     $("#previewModal").classList.remove("hidden");
   });
   $("#closePreview").addEventListener("click", function(){ $("#previewModal").classList.add("hidden"); });
+
+  // ==== help ====
+  var helpOverlay = $("#helpOverlay");
+  function openHelp(){ helpOverlay.classList.remove("hidden"); }
+  function closeHelp(){ helpOverlay.classList.add("hidden"); }
+  $("#helpBtn").addEventListener("click", openHelp);
+  $("#helpCloseBtn").addEventListener("click", closeHelp);
+  helpOverlay.addEventListener("click", function(e){ if (e.target === helpOverlay) closeHelp(); });
+  document.addEventListener("keydown", function(e){
+    if (e.key === "Escape" && !helpOverlay.classList.contains("hidden")) closeHelp();
+  });
 
   // ==== autosave (IndexedDB) + unload guard ====
   // Everything used to live in memory only, so one stray Ctrl+W threw away the whole

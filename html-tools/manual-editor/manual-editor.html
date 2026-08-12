@@ -38,6 +38,19 @@
   button.primary{background:var(--accent);border-color:var(--accent);color:var(--ink);}
   button.primary:hover{background:#ff8a1a;}
   .btnfile{display:inline-block;}
+  .help-btn{width:30px;height:30px;padding:0;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:14px;}
+  .help-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:700;padding:20px;}
+  .help-overlay.hidden{display:none;}
+  .help-panel{background:var(--paper-raised);border:1px solid var(--border);border-radius:10px;width:100%;max-width:560px;max-height:85vh;overflow-y:auto;padding:20px 24px 24px;box-shadow:0 12px 40px rgba(0,0,0,.4);color:var(--ink);}
+  .help-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  .help-header h2{margin:0;font-size:16px;color:var(--ink);font-family:var(--font-display);}
+  .help-header .help-btn{background:var(--paper);color:var(--ink);border:1px solid var(--border);}
+  .help-header .help-btn:hover{background:var(--accent-soft);border-color:var(--accent);}
+  .help-body h3{font-size:13px;color:var(--ink-soft);margin:18px 0 6px;letter-spacing:.02em;font-family:var(--font-display);}
+  .help-body h3:first-child{margin-top:0;}
+  .help-body ul{margin:0;padding-left:20px;font-size:13px;line-height:1.7;color:var(--ink);}
+  .help-body li{margin-bottom:4px;}
+  .help-body kbd{background:var(--paper);border:1px solid var(--border);border-radius:4px;padding:1px 6px;font-family:var(--font-mono);font-size:12px;}
 
   .layout{display:flex;flex:1;min-height:0;}
   .sheet-rail{width:220px;flex-shrink:0;background:var(--ink-soft);color:#fff;padding:14px 10px;overflow-y:auto;}
@@ -168,6 +181,7 @@
     <span id="stats" class="stats"></span>
     <span id="autosaveStatus" class="autosave-status"></span>
     <div class="actions">
+      <button id="helpBtn" class="help-btn" type="button" title="使い方" aria-label="使い方">?</button>
       <label class="sel-label" title="取り込む画像の縮小サイズ。ブラウザに記憶されます">縮小
         <select id="shrinkSel">
           <option value="2000">長辺2000px</option>
@@ -197,6 +211,57 @@
       <button id="addSheet">＋ シートを追加</button>
     </aside>
     <main class="editor-main" id="editorMain"></main>
+  </div>
+</div>
+
+<div id="helpOverlay" class="help-overlay hidden">
+  <div class="help-panel" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <div class="help-header">
+      <h2 id="helpTitle">使い方</h2>
+      <button id="helpCloseBtn" class="help-btn" type="button" title="閉じる" aria-label="閉じる">×</button>
+    </div>
+    <div class="help-body">
+      <h3>シート</h3>
+      <ul>
+        <li>左のシート一覧で手順書を複数シートに分けて管理できます</li>
+        <li>「＋ シートを追加」で新規作成、⠿ をドラッグして並び替え</li>
+        <li>タブ内の <strong>↑↓</strong> で移動、<strong>⧉</strong> で複製、<strong>✕</strong> で削除（最後の1枚は削除不可）</li>
+        <li>タブの名前欄はクリックして直接編集できます</li>
+      </ul>
+      <h3>手順</h3>
+      <ul>
+        <li>「＋ 手順を追加」で新規作成</li>
+        <li>手順を右クリックすると、上/下に追加・複製・削除ができます</li>
+        <li>⠿ をドラッグすると並び替え、左のシートタブへドロップすると別シートへ移動できます</li>
+      </ul>
+      <h3>画像</h3>
+      <ul>
+        <li>手順をクリックすると「貼り付け先」になり、その状態で <kbd>Ctrl</kbd>+<kbd>V</kbd> で画像を貼り付けられます</li>
+        <li>ドラッグ&ドロップでも画像を追加できます</li>
+      </ul>
+      <h3>検索・置換</h3>
+      <ul>
+        <li><kbd>Ctrl</kbd>+<kbd>F</kbd> — 検索バーを開く（<kbd>Esc</kbd>で閉じる）</li>
+        <li><kbd>Enter</kbd> / <kbd>Shift</kbd>+<kbd>Enter</kbd> — 次/前の一致へ移動</li>
+        <li>置換欄に入力して「全置換」（または置換欄で <kbd>Enter</kbd>）</li>
+      </ul>
+      <h3>キーボードショートカット</h3>
+      <ul>
+        <li><kbd>Ctrl</kbd>+<kbd>S</kbd> — JSON保存</li>
+        <li><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd>（または <kbd>Ctrl</kbd>+<kbd>Y</kbd>） — 元に戻す/やり直す</li>
+        <li><kbd>Esc</kbd> — 検索バー・メニューを閉じる</li>
+      </ul>
+      <h3>ファイル操作</h3>
+      <ul>
+        <li>「JSON保存」「ファイル読込」— 作業データをファイルとして保存/読込（このツールが書き出したHTMLも読込可）</li>
+        <li>「プレビュー（印刷確認）」— 書き出し結果を別画面で確認</li>
+        <li>「HTMLエクスポート」— 単体で開けるHTMLファイルとして書き出し</li>
+      </ul>
+      <h3>自動保存</h3>
+      <ul>
+        <li>編集内容はブラウザに自動保存され、閉じてしまっても次回開いたときに復元を確認できます</li>
+      </ul>
+    </div>
   </div>
 </div>
 
@@ -1951,6 +2016,17 @@
     $("#previewModal").classList.remove("hidden");
   });
   $("#closePreview").addEventListener("click", function(){ $("#previewModal").classList.add("hidden"); });
+
+  // ==== help ====
+  var helpOverlay = $("#helpOverlay");
+  function openHelp(){ helpOverlay.classList.remove("hidden"); }
+  function closeHelp(){ helpOverlay.classList.add("hidden"); }
+  $("#helpBtn").addEventListener("click", openHelp);
+  $("#helpCloseBtn").addEventListener("click", closeHelp);
+  helpOverlay.addEventListener("click", function(e){ if (e.target === helpOverlay) closeHelp(); });
+  document.addEventListener("keydown", function(e){
+    if (e.key === "Escape" && !helpOverlay.classList.contains("hidden")) closeHelp();
+  });
 
   // ==== autosave (IndexedDB) + unload guard ====
   // Everything used to live in memory only, so one stray Ctrl+W threw away the whole
