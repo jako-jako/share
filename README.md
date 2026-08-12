@@ -11,5 +11,6 @@
 | [`html-tools/evidence-gallery/`](html-tools/evidence-gallery/) | 作業証跡ギャラリー エディタ |
 | [`html-tools/manual-editor/`](html-tools/manual-editor/) | 手順書エディタ |
 | [`html-tools/test-evidence/`](html-tools/test-evidence/) | テストエビデンス作成ツール（使い方ガイド付き） |
+| [`html-tools/mermaid-viewer/`](html-tools/mermaid-viewer/) | Mermaid ビューワー（Mermaid記法をプレビューし、SVG/PNG/単体HTMLとして書き出し） |
 
 `html-tools/` 配下は、いずれもブラウザで開くだけで動く単一HTMLファイルのツール群です。インストール不要・外部通信なしで動作します。
