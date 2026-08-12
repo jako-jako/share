@@ -175,6 +175,79 @@
     min-width:28px;
   }
   .toolbar button:hover{ background:var(--bg); border-color:var(--accent); filter:none; }
+  /* ヘルプボタンなど、主要な操作ボタンより控えめに見せたい丸アイコン */
+  .icon-btn{
+    width:30px;
+    height:30px;
+    padding:0;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    background:transparent;
+    color:var(--text);
+    border:1px solid var(--border);
+    border-radius:50%;
+    font-size:14px;
+    font-weight:700;
+    cursor:pointer;
+  }
+  .icon-btn:hover{ background:var(--bg); border-color:var(--accent); filter:none; }
+  .help-overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.55);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:100;
+    padding:20px;
+  }
+  .help-overlay[hidden]{ display:none; }
+  .help-panel{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:10px;
+    width:100%;
+    max-width:560px;
+    max-height:85vh;
+    overflow-y:auto;
+    padding:20px 24px 24px;
+    box-shadow:0 12px 40px rgba(0,0,0,.4);
+  }
+  .help-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:14px;
+  }
+  .help-header h2{
+    margin:0;
+    font-size:16px;
+    color:var(--text);
+  }
+  .help-body h3{
+    font-size:13px;
+    color:var(--label);
+    margin:18px 0 6px;
+    letter-spacing:.02em;
+  }
+  .help-body h3:first-child{ margin-top:0; }
+  .help-body ul{
+    margin:0;
+    padding-left:20px;
+    font-size:13px;
+    line-height:1.7;
+    color:var(--text);
+  }
+  .help-body li{ margin-bottom:4px; }
+  .help-body kbd{
+    background:var(--bg);
+    border:1px solid var(--border);
+    border-radius:4px;
+    padding:1px 6px;
+    font-family:"SFMono-Regular", Menlo, Consolas, monospace;
+    font-size:12px;
+  }
   textarea{
     flex:1;
     background:var(--bg);
@@ -203,6 +276,7 @@
 <header>
   <h1>MD → HTML ダウンローダー</h1>
   <div class="controls">
+    <button id="helpBtn" class="icon-btn" type="button" title="使い方" aria-label="使い方">?</button>
     <label class="field" for="filename">
       <span class="field-label">ファイル名</span>
       <span class="field-box">
@@ -216,6 +290,44 @@
     <button id="downloadBtn">HTMLダウンロード</button>
   </div>
 </header>
+
+<div id="helpOverlay" class="help-overlay" hidden>
+  <div class="help-panel" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <div class="help-header">
+      <h2 id="helpTitle">使い方</h2>
+      <button id="helpCloseBtn" class="icon-btn" type="button" title="閉じる" aria-label="閉じる">×</button>
+    </div>
+    <div class="help-body">
+      <h3>ツールバー</h3>
+      <ul>
+        <li><strong>H</strong> 見出し / <strong>B</strong> 太字 / <strong>I</strong> 斜体 / <strong>S</strong> 取り消し線</li>
+        <li><strong>"</strong> 引用 / <strong>•</strong> 箇条書き / <strong>&lt;/&gt;</strong> インラインコード / <strong>🔗</strong> リンク</li>
+        <li>選択範囲があればそれを装飾、なければカーソル位置に記法を挿入します</li>
+      </ul>
+      <h3>キーボードショートカット</h3>
+      <ul>
+        <li><kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd> — 選択行をインデント/解除</li>
+        <li><kbd>Ctrl</kbd>+<kbd>Z</kbd>(Macは<kbd>Cmd</kbd>+<kbd>Z</kbd>) — 元に戻す</li>
+        <li><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> — やり直す</li>
+      </ul>
+      <h3>画像</h3>
+      <ul>
+        <li>エディタへの貼り付け、またはドラッグ&ドロップで画像をBase64として本文に埋め込みます</li>
+        <li>幅1600pxを超える画像は自動的に縮小されます</li>
+      </ul>
+      <h3>ファイル操作</h3>
+      <ul>
+        <li>「Markdownインポート」— .md / .markdown ファイルを読み込み(ドラッグ&ドロップも可)</li>
+        <li>「クリア」— エディタの内容を消去(Ctrl+Zで復元可能)</li>
+        <li>「Markdownダウンロード」「HTMLダウンロード」— 現在の内容をファイルとして保存</li>
+      </ul>
+      <h3>自動保存</h3>
+      <ul>
+        <li>入力内容とファイル名はブラウザのlocalStorageに自動保存され、タブを閉じても次回開いたときに復元されます</li>
+      </ul>
+    </div>
+  </div>
+</div>
 
 <main>
   <div class="pane">
@@ -376,6 +488,9 @@ const downloadMdBtn = document.getElementById('downloadMdBtn');
 const importMdBtn = document.getElementById('importMdBtn');
 const importMdInput = document.getElementById('importMdInput');
 const clearBtn = document.getElementById('clearBtn');
+const helpBtn = document.getElementById('helpBtn');
+const helpOverlay = document.getElementById('helpOverlay');
+const helpCloseBtn = document.getElementById('helpCloseBtn');
 const statsEl = document.getElementById('stats');
 const toolbar = document.getElementById('toolbar');
 
@@ -783,6 +898,22 @@ clearBtn.addEventListener('click', () => {
   editor.selectionStart = editor.selectionEnd = 0;
   editor.focus();
   syncAfterEdit({ commitHistory: true });
+});
+
+// ヘルプの開閉(背景クリックとEscでも閉じられるようにする)
+function openHelp(){
+  helpOverlay.hidden = false;
+}
+function closeHelp(){
+  helpOverlay.hidden = true;
+}
+helpBtn.addEventListener('click', openHelp);
+helpCloseBtn.addEventListener('click', closeHelp);
+helpOverlay.addEventListener('click', (e) => {
+  if(e.target === helpOverlay) closeHelp();
+});
+document.addEventListener('keydown', (e) => {
+  if(e.key === 'Escape' && !helpOverlay.hidden) closeHelp();
 });
 </script>
 
