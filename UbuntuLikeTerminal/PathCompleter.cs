@@ -55,6 +55,11 @@ namespace UbuntuLikeTerminal
         {
             token = token ?? "";
 
+            // A bare "~" is equivalent to "~\": both denote the home directory itself. Normalizing here
+            // means namePrefix (derived below from the *expanded* token) never ends up longer than the
+            // *original* token, which would otherwise make the tilde-form reconstruction below go negative.
+            if (token == "~") token = "~\\";
+
             // Expand a leading ~ to the user's profile directory, like a Unix shell.
             string expandedToken = token;
             bool hadTilde = false;

@@ -14,6 +14,20 @@ NuGet の復元は不要です（パッケージ参照が一切ありません�
 ソリューションを右クリック →「NuGet パッケージの復元」を無効にするか、`dotnet build /p:RestorePackages=false` 相当の
 設定で問題ありません。基本的には参照パッケージが無いのでビルドは完全にオフラインで完結します。
 
+## Linux 上でビルド確認するには（Docker）
+
+実行は Windows 専用ですが、コンパイルが通るかどうかは Docker + mono の msbuild で Linux 上でも確認できます。
+
+```sh
+./build.sh          # Release ビルド（bin/Release/net48/UbuntuLikeTerminal.exe を生成）
+./build.sh Debug    # Debug ビルド
+```
+
+内部では `Dockerfile`（mono イメージ）をビルドし、コンテナ内で msbuild の Restore→Build を実行しています。
+SDK スタイルの net48 プロジェクトは NuGet パッケージ参照が無くても `obj/project.assets.json` の生成に restore 相当の
+処理が必要なため、この Restore ステップだけはコンテナ内から `https://api.nuget.org` へアクセスします
+（パッケージ自体はダウンロードしません）。
+
 ## 対応コマンド
 
 | コマンド | オプション | 説明 |

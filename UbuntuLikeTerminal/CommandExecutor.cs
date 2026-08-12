@@ -68,7 +68,7 @@ namespace UbuntuLikeTerminal
             positional = new List<string>();
             foreach (var arg in args)
             {
-                if (arg.Length >= 2 && arg[0] == '-' && arg != "-" && arg != "--" && !char.IsDigit(arg[1]))
+                if (arg.Length >= 2 && arg[0] == '-' && arg != "-" && arg != "--")
                 {
                     foreach (char c in arg.Substring(1)) flags.Add(char.ToLowerInvariant(c));
                 }
@@ -183,13 +183,15 @@ namespace UbuntuLikeTerminal
             if (names.Count == 0) return;
 
             var display = names.Select(n => n + (Directory.Exists(Path.Combine(baseDir, n)) ? "\\" : "")).ToList();
-            int colWidth = display.Max(n => n.Length) + 2;
+            int colWidth = display.Max(DisplayWidth.Of) + 2;
             int consoleWidth = SafeConsoleWidth();
             int columns = Math.Max(1, consoleWidth / colWidth);
 
             for (int i = 0; i < display.Count; i++)
             {
-                Console.Write(display[i].PadRight(colWidth));
+                bool lastInRow = (i + 1) % columns == 0 || i == display.Count - 1;
+                Console.Write(display[i]);
+                if (!lastInRow) Console.Write(new string(' ', colWidth - DisplayWidth.Of(display[i])));
                 if ((i + 1) % columns == 0) Console.WriteLine();
             }
             if (display.Count % columns != 0) Console.WriteLine();
