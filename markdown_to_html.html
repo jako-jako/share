@@ -118,17 +118,27 @@
   button:hover{ filter:brightness(1.08); }
   main{
     flex:1;
-    display:grid;
-    grid-template-columns:1fr 1fr;
+    display:flex;
     min-height:0;
   }
   .pane{
     display:flex;
     flex-direction:column;
+    min-width:0;
     min-height:0;
-    border-right:1px solid var(--border);
+    flex:1 1 0;
   }
-  .pane:last-child{ border-right:none; }
+  /* ペイン幅を左右にドラッグして変更するためのハンドル */
+  .divider{
+    flex:0 0 6px;
+    background:var(--border);
+    cursor:col-resize;
+    position:relative;
+  }
+  .divider:hover, .divider:focus-visible, .divider.dragging{
+    background:var(--accent);
+    outline:none;
+  }
   .pane-label{
     font-size:12.5px;
     font-weight:600;
@@ -298,6 +308,13 @@
       <button id="helpCloseBtn" class="icon-btn" type="button" title="閉じる" aria-label="閉じる">×</button>
     </div>
     <div class="help-body">
+      <h3>画面レイアウト</h3>
+      <ul>
+        <li>入力欄とプレビューの間の境界線をドラッグすると、左右のペイン幅を変更できます</li>
+        <li>境界線をダブルクリックすると幅が50:50にリセットされます</li>
+        <li>境界線をクリックして選択した状態で <kbd>←</kbd> / <kbd>→</kbd> キーでも微調整できます</li>
+        <li>変更した幅はlocalStorageに保存され、次回開いたときも復元されます</li>
+      </ul>
       <h3>ツールバー</h3>
       <ul>
         <li><strong>H</strong> 見出し / <strong>B</strong> 太字 / <strong>I</strong> 斜体 / <strong>S</strong> 取り消し線</li>
@@ -330,7 +347,7 @@
 </div>
 
 <main>
-  <div class="pane">
+  <div class="pane" id="editorPane">
     <div class="pane-label">
       <span>Markdown 入力</span>
       <span id="stats" class="stats"></span>
@@ -446,7 +463,8 @@ npm run dev
 </div>
 </textarea>
   </div>
-  <div class="pane">
+  <div class="divider" id="paneDivider" role="separator" aria-orientation="vertical" aria-label="ペイン幅の変更" tabindex="0"></div>
+  <div class="pane" id="previewPane">
     <div class="pane-label">プレビュー</div>
     <div id="preview"></div>
   </div>
@@ -493,6 +511,10 @@ const helpOverlay = document.getElementById('helpOverlay');
 const helpCloseBtn = document.getElementById('helpCloseBtn');
 const statsEl = document.getElementById('stats');
 const toolbar = document.getElementById('toolbar');
+const mainEl = document.querySelector('main');
+const editorPane = document.getElementById('editorPane');
+const previewPane = document.getElementById('previewPane');
+const paneDivider = document.getElementById('paneDivider');
 
 function baseName(){
   return (filenameInput.value.trim() || 'document').replace(/\.(html?|md|markdown)$/i, '');
@@ -914,6 +936,77 @@ helpOverlay.addEventListener('click', (e) => {
 });
 document.addEventListener('keydown', (e) => {
   if(e.key === 'Escape' && !helpOverlay.hidden) closeHelp();
+});
+
+// ペイン幅のドラッグ変更(左ペインの比率をlocalStorageに保存し、次回開いたときも復元する)
+const STORAGE_KEY_PANE_RATIO = 'md_downloader_pane_ratio_v1';
+const PANE_RATIO_MIN = 0.15;
+const PANE_RATIO_MAX = 0.85;
+
+function applyPaneRatio(ratio){
+  const clamped = Math.min(PANE_RATIO_MAX, Math.max(PANE_RATIO_MIN, ratio));
+  editorPane.style.flex = `0 0 ${clamped * 100}%`;
+  previewPane.style.flex = '1 1 0';
+  return clamped;
+}
+
+function currentPaneRatio(){
+  const rect = mainEl.getBoundingClientRect();
+  return editorPane.getBoundingClientRect().width / rect.width;
+}
+
+const savedPaneRatio = parseFloat(localStorage.getItem(STORAGE_KEY_PANE_RATIO));
+applyPaneRatio(Number.isFinite(savedPaneRatio) ? savedPaneRatio : 0.5);
+
+let paneDragging = false;
+
+function paneDragMove(e){
+  if(!paneDragging) return;
+  const rect = mainEl.getBoundingClientRect();
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  applyPaneRatio((clientX - rect.left) / rect.width);
+}
+
+function paneDragEnd(){
+  if(!paneDragging) return;
+  paneDragging = false;
+  paneDivider.classList.remove('dragging');
+  document.body.style.userSelect = '';
+  localStorage.setItem(STORAGE_KEY_PANE_RATIO, currentPaneRatio());
+}
+
+paneDivider.addEventListener('mousedown', (e) => {
+  paneDragging = true;
+  paneDivider.classList.add('dragging');
+  document.body.style.userSelect = 'none';
+  e.preventDefault();
+});
+window.addEventListener('mousemove', paneDragMove);
+window.addEventListener('mouseup', paneDragEnd);
+
+paneDivider.addEventListener('touchstart', (e) => {
+  paneDragging = true;
+  paneDivider.classList.add('dragging');
+}, { passive: true });
+window.addEventListener('touchmove', paneDragMove, { passive: true });
+window.addEventListener('touchend', paneDragEnd);
+
+// ダブルクリックで50:50にリセット
+paneDivider.addEventListener('dblclick', () => {
+  applyPaneRatio(0.5);
+  localStorage.setItem(STORAGE_KEY_PANE_RATIO, 0.5);
+});
+
+// 矢印キーでも微調整できるようにする
+paneDivider.addEventListener('keydown', (e) => {
+  const STEP = 0.02;
+  let next;
+  if(e.key === 'ArrowLeft') next = currentPaneRatio() - STEP;
+  else if(e.key === 'ArrowRight') next = currentPaneRatio() + STEP;
+  else return;
+  e.preventDefault();
+  applyPaneRatio(next);
+  localStorage.setItem(STORAGE_KEY_PANE_RATIO, currentPaneRatio());
 });
 </script>
 
