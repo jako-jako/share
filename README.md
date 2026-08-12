@@ -1,28 +1,15 @@
 # share
 
-:sparkles: Markdown → HTML 変換ツール（ブラウザだけで動きます）
+個人用のツール・プロジェクトを置くリポジトリです。ツールごとに独立したフォルダに分かれています。
 
-Markdown を書くとその場でプレビューされ、スタイル込みの HTML ファイルとして保存できるツールを作りました。HTML ファイル 1 つだけで動きます。
+## 構成
 
-こんなときに
-•ブラウザだけで Markdown が書ける
-• 手順書・議事録・メモを、そのまま人に渡せる HTML にしたい
-• 「Markdown をまだ触ったことがない」人の入り口として
+| フォルダ | 内容 |
+|---|---|
+| [`UbuntuLikeTerminal/`](UbuntuLikeTerminal/) | Windows 用の自作ターミナル（C# / .NET Framework 4.8） |
+| [`html-tools/markdown-to-html/`](html-tools/markdown-to-html/) | Markdown → HTML 変換ツール（ブラウザだけで動く単一HTML） |
+| [`html-tools/evidence-gallery/`](html-tools/evidence-gallery/) | 作業証跡ギャラリー エディタ |
+| [`html-tools/manual-editor/`](html-tools/manual-editor/) | 手順書エディタ |
+| [`html-tools/test-evidence/`](html-tools/test-evidence/) | テストエビデンス作成ツール（使い方ガイド付き、v2あり） |
 
-使い方
-1. markdown_to_html.html を手元にダウンロード
-2. ブラウザで開く（ダブルクリックでOK）
-3. 左に Markdown を書く → 右にリアルタイムでプレビュー
-4. ファイル名を入れて「ダウンロード」→ スタイル付きの HTML が保存されます
-
-ポイント
-• インストール不要・アカウント不要・設定不要
-• 入力内容がどこかに送信されることはありません。変換はすべてブラウザ内で完結します
-• 保存した HTML は単体で開けます。受け取った人の側に特別な環境は要りません
-• 見出し・箇条書き・表・コードブロック・引用に対応
-• Markdown 標準にはない文字色も、<span style="color:#e63946;">赤い文字</span> のように書けば反映されます
-• オフライン環境でも動作します。外部サーバーへの通信は一切発生しません
-
-開いた直後に主要な記法をひと通り詰めたサンプルが入っているので、上書きしながら試すのが手っ取り早いと思います。
-
-気になる点・こう直したいという要望があれば、このスレッドに気軽にどうぞ :pray: （
+`html-tools/` 配下は、いずれもブラウザで開くだけで動く単一HTMLファイルのツール群です。インストール不要・外部通信なしで動作します。
