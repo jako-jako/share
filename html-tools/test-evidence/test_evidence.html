@@ -47,8 +47,16 @@
   .field textarea{ width:100%; min-height:48px; border:1px solid var(--line); border-radius:4px; padding:7px 8px; font-size:13px; resize:vertical; font-family:inherit; }
 
   .gallery-section{ grid-column:1 / -1; }
-  .gallery{ display:grid; grid-template-columns:repeat(auto-fill, minmax(170px,1fr)); gap:12px; }
-  .shot-card{ border:1px solid var(--line); border-radius:6px; overflow:hidden; background:#fafafa; display:flex; flex-direction:column; }
+  /* 画像ごとに幅を持たせるためグリッドではなくフレックス。編集画面の並びが
+     そのまま配布用HTML・印刷の並びになる（従来は編集とエクスポートで折り返しが違った）。 */
+  .gallery{ display:flex; flex-wrap:wrap; gap:12px; align-items:flex-start; }
+  .shot-card{ position:relative; border:1px solid var(--line); border-radius:6px; overflow:hidden; background:#fafafa; display:flex; flex-direction:column; flex-grow:0; }
+  .width-btns{ display:flex; gap:2px; }
+  .width-btns button{ font-size:9.5px; padding:2px 5px; background:#fff; border:1px solid var(--line); color:var(--muted); border-radius:3px; cursor:pointer; line-height:1.4; }
+  .width-btns button.active{ background:var(--navy); border-color:var(--navy); color:#fff; font-weight:700; }
+  .width-resizer{ position:absolute; top:0; right:0; width:8px; height:100%; cursor:ew-resize; z-index:3; }
+  .width-resizer:hover{ background:rgba(31,58,95,.18); }
+  .width-current{ font-family:Menlo,Consolas,monospace; font-size:9.5px; color:var(--muted); padding:0 2px; }
   .shot-card .thumb-wrap{ position:relative; cursor:pointer; background:#111; }
   .shot-card img{ width:100%; display:block; }
   .shot-card .num{ position:absolute; top:4px; left:4px; background:var(--navy); color:#fff; font-size:11px; font-weight:700; padding:1px 7px; border-radius:10px; }
@@ -57,7 +65,7 @@
   .shot-card .shot-actions{ display:flex; gap:2px; padding:3px 6px; background:#f4f4f4; }
   .shot-card .shot-actions .spacer{ flex:1; }
 
-  .add-shot{ border:2px dashed var(--line); border-radius:6px; min-height:120px; display:flex; flex-direction:column; gap:8px; align-items:center; justify-content:center; text-align:center; color:var(--muted); font-size:11.5px; cursor:pointer; padding:8px; }
+  .add-shot{ flex:0 0 calc(33% - 12px); min-width:160px; border:2px dashed var(--line); border-radius:6px; min-height:120px; display:flex; flex-direction:column; gap:8px; align-items:center; justify-content:center; text-align:center; color:var(--muted); font-size:11.5px; cursor:pointer; padding:8px; }
   .add-shot.selected{ border-style:solid; border-color:var(--navy); background:#eef2f6; color:var(--navy); font-weight:600; }
   .add-shot .pick-file{ background:#fff; border:1px solid var(--line); border-radius:4px; padding:4px 10px; font-size:11.5px; cursor:pointer; color:var(--ink); }
 
@@ -79,12 +87,50 @@
   .anno-canvas-wrap{ flex:1; display:flex; align-items:center; justify-content:center; overflow:auto; padding:16px; }
   #annoCanvas{ background:#000; max-width:100%; max-height:100%; cursor:crosshair; box-shadow:0 0 0 1px #333; }
 
+  /* --- 統計表示UI --- */
+  #stats{ display:flex; gap:6px; align-items:center; font-size:11.5px; }
+  #stats .st{ background:rgba(255,255,255,.14); padding:2px 8px; border-radius:10px; white-space:nowrap; }
+  #stats .st.ok{ color:#8fe3b6; } #stats .st.ng{ color:#ffb0a6; } #stats .st.pd{ color:#ffe08a; }
+  .toolbar input[type=range]{ width:90px; }
+  .icon-btn.safe:hover{ color:var(--navy); }
+  .drag-handle{ cursor:grab; color:var(--muted); font-size:13px; padding:2px 4px; user-select:none; }
+  .case.drag-over-top{ box-shadow:0 -3px 0 0 var(--navy); }
+  .case.drag-over-bottom{ box-shadow:0 3px 0 0 var(--navy); }
+  .shot-card .thumb-wrap[draggable=true]{ cursor:grab; }
+  .shot-card.drag-over-left{ box-shadow:-3px 0 0 0 var(--navy); }
+  .shot-card.drag-over-right{ box-shadow:3px 0 0 0 var(--navy); }
+  .add-shot.drag-over-img{ border-style:solid; border-color:var(--navy); background:#eef2f6; }
+  .dragging{ opacity:.4; }
+  .sel-box{ position:absolute; top:4px; right:4px; z-index:2; }
+  .sel-box input{ width:15px; height:15px; cursor:pointer; accent-color:var(--navy); margin:0; }
+  .shot-card.selected-card{ outline:2px solid var(--navy); }
+  #bulkBar{ position:fixed; bottom:70px; left:50%; transform:translateX(-50%); background:var(--navy); color:#fff; padding:9px 14px; border-radius:8px; display:none; gap:10px; align-items:center; z-index:150; box-shadow:0 4px 14px rgba(0,0,0,.3); font-size:12.5px; }
+  #bulkBar.show{ display:flex; }
+  #bulkBar button{ background:#fff; color:var(--navy); border:none; border-radius:4px; padding:5px 11px; font-size:12px; font-weight:600; cursor:pointer; }
+  #ctxMenu{ position:fixed; z-index:300; background:#fff; border:1px solid var(--line); border-radius:6px; box-shadow:0 6px 20px rgba(0,0,0,.18); min-width:170px; padding:4px 0; display:none; font-size:12.5px; }
+  .ctx-item{ padding:7px 14px; cursor:pointer; }
+  .ctx-item:hover{ background:#eef2f6; }
+  .ctx-item.danger{ color:var(--ng); }
+  .ctx-sep{ height:1px; background:var(--line); margin:4px 0; }
+  #searchBar{ position:fixed; top:60px; right:24px; z-index:150; background:#fff; border:1px solid var(--line); border-radius:8px; box-shadow:0 6px 20px rgba(0,0,0,.18); padding:8px 10px; display:none; gap:6px; align-items:center; font-size:12.5px; flex-wrap:wrap; max-width:560px; }
+  #searchBar.show{ display:flex; }
+  #searchBar input[type=text]{ border:1px solid var(--line); border-radius:4px; padding:5px 8px; font-size:12.5px; width:150px; }
+  #searchBar button{ background:#f1f2f4; border:1px solid var(--line); border-radius:4px; padding:5px 9px; cursor:pointer; font-size:12px; }
+  #searchCount{ color:var(--muted); min-width:46px; text-align:center; }
+  textarea.search-hit, input.search-hit{ outline:2px solid #e0a800 !important; }
+  #restoreBanner{ display:none; max-width:1040px; margin:16px auto -8px; background:#fff8e6; border:1px solid #e6d9ad; color:#6b5714; padding:10px 14px; border-radius:6px; font-size:12.5px; align-items:center; gap:10px; }
+  #restoreBanner.show{ display:flex; }
+  #restoreBanner button{ border:1px solid #cbb96a; background:#fff; border-radius:4px; padding:5px 12px; cursor:pointer; font-size:12px; color:#6b5714; font-weight:600; }
+
   @media print{
-    .toolbar, .add-case, .icon-btn, .shot-actions, .add-shot, .edit-hint{ display:none !important; }
+    .toolbar, .add-case, .icon-btn, .shot-actions, .add-shot, .edit-hint, .sel-box, .drag-handle, #searchBar, #ctxMenu, #bulkBar, #restoreBanner{ display:none !important; }
     body{ background:#fff; }
     #sheet{ box-shadow:none; margin:0; max-width:100%; }
     .case{ break-inside:avoid; }
-    textarea, input, select{ border:none !important; }
+    textarea, input, select{ border:none !important; background:transparent !important; }
+    textarea{ overflow:hidden !important; resize:none !important; }
+    select{ -webkit-appearance:none; appearance:none; }
+    .shot-card{ break-inside:avoid; }
   }
 </style>
 </head>
@@ -97,12 +143,47 @@
   <div class="meta-row">日付<input type="text" id="testDate" value=""></div>
   <div class="meta-row">縮小<select id="shrinkSel"><option value="1600">長辺1600px</option><option value="1200">長辺1200px</option><option value="800" selected>長辺800px</option><option value="500">長辺500px</option><option value="0">なし</option></select></div>
   <div class="meta-row">形式<select id="fmtSel"><option value="jpeg85" selected>JPEG 標準</option><option value="jpeg92">JPEG 高画質</option><option value="png">PNG</option></select></div>
+  <div class="meta-row">既定幅<select id="defWidth" title="新しく取り込む画像の表示幅。個々の画像はカード下のボタン、または右端をドラッグで変更できます"><option value="100">100%</option><option value="50" selected>50%</option><option value="33">33%</option><option value="25">25%</option></select></div>
+  <span id="stats"></span>
+  <span id="saveStatus" class="meta-row" style="white-space:nowrap"></span>
   <div style="flex:1"></div>
+  <button class="secondary" id="collapseAllBtn" onclick="toggleCollapseAll()">全折りたたみ</button>
+  <button class="secondary" onclick="openSearch()" title="Ctrl+F">検索</button>
   <button class="secondary" onclick="document.getElementById('importInput').click()">作業用HTMLを読み込む</button>
   <input type="file" id="importInput" accept=".html,text/html" style="display:none" onchange="if(this.files[0]) importHtml(this.files[0]); this.value='';">
   <button class="secondary" onclick="window.print()">印刷 / PDF化</button>
   <button class="secondary" onclick="exportHtml(true)">作業用保存</button>
   <button onclick="exportHtml(false)">配布用保存</button>
+</div>
+
+<div id="restoreBanner">
+  <span id="restoreInfo"></span>
+  <span style="flex:1"></span>
+  <button onclick="restoreBackup()">復元する</button>
+  <button onclick="dismissBackup()">今回は復元しない</button>
+</div>
+
+<div id="searchBar">
+  <input type="text" id="searchInput" placeholder="検索（Enter=次 / Shift+Enter=前）">
+  <span id="searchCount"></span>
+  <button onclick="gotoSearch(-1)" title="前へ (Shift+Enter)">↑</button>
+  <button onclick="gotoSearch(1)" title="次へ (Enter)">↓</button>
+  <input type="text" id="replaceInput" placeholder="置換後の文字列">
+  <button onclick="replaceAll()">全置換</button>
+  <button onclick="closeSearch()" title="閉じる (Esc)">×</button>
+</div>
+
+<div id="ctxMenu"></div>
+
+<div id="bulkBar">
+  <span><b id="bulkCount">0</b> 枚選択中</span>
+  <span>幅を一括変更</span>
+  <button onclick="bulkSetWidth(100)">100%</button>
+  <button onclick="bulkSetWidth(50)">50%</button>
+  <button onclick="bulkSetWidth(33)">33%</button>
+  <button onclick="bulkSetWidth(25)">25%</button>
+  <button onclick="bulkDeleteSelected()">一括削除</button>
+  <button onclick="clearSelection()">選択解除</button>
 </div>
 
 <div id="sheet">
@@ -150,34 +231,177 @@ let caseSeq = 0;
 let imgSeq = 0;
 let activePasteCaseId = null;
 
+/* ---------- undo / redo ---------- */
+let undoStack = [], redoStack = [], pendingTextSnapshot = null;
+const UNDO_MAX = 60;
+// 画像のdataURL文字列は参照共有されるため、スナックショット自体は軽量
+function cloneCases(list){
+  return list.map(c => ({ id:c.id, collapsed:c.collapsed, title:c.title, step:c.step, expected:c.expected, actual:c.actual, result:c.result,
+    images:(c.images||[]).map(i => ({ id:i.id, original:i.original, flattened:i.flattened, comment:i.comment, width:i.width, shapes:JSON.parse(JSON.stringify(i.shapes||[])) })) }));
+}
+function takeSnapshot(){
+  return { meta:{ proj:document.getElementById('projName').value, tester:document.getElementById('tester').value, date:document.getElementById('testDate').value },
+    active:activePasteCaseId, caseSeq, imgSeq, cases:cloneCases(cases) };
+}
+function pushUndo(){ undoStack.push(takeSnapshot()); if(undoStack.length > UNDO_MAX) undoStack.shift(); redoStack.length = 0; pendingTextSnapshot = null; }
+function beginTextEdit(){ pendingTextSnapshot = takeSnapshot(); }
+function commitTextEdit(){ if(pendingTextSnapshot){ undoStack.push(pendingTextSnapshot); if(undoStack.length > UNDO_MAX) undoStack.shift(); redoStack.length = 0; pendingTextSnapshot = null; } }
+function restoreSnapshot(s){
+  document.getElementById('projName').value = s.meta.proj;
+  document.getElementById('tester').value = s.meta.tester;
+  document.getElementById('testDate').value = s.meta.date;
+  cases = cloneCases(s.cases); caseSeq = s.caseSeq; imgSeq = s.imgSeq;
+  activePasteCaseId = (s.active != null && cases.some(c => c.id === s.active)) ? s.active : (cases.length ? cases[cases.length-1].id : null);
+  render();
+}
+function undo(){ pendingTextSnapshot = null; if(!undoStack.length){ showToast('元に戻せる操作がありません'); return; } redoStack.push(takeSnapshot()); restoreSnapshot(undoStack.pop()); showToast('元に戻しました'); }
+function redo(){ pendingTextSnapshot = null; if(!redoStack.length){ showToast('やり直せる操作がありません'); return; } undoStack.push(takeSnapshot()); restoreSnapshot(redoStack.pop()); showToast('やり直しました'); }
+
+/* ---------- multi-select ---------- */
+const selectedImgs = new Set();
+function selKey(c, i){ return c + ':' + i; }
+function toggleSel(cid, iid, on){ const k = selKey(cid, iid); if(on) selectedImgs.add(k); else selectedImgs.delete(k); updateBulkBar(); markSelectedCards(); }
+function pruneSelection(){ const valid = new Set(); cases.forEach(c => c.images.forEach(i => valid.add(selKey(c.id, i.id)))); Array.from(selectedImgs).forEach(k => { if(!valid.has(k)) selectedImgs.delete(k); }); }
+function clearSelection(){ selectedImgs.clear(); updateBulkBar(); markSelectedCards(); }
+function markSelectedCards(){ document.querySelectorAll('.shot-card').forEach(card => { card.classList.toggle('selected-card', selectedImgs.has(selKey(Number(card.dataset.cid), Number(card.dataset.iid)))); }); }
+function updateBulkBar(){ const bar = document.getElementById('bulkBar'); document.getElementById('bulkCount').textContent = selectedImgs.size; bar.classList.toggle('show', selectedImgs.size > 0); }
+function bulkDeleteSelected(){
+  if(!selectedImgs.size) return;
+  if(!confirm('選択中の画像 ' + selectedImgs.size + ' 枚を削除しますか？（Ctrl+Zで戻せます）')) return;
+  pushUndo();
+  cases.forEach(c => { c.images = c.images.filter(i => !selectedImgs.has(selKey(c.id, i.id))); });
+  selectedImgs.clear();
+  render();
+  showToast('選択画像を削除しました');
+}
+
+/* ---------- auto backup (IndexedDB) ---------- */
+// 自動バックアップは無言で失敗しうる（プライベートウィンドウ、容量超過、file:// の制限）。
+// 結果をツールバーに出しておかないと、ユーザーは保存されている前提で作業を続けてしまう。
+let backupTimer = null, bkBroken = false;
+function setSaveStatus(msg){ const el = document.getElementById('saveStatus'); if(el) el.textContent = msg; }
+function hhmm(d){ const z = n => String(n).padStart(2,'0'); return z(d.getHours()) + ':' + z(d.getMinutes()); }
+function idbOpen(){
+  return new Promise((res, rej) => {
+    try{
+      const r = indexedDB.open('evidence_tool_backup', 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('kv');
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+      r.onblocked = () => rej(new Error('blocked'));
+    }catch(e){ rej(e); }
+  });
+}
+function bkFail(){
+  if(bkBroken) return;
+  bkBroken = true;
+  setSaveStatus('自動バックアップ不可');
+  showToast('自動バックアップを利用できません。こまめに「作業用保存」してください。');
+}
+function bkSet(v){
+  idbOpen().then(db => {
+    const tx = db.transaction('kv','readwrite');
+    tx.objectStore('kv').put(v, 'latest');
+    tx.oncomplete = () => { bkBroken = false; setSaveStatus('自動バックアップ ' + hhmm(new Date())); };
+    tx.onerror = bkFail;
+    tx.onabort = bkFail;
+  }).catch(bkFail);
+}
+function bkGet(){ return idbOpen().then(db => new Promise(res => { const rq = db.transaction('kv').objectStore('kv').get('latest'); rq.onsuccess = () => res(rq.result); rq.onerror = () => res(null); })).catch(() => null); }
+function bkDel(){ idbOpen().then(db => { db.transaction('kv','readwrite').objectStore('kv').delete('latest'); }).catch(() => {}); }
+function scheduleBackup(){ clearTimeout(backupTimer); backupTimer = setTimeout(() => { if(hasContent()) bkSet(serializeState()); }, 2500); }
+function serializeState(){
+  return { v:1, savedAt:new Date().toISOString(),
+    meta:{ proj:document.getElementById('projName').value, tester:document.getElementById('tester').value, date:document.getElementById('testDate').value },
+    cases: cases.map(c => ({ title:c.title, step:c.step, expected:c.expected, actual:c.actual, result:c.result, collapsed:c.collapsed,
+      images: c.images.map(i => ({ original:i.original, shapes:i.shapes, comment:i.comment, width:i.width })) })) };
+}
+
+/* ---------- drag & drop state ---------- */
+let dragData = null;
+function clearDropMarks(){ document.querySelectorAll('.drag-over-top,.drag-over-bottom,.drag-over-left,.drag-over-right,.drag-over-img,.dragging').forEach(el => el.classList.remove('drag-over-top','drag-over-bottom','drag-over-left','drag-over-right','drag-over-img','dragging')); }
+
 /* ---------- state ops ---------- */
 function addCase(){
+  pushUndo();
   caseSeq++;
   cases.push({ id: caseSeq, collapsed:false, title:`テストケース ${caseSeq}`, step:'', expected:'', actual:'', result:'PENDING', images:[] });
   activePasteCaseId = caseSeq;
   render();
 }
 function removeCase(id){
-  if(!confirm('このケースを削除しますか？（画像も削除されます）')) return;
+  if(!confirm('このケースを削除しますか？（画像も削除されます / Ctrl+Zで戻せます）')) return;
+  pushUndo();
   cases = cases.filter(c => c.id !== id);
   if(activePasteCaseId === id) activePasteCaseId = cases.length ? cases[cases.length-1].id : null;
   render();
 }
+function duplicateCase(id){
+  const src = findCase(id); if(!src) return;
+  pushUndo();
+  caseSeq++;
+  const copy = { id:caseSeq, collapsed:false, title:(src.title || '') + '（コピー）', step:src.step, expected:src.expected, actual:src.actual, result:src.result,
+    images: src.images.map(i => { imgSeq++; return { id:imgSeq, original:i.original, flattened:i.flattened, comment:i.comment, width:i.width, shapes:JSON.parse(JSON.stringify(i.shapes||[])) }; }) };
+  cases.splice(cases.findIndex(c => c.id === id) + 1, 0, copy);
+  activePasteCaseId = copy.id;
+  render();
+  showToast('ケースを複製しました');
+}
+function insertCase(id, below){
+  pushUndo();
+  caseSeq++;
+  const nc = { id:caseSeq, collapsed:false, title:`テストケース ${caseSeq}`, step:'', expected:'', actual:'', result:'PENDING', images:[] };
+  const idx = cases.findIndex(c => c.id === id);
+  cases.splice(idx + (below ? 1 : 0), 0, nc);
+  activePasteCaseId = nc.id;
+  render();
+}
+function moveCase(id, dir){
+  const i = cases.findIndex(c => c.id === id); const t = i + dir;
+  if(i < 0 || t < 0 || t >= cases.length) return;
+  pushUndo();
+  const [c] = cases.splice(i, 1); cases.splice(t, 0, c); render();
+}
+function moveCaseTo(id, targetId, before){
+  const from = cases.findIndex(c => c.id === id), ti = cases.findIndex(c => c.id === targetId);
+  if(from < 0 || ti < 0 || id === targetId) return;
+  let to = ti + (before ? 0 : 1);
+  if(from < to) to--;
+  if(to === from) return;
+  pushUndo();
+  const [c] = cases.splice(from, 1); cases.splice(to, 0, c); render();
+}
+function toggleCollapseAll(){
+  const anyOpen = cases.some(c => !c.collapsed);
+  cases.forEach(c => c.collapsed = anyOpen);
+  render();
+}
 function toggleCollapse(id){ const c = findCase(id); if(c){ c.collapsed = !c.collapsed; render(); } }
-function updateField(id, field, value){ const c = findCase(id); if(c) c[field] = value; }
+function updateField(id, field, value){ commitTextEdit(); const c = findCase(id); if(c) c[field] = value; scheduleBackup(); }
+function setResult(id, value){ pushUndo(); const c = findCase(id); if(c) c.result = value; updateStats(); scheduleBackup(); }
 function findCase(id){ return cases.find(c => c.id === id); }
 function findImage(caseId, imgId){ const c = findCase(caseId); return c ? c.images.find(i => i.id === imgId) : null; }
-function updateImageComment(caseId, imgId, value){ const img = findImage(caseId, imgId); if(img) img.comment = value; }
+function updateImageComment(caseId, imgId, value){ commitTextEdit(); const img = findImage(caseId, imgId); if(img) img.comment = value; scheduleBackup(); }
 
-function addImageToCase(caseId, dataUrl){
+// 複数枚をまとめて1回のUndo履歴で追加する。1枚ずつ push すると、5枚ドロップ＝Undo 5回に
+// なるうえ、FileReader の完了順で並び順が入れ替わる（大きい画像が後ろに回る）。
+function addImages(caseId, dataUrls){
   const c = findCase(caseId);
   if(!c) return;
-  imgSeq++;
-  c.images.push({ id: imgSeq, original: dataUrl, shapes: [], flattened: dataUrl, comment: '' });
+  const list = dataUrls.filter(Boolean);
+  if(!list.length) return;
+  pushUndo();
+  const w = defaultWidth();
+  list.forEach(u => {
+    imgSeq++;
+    c.images.push({ id: imgSeq, original: u, shapes: [], flattened: u, comment: '', width: w });
+  });
+  if(c.collapsed) c.collapsed = false;  // 折りたたみ中のケースに貼ると行方不明になる
   render();
 }
 function removeImage(caseId, imgId){
   const c = findCase(caseId); if(!c) return;
+  pushUndo();
   c.images = c.images.filter(i => i.id !== imgId);
   render();
 }
@@ -186,16 +410,107 @@ function moveImage(caseId, imgId, dir){
   const idx = c.images.findIndex(i => i.id === imgId);
   const to = idx + dir;
   if(idx < 0 || to < 0 || to >= c.images.length) return;
+  pushUndo();
   const [item] = c.images.splice(idx, 1);
   c.images.splice(to, 0, item);
   render();
 }
+function duplicateImage(caseId, imgId){
+  const c = findCase(caseId); if(!c) return;
+  const src = c.images.find(i => i.id === imgId); if(!src) return;
+  pushUndo();
+  imgSeq++;
+  const idx = c.images.findIndex(i => i.id === imgId);
+  c.images.splice(idx + 1, 0, { id:imgSeq, original:src.original, flattened:src.flattened, comment:src.comment, width:src.width, shapes:JSON.parse(JSON.stringify(src.shapes||[])) });
+  render();
+}
+// 画像ごとの表示幅。横長のPC画面は100%、縦長のダイアログは25〜33%、
+// 変更前後の比較は両方50%で自動的に横並びになる。
+function defaultWidth(){
+  const v = Number((document.getElementById('defWidth') || {}).value);
+  return (isFinite(v) && v >= 15 && v <= 100) ? Math.round(v) : 50;
+}
+function imgWidth(img){
+  const w = Number(img && img.width);
+  return (isFinite(w) && w >= 15 && w <= 100) ? Math.round(w) : 50;
+}
+function setImageWidth(caseId, imgId, w){
+  const img = findImage(caseId, imgId);
+  if(!img || imgWidth(img) === w) return;
+  pushUndo();
+  img.width = w;
+  render();
+}
+function bulkSetWidth(w){
+  if(!selectedImgs.size) return;
+  pushUndo();
+  cases.forEach(c => c.images.forEach(i => { if(selectedImgs.has(selKey(c.id, i.id))) i.width = w; }));
+  render();
+  showToast(`選択画像の幅を ${w}% にしました`);
+}
+// 掴んだ瞬間に pushUndo() すると、幅を変えずに離しただけで Undo 履歴が1つ埋まる。
+// 実際に動いた最初の1回だけ記録する。
+function bindWidthResizers(){
+  document.querySelectorAll('.shot-card .width-resizer').forEach(rz => {
+    rz.addEventListener('mousedown', e => {
+      e.preventDefault(); e.stopPropagation();
+      const card = rz.parentElement;
+      const gallery = card.parentElement;
+      const img = findImage(Number(card.dataset.cid), Number(card.dataset.iid));
+      if(!img || !gallery) return;
+      const gw = gallery.getBoundingClientRect().width || 1;
+      const startX = e.clientX, startW = imgWidth(img);
+      let moved = false;
+      const onMove = ev => {
+        const w = Math.round(Math.min(100, Math.max(15, startW + ((ev.clientX - startX) / gw) * 100)));
+        if(w === imgWidth(img)) return;
+        if(!moved){ moved = true; pushUndo(); }
+        img.width = w;
+        card.style.flexBasis = `calc(${w}% - 12px)`;
+        const lbl = card.querySelector('.width-current');
+        if(lbl) lbl.textContent = w + '%';
+      };
+      const onUp = () => {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        if(moved) render();
+      };
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+  });
+}
+
+function moveImageTo(srcCid, imgId, dstCid, dstIdx){
+  const sc = findCase(srcCid), dc = findCase(dstCid); if(!sc || !dc) return;
+  const si = sc.images.findIndex(i => i.id === imgId); if(si < 0) return;
+  if(srcCid === dstCid){
+    let to = dstIdx;
+    if(si < to) to--;
+    if(to === si) return;
+    pushUndo();
+    const [it] = sc.images.splice(si, 1);
+    sc.images.splice(Math.max(0, Math.min(to, sc.images.length)), 0, it);
+  } else {
+    pushUndo();
+    const [it] = sc.images.splice(si, 1);
+    dc.images.splice(Math.max(0, Math.min(dstIdx, dc.images.length)), 0, it);
+  }
+  render();
+}
 
 /* ---------- image intake ---------- */
+// cb は成功時 dataURL、失敗時 null で必ず一度だけ呼ばれる。
+// onerror を付けないと壊れたファイルで待ちっぱなしになり、一括投入が永久に完了しない。
 function readFileAsDataUrl(file, cb){
+  if(!file){ cb(null); return; }
   const reader = new FileReader();
-  reader.onload = e => cb(e.target.result);
-  reader.readAsDataURL(file);
+  let done = false;
+  const fin = v => { if(done) return; done = true; cb(v); };
+  reader.onload = e => fin(e.target.result);
+  reader.onerror = () => fin(null);
+  reader.onabort = () => fin(null);
+  try{ reader.readAsDataURL(file); }catch(e){ fin(null); }
 }
 function getFmt(){
   const v = document.getElementById('fmtSel').value;
@@ -210,33 +525,62 @@ function encodeCanvas(cv, likeDataUrl){
   }
   return cv.toDataURL('image/png');
 }
+// cb は成功時 dataURL、失敗時 null で必ず一度だけ呼ばれる（読めない画像で待ちっぱなしにしない）。
 function preprocessImage(dataUrl, cb){
+  if(typeof dataUrl !== 'string' || dataUrl.indexOf('data:image/') !== 0){ cb(null); return; }
   const maxW = Number(document.getElementById('shrinkSel').value);
   const fmt = getFmt();
   const img = new Image();
+  let done = false;
+  const fin = v => { if(done) return; done = true; cb(v); };
   img.onload = () => {
-    const longEdge = Math.max(img.naturalWidth, img.naturalHeight);
-    const needShrink = maxW > 0 && longEdge > maxW;
-    const wantJpeg = fmt.mime === 'image/jpeg';
-    const alreadyJpeg = dataUrl.indexOf('data:image/jpeg') === 0;
-    if(!needShrink && (!wantJpeg || alreadyJpeg)) return cb(dataUrl);
-    const sc = needShrink ? maxW / longEdge : 1;
-    const cv = document.createElement('canvas');
-    cv.width = Math.round(img.naturalWidth * sc);
-    cv.height = Math.round(img.naturalHeight * sc);
-    const cx = cv.getContext('2d');
-    if(wantJpeg){ cx.fillStyle = '#fff'; cx.fillRect(0, 0, cv.width, cv.height); }
-    cx.drawImage(img, 0, 0, cv.width, cv.height);
-    cb(wantJpeg ? cv.toDataURL('image/jpeg', fmt.q) : cv.toDataURL('image/png'));
+    try{
+      const longEdge = Math.max(img.naturalWidth, img.naturalHeight);
+      if(!longEdge) return fin(null);
+      const needShrink = maxW > 0 && longEdge > maxW;
+      const wantJpeg = fmt.mime === 'image/jpeg';
+      const alreadyJpeg = dataUrl.indexOf('data:image/jpeg') === 0;
+      if(!needShrink && (!wantJpeg || alreadyJpeg)) return fin(dataUrl);
+      const sc = needShrink ? maxW / longEdge : 1;
+      const cv = document.createElement('canvas');
+      cv.width = Math.max(1, Math.round(img.naturalWidth * sc));
+      cv.height = Math.max(1, Math.round(img.naturalHeight * sc));
+      const cx = cv.getContext('2d');
+      if(wantJpeg){ cx.fillStyle = '#fff'; cx.fillRect(0, 0, cv.width, cv.height); }
+      cx.imageSmoothingEnabled = true;
+      cx.imageSmoothingQuality = 'high';
+      cx.drawImage(img, 0, 0, cv.width, cv.height);
+      const out = wantJpeg ? cv.toDataURL('image/jpeg', fmt.q) : cv.toDataURL('image/png');
+      // 縮小したのに肥大したら（極小PNG等）元を使う
+      fin(needShrink || out.length < dataUrl.length ? out : dataUrl);
+    }catch(e){ fin(dataUrl); }
   };
+  img.onerror = () => fin(null);
   img.src = dataUrl;
 }
-function processIncoming(dataUrl, caseId){ preprocessImage(dataUrl, d => addImageToCase(caseId, d)); }
-function handleFileInput(caseId, files){
-  Array.from(files).forEach(file => {
-    if(file.type.startsWith('image/')) readFileAsDataUrl(file, d => processIncoming(d, caseId));
-  });
+
+// ファイル群を並列に読み、全部揃ってから元の順序どおりに1回で追加する。
+function intakeFiles(caseId, fileList){
+  const files = Array.prototype.filter.call(fileList || [], f => f && typeof f.type === 'string' && f.type.indexOf('image/') === 0);
+  if(!files.length) return;
+  if(!findCase(caseId)) return;
+  const out = new Array(files.length);
+  let pending = files.length, failed = 0;
+  const done = (i, url) => {
+    out[i] = url;
+    if(!url) failed++;
+    if(--pending) return;
+    addImages(caseId, out);
+    const ok = files.length - failed;
+    if(failed) showToast(`${ok} 枚を追加しました（${failed} 件は読み込めませんでした）`);
+    else if(ok > 1) showToast(`${ok} 枚を追加しました`);
+  };
+  files.forEach((f, i) => readFileAsDataUrl(f, d => {
+    if(!d) return done(i, null);
+    preprocessImage(d, u => done(i, u));
+  }));
 }
+function handleFileInput(caseId, files){ intakeFiles(caseId, files); }
 function selectPasteTarget(id){ activePasteCaseId = id; render(); }
 
 document.addEventListener('paste', e => {
@@ -244,47 +588,79 @@ document.addEventListener('paste', e => {
   if(ae && (ae.tagName === 'TEXTAREA' || ae.tagName === 'INPUT')) return; // don't hijack text paste
   const items = e.clipboardData && e.clipboardData.items;
   if(!items) return;
-  let target = (activePasteCaseId != null && findCase(activePasteCaseId)) ? activePasteCaseId
-             : (cases.length ? cases[cases.length-1].id : null);
+  const target = (activePasteCaseId != null && findCase(activePasteCaseId)) ? activePasteCaseId
+               : (cases.length ? cases[cases.length-1].id : null);
   if(target == null) return;
-  let handled = false;
+  const files = [];
   for(const item of items){
-    if(item.type.indexOf('image') === 0){
-      handled = true;
-      readFileAsDataUrl(item.getAsFile(), d => processIncoming(d, target));
+    if(item.kind === 'file' && item.type.indexOf('image') === 0){
+      const f = item.getAsFile();   // 環境によっては null が返る
+      if(f) files.push(f);
     }
   }
-  if(handled) e.preventDefault();
+  if(!files.length) return;
+  e.preventDefault();
+  intakeFiles(target, files);
+});
+
+// ドロップゾーンを外すと、ブラウザ既定動作でその画像ファイルへ画面遷移してしまい
+// 作業内容が丸ごと飛ぶ。ページ全域で既定動作を止め、外した分は貼り付け先ケースへ回す。
+document.addEventListener('dragover', e => {
+  if(e.dataTransfer && Array.prototype.indexOf.call(e.dataTransfer.types || [], 'Files') !== -1) e.preventDefault();
+});
+document.addEventListener('drop', e => {
+  const files = e.dataTransfer && e.dataTransfer.files;
+  if(!files || !files.length) return;
+  e.preventDefault();
+  if(dragData) return;                       // 画像カードの並び替え中
+  const caseEl = e.target.closest && e.target.closest('.case[data-cid]');
+  const cid = caseEl ? Number(caseEl.dataset.cid)
+            : (activePasteCaseId != null && findCase(activePasteCaseId)) ? activePasteCaseId
+            : (cases.length ? cases[cases.length-1].id : null);
+  if(cid == null || !findCase(cid)) return;
+  activePasteCaseId = cid;
+  intakeFiles(cid, files);
 });
 
 /* ---------- render ---------- */
-function escapeHtml(s){ return (s||'').replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
+function escapeHtml(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+const RESULT_SET = { OK:1, NG:1, PENDING:1 };
+function safeResult(v){ return RESULT_SET[v] ? v : 'PENDING'; }
 
 function render(){
+  // innerHTML='' で一度中身が消えると高さが潰れ、ブラウザがスクロール位置を切り詰める。
+  // 再構築後に戻さないと、画面下のケースを操作するたび先頭までジャンプする。
+  const keepScroll = window.pageYOffset;
+  pruneSelection();
   const container = document.getElementById('cases');
   container.innerHTML = '';
   cases.forEach((c, idx) => {
     const imagesHtml = c.images.map((img, ii) => `
-      <div class="shot-card">
-        <div class="thumb-wrap" onclick="openAnnotate(${c.id}, ${img.id})">
+      <div class="shot-card" data-cid="${c.id}" data-iid="${img.id}" style="flex-basis:calc(${imgWidth(img)}% - 12px)">
+        <div class="width-resizer" title="ドラッグで幅を調整"></div>
+        <div class="thumb-wrap" onclick="openAnnotate(${c.id}, ${img.id})" title="クリックで注釈 / サムネイルをドラッグで並び替え・ケース間移動">
           <span class="num">${ii+1}</span>
-          <img src="${img.flattened}">
+          <img src="${escapeHtml(img.flattened)}" alt="${escapeHtml(img.comment) || ('証跡画像 ' + (ii+1))}" draggable="false">
           <span class="edit-hint">クリックで注釈</span>
+          <span class="sel-box"><input type="checkbox" title="選択（一括操作用）" ${selectedImgs.has(selKey(c.id,img.id))?'checked':''} onclick="event.stopPropagation()" onchange="toggleSel(${c.id},${img.id},this.checked)"></span>
         </div>
-        <textarea placeholder="この画像のコメント" oninput="updateImageComment(${c.id},${img.id},this.value)">${escapeHtml(img.comment)}</textarea>
+        <textarea placeholder="この画像のコメント" data-f="comment" onfocus="beginTextEdit()" oninput="updateImageComment(${c.id},${img.id},this.value)">${escapeHtml(img.comment)}</textarea>
         <div class="shot-actions">
-          <button class="icon-btn" onclick="moveImage(${c.id},${img.id},-1)" title="前へ">◀</button>
-          <button class="icon-btn" onclick="moveImage(${c.id},${img.id},1)" title="後へ">▶</button>
+          <span class="width-btns">${[100,50,33,25].map(w => `<button class="${imgWidth(img)===w?'active':''}" onclick="setImageWidth(${c.id},${img.id},${w})" title="表示幅 ${w}%">${w}%</button>`).join('')}</span>
+          <span class="width-current">${imgWidth(img)}%</span>
           <span class="spacer"></span>
+          <button class="icon-btn safe" onclick="moveImage(${c.id},${img.id},-1)" title="前へ">◀</button>
+          <button class="icon-btn safe" onclick="moveImage(${c.id},${img.id},1)" title="後へ">▶</button>
+          <button class="icon-btn safe" onclick="duplicateImage(${c.id},${img.id})" title="この画像を複製">⧉</button>
           <button class="icon-btn" onclick="removeImage(${c.id},${img.id})">削除</button>
         </div>
       </div>`).join('');
 
     const bodyHtml = c.collapsed ? '' : `
       <div class="case-body">
-        <div class="field"><label>手順</label><textarea oninput="updateField(${c.id},'step',this.value)">${escapeHtml(c.step)}</textarea></div>
-        <div class="field"><label>期待結果</label><textarea oninput="updateField(${c.id},'expected',this.value)">${escapeHtml(c.expected)}</textarea></div>
-        <div class="field" style="grid-column:1 / -1"><label>総評・備考</label><textarea oninput="updateField(${c.id},'actual',this.value)">${escapeHtml(c.actual)}</textarea></div>
+        <div class="field"><label>手順</label><textarea data-f="step" onfocus="beginTextEdit()" oninput="updateField(${c.id},'step',this.value)">${escapeHtml(c.step)}</textarea></div>
+        <div class="field"><label>期待結果</label><textarea data-f="expected" onfocus="beginTextEdit()" oninput="updateField(${c.id},'expected',this.value)">${escapeHtml(c.expected)}</textarea></div>
+        <div class="field" style="grid-column:1 / -1"><label>総評・備考</label><textarea data-f="actual" onfocus="beginTextEdit()" oninput="updateField(${c.id},'actual',this.value)">${escapeHtml(c.actual)}</textarea></div>
         <div class="gallery-section">
           <div class="gallery">
             ${imagesHtml}
@@ -300,36 +676,124 @@ function render(){
 
     const div = document.createElement('div');
     div.className = 'case';
+    div.dataset.cid = c.id;
     div.innerHTML = `
       <div class="case-head">
+        <span class="drag-handle" title="ドラッグでケースを並び替え">⠿</span>
         <button class="icon-btn toggle" onclick="toggleCollapse(${c.id})">${c.collapsed ? '▶' : '▼'}</button>
         <span class="no">#${String(idx+1).padStart(2,'0')}</span>
-        <input type="text" value="${escapeHtml(c.title)}" oninput="updateField(${c.id},'title',this.value)">
+        <input type="text" data-f="title" value="${escapeHtml(c.title)}" onfocus="beginTextEdit()" oninput="updateField(${c.id},'title',this.value)">
         <span class="img-count">画像 ${c.images.length} 枚</span>
-        <select class="result ${c.result}" onchange="updateField(${c.id},'result',this.value); this.className='result '+this.value;">
+        <select class="result ${safeResult(c.result)}" onchange="setResult(${c.id}, this.value); this.className='result '+this.value;">
           <option value="PENDING" ${c.result==='PENDING'?'selected':''}>保留</option>
           <option value="OK" ${c.result==='OK'?'selected':''}>OK</option>
           <option value="NG" ${c.result==='NG'?'selected':''}>NG</option>
         </select>
+        <button class="icon-btn safe" onclick="moveCase(${c.id},-1)" title="ケースを上へ">↑</button>
+        <button class="icon-btn safe" onclick="moveCase(${c.id},1)" title="ケースを下へ">↓</button>
+        <button class="icon-btn safe" onclick="duplicateCase(${c.id})" title="このケースを複製（画像・注釈含む）">⧉複製</button>
         <button class="icon-btn" onclick="removeCase(${c.id})">ケース削除</button>
       </div>
       ${bodyHtml}`;
     container.appendChild(div);
   });
   bindDropZones();
+  bindCardDnD();
+  bindWidthResizers();
   updateHeader();
+  updateStats();
+  markSelectedCards();
+  updateBulkBar();
+  scheduleBackup();
+  window.scrollTo(0, keepScroll);
 }
 
 function bindDropZones(){
   document.querySelectorAll('.add-shot').forEach(zone => {
-    zone.addEventListener('dragover', e => e.preventDefault());
+    zone.addEventListener('dragover', e => { e.preventDefault(); if(dragData && dragData.type === 'img') zone.classList.add('drag-over-img'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('drag-over-img'));
     zone.addEventListener('drop', e => {
       e.preventDefault();
+      e.stopPropagation();          // 下の document 版フォールバックに二重処理させない
+      zone.classList.remove('drag-over-img');
       const caseId = Number(zone.dataset.caseid);
+      if(dragData && dragData.type === 'img'){
+        const c = findCase(caseId);
+        moveImageTo(dragData.caseId, dragData.imgId, caseId, c ? c.images.length : 0);
+        dragData = null; clearDropMarks();
+        return;
+      }
       activePasteCaseId = caseId;
-      Array.from(e.dataTransfer.files).forEach(file => {
-        if(file.type.startsWith('image/')) readFileAsDataUrl(file, d => processIncoming(d, caseId));
+      intakeFiles(caseId, e.dataTransfer.files);
+    });
+  });
+}
+function bindCardDnD(){
+  // 画像カード：サムネイルをドラッグして並び替え / ケース間移動
+  document.querySelectorAll('.shot-card').forEach(card => {
+    const cid = Number(card.dataset.cid), iid = Number(card.dataset.iid);
+    const thumb = card.querySelector('.thumb-wrap');
+    if(thumb){
+      thumb.setAttribute('draggable', 'true');
+      thumb.addEventListener('dragstart', e => {
+        dragData = { type:'img', caseId:cid, imgId:iid };
+        card.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        try{ e.dataTransfer.setData('text/plain', ''); }catch(_){ }
       });
+      thumb.addEventListener('dragend', () => { clearDropMarks(); dragData = null; });
+    }
+    card.addEventListener('dragover', e => {
+      if(!dragData || dragData.type !== 'img') return;
+      e.preventDefault();
+      const r = card.getBoundingClientRect();
+      const before = (e.clientX - r.left) < r.width / 2;
+      card.classList.toggle('drag-over-left', before);
+      card.classList.toggle('drag-over-right', !before);
+    });
+    card.addEventListener('dragleave', () => card.classList.remove('drag-over-left', 'drag-over-right'));
+    card.addEventListener('drop', e => {
+      if(!dragData || dragData.type !== 'img') return;
+      e.preventDefault(); e.stopPropagation();
+      const r = card.getBoundingClientRect();
+      const before = (e.clientX - r.left) < r.width / 2;
+      const c = findCase(cid);
+      let idx = c ? c.images.findIndex(i => i.id === iid) : 0;
+      if(!before) idx++;
+      const d = dragData; dragData = null; clearDropMarks();
+      moveImageTo(d.caseId, d.imgId, cid, idx);
+    });
+  });
+  // ケース：⠿ハンドルをドラッグして並び替え
+  document.querySelectorAll('.case[data-cid]').forEach(div => {
+    const cid = Number(div.dataset.cid);
+    const handle = div.querySelector('.drag-handle');
+    if(handle){
+      handle.setAttribute('draggable', 'true');
+      handle.addEventListener('dragstart', e => {
+        dragData = { type:'case', id:cid };
+        div.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        try{ e.dataTransfer.setData('text/plain', ''); }catch(_){ }
+      });
+      handle.addEventListener('dragend', () => { clearDropMarks(); dragData = null; });
+    }
+    div.addEventListener('dragover', e => {
+      if(!dragData || dragData.type !== 'case' || dragData.id === cid) return;
+      e.preventDefault();
+      const r = div.getBoundingClientRect();
+      const before = (e.clientY - r.top) < r.height / 2;
+      div.classList.toggle('drag-over-top', before);
+      div.classList.toggle('drag-over-bottom', !before);
+    });
+    div.addEventListener('dragleave', () => div.classList.remove('drag-over-top', 'drag-over-bottom'));
+    div.addEventListener('drop', e => {
+      if(!dragData || dragData.type !== 'case') return;
+      e.preventDefault();
+      const r = div.getBoundingClientRect();
+      const before = (e.clientY - r.top) < r.height / 2;
+      const d = dragData; dragData = null; clearDropMarks();
+      moveCaseTo(d.id, cid, before);
     });
   });
 }
@@ -342,7 +806,11 @@ function updateHeader(){
   document.getElementById('docSubView').textContent =
     [tester ? `実施者: ${tester}` : null, date ? `実施日: ${date}` : null].filter(Boolean).join('　/　');
 }
-['projName','tester','testDate'].forEach(id => document.getElementById(id).addEventListener('input', updateHeader));
+['projName','tester','testDate'].forEach(id => {
+  const el = document.getElementById(id);
+  el.addEventListener('focus', beginTextEdit);
+  el.addEventListener('input', () => { commitTextEdit(); updateHeader(); scheduleBackup(); });
+});
 
 /* ---------- annotation ---------- */
 let annoState = { caseId:null, imgId:null, tool:'rect', color:'#ff3b30', shapes:[], baseImage:null, drawing:false, startX:0, startY:0, currentPenPath:null };
@@ -353,6 +821,7 @@ function openAnnotate(caseId, imgId){
   const img = findImage(caseId, imgId);
   if(!img) return;
   const image = new Image();
+  image.onerror = () => showToast('この画像を開けませんでした');
   image.onload = () => {
     canvas.width = image.naturalWidth;
     canvas.height = image.naturalHeight;
@@ -382,6 +851,8 @@ function updateAnnoNavUI(){
 function annoSaveCurrent(){
   const img = findImage(annoState.caseId, annoState.imgId);
   if(img){
+    const changed = JSON.stringify(img.shapes || []) !== JSON.stringify(annoState.shapes || []);
+    if(changed) pushUndo();
     img.shapes = annoState.shapes;
     redrawAnno();
     img.flattened = encodeCanvas(canvas, img.original);
@@ -513,6 +984,7 @@ document.addEventListener('keydown', e => {
   if(e.key === 'Escape'){ closeAnnotate(); }
   else if(e.key === 'ArrowRight'){ annoNav(1); e.preventDefault(); }
   else if(e.key === 'ArrowLeft'){ annoNav(-1); e.preventDefault(); }
+  else if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z'){ annoState.shapes.pop(); redrawAnno(); e.preventDefault(); }
 });
 document.getElementById('saveBtn').addEventListener('click', () => {
   annoSaveCurrent();
@@ -521,14 +993,19 @@ document.getElementById('saveBtn').addEventListener('click', () => {
 
 function flattenImage(imgObj, cb){
   const im = new Image();
+  let done = false;
+  const fin = v => { if(done) return; done = true; cb(v); };
   im.onload = () => {
-    const cv = document.createElement('canvas');
-    cv.width = im.naturalWidth; cv.height = im.naturalHeight;
-    const cx = cv.getContext('2d');
-    cx.drawImage(im, 0, 0);
-    (imgObj.shapes || []).forEach(s => drawShape(cx, s, im, cv.width));
-    cb(encodeCanvas(cv, imgObj.original));
+    try{
+      const cv = document.createElement('canvas');
+      cv.width = im.naturalWidth; cv.height = im.naturalHeight;
+      const cx = cv.getContext('2d');
+      cx.drawImage(im, 0, 0);
+      (imgObj.shapes || []).forEach(s => drawShape(cx, s, im, cv.width));
+      fin(encodeCanvas(cv, imgObj.original));
+    }catch(e){ fin(null); }
   };
+  im.onerror = () => fin(null);   // 呼び戻さないと読み込み側のカウンタが永久に残る
   im.src = imgObj.original;
 }
 
@@ -551,11 +1028,7 @@ function exportHtml(withData){
   };
   let stateJson = null;
   if(withData){
-    const state = { v:1, meta, cases: cases.map(c => ({
-      title:c.title, step:c.step, expected:c.expected, actual:c.actual, result:c.result,
-      images: c.images.map(i => ({ original:i.original, shapes:i.shapes, comment:i.comment }))
-    }))};
-    stateJson = JSON.stringify(state).replace(/</g, '\\u003c');
+    stateJson = JSON.stringify(serializeState()).replace(/</g, '\\u003c');
   }
   const html = buildReport(meta, stateJson);
   const blob = new Blob([html], { type:'text/html' });
@@ -576,16 +1049,16 @@ function exportHtml(withData){
 function buildReport(meta, stateJson){
   const resLabel = { OK:'OK', NG:'NG', PENDING:'保留' };
   const summaryRows = cases.map((c,i) =>
-    `<tr><td class="mono">#${String(i+1).padStart(2,'0')}</td><td><a href="#case-${i+1}">${escapeHtml(c.title)}</a></td><td><span class="badge ${c.result}">${resLabel[c.result]}</span></td><td class="mono">${c.images.length}</td></tr>`
+    `<tr><td class="mono">#${String(i+1).padStart(2,'0')}</td><td><a href="#case-${i+1}">${escapeHtml(c.title)}</a></td><td><span class="badge ${safeResult(c.result)}">${resLabel[safeResult(c.result)]}</span></td><td class="mono">${c.images.length}</td></tr>`
   ).join('');
 
   const caseSections = cases.map((c,ci) => {
     const tb = (label,val) => val ? `<div class="tb"><div class="tl">${label}</div><div class="tv">${escapeHtml(val)}</div></div>` : '';
     const figs = c.images.map((img,ii) =>
-      `<figure><img src="${img.flattened}" onclick="Z(this)" title="クリックで拡大"><figcaption>図${ci+1}-${ii+1}${img.comment ? '：'+escapeHtml(img.comment) : ''}</figcaption></figure>`
+      `<figure style="flex-basis:calc(${imgWidth(img)}% - 14px)"><img src="${escapeHtml(img.flattened)}" alt="図${ci+1}-${ii+1}" onclick="Z(this)" title="クリックで拡大"><figcaption>図${ci+1}-${ii+1}${img.comment ? '：'+escapeHtml(img.comment) : ''}</figcaption></figure>`
     ).join('');
     return `<section class="case" id="case-${ci+1}">
-      <h2><span class="mono">#${String(ci+1).padStart(2,'0')}</span> ${escapeHtml(c.title)} <span class="badge ${c.result}">${resLabel[c.result]}</span></h2>
+      <h2><span class="mono">#${String(ci+1).padStart(2,'0')}</span> ${escapeHtml(c.title)} <span class="badge ${safeResult(c.result)}">${resLabel[safeResult(c.result)]}</span></h2>
       ${tb('手順', c.step)}${tb('期待結果', c.expected)}${tb('総評・備考', c.actual)}
       ${c.images.length ? `<div class="figs">${figs}</div>` : ''}
     </section>`;
@@ -613,8 +1086,8 @@ function buildReport(meta, stateJson){
   .tb{ margin-bottom:10px; }
   .tl{ font-size:11px; color:#6b7280; margin-bottom:2px; }
   .tv{ font-size:13.5px; white-space:pre-wrap; background:#fafafa; border:1px solid #eceef0; border-radius:4px; padding:8px 10px; }
-  .figs{ display:grid; grid-template-columns:repeat(auto-fill, minmax(300px,1fr)); gap:14px; margin-top:14px; }
-  figure{ margin:0; border:1px solid #d8dce1; border-radius:6px; overflow:hidden; background:#fff; }
+  .figs{ display:flex; flex-wrap:wrap; gap:14px; margin-top:14px; align-items:flex-start; }
+  figure{ margin:0; border:1px solid #d8dce1; border-radius:6px; overflow:hidden; background:#fff; flex-grow:0; }
   figure img{ width:100%; display:block; cursor:zoom-in; }
   figcaption{ font-size:12px; padding:6px 9px; background:#f7f7f7; border-top:1px solid #eceef0; }
   #lb{ display:none; position:fixed; inset:0; background:rgba(10,12,16,.92); z-index:50; align-items:center; justify-content:center; cursor:zoom-out; padding:24px; gap:14px; }
@@ -690,51 +1163,376 @@ ${stateJson ? `<script type="application/json" id="__evidence_data__">${stateJso
 </html>`;
 }
 
-/* ---------- import ---------- */
+/* ---------- import / restore ---------- */
+// 読み込むデータは他人が作ったファイル（作業用HTML）や、古いバージョンが書いた
+// バックアップかもしれない。まっさらな入れ物に1フィールドずつ検証しながら詰め替え、
+// 通ったものだけを採用する。特に画像URLと result は HTML 属性に埋めるため、
+// 検証を省くと細工したファイルを開いた瞬間に任意のマークアップを差し込まれる。
+const DATA_URL_RE = /^data:image\/[a-z0-9.+-]+;base64,[A-Za-z0-9+/=]*$/i;
+function safeDataUrl(v){ return (typeof v === 'string' && DATA_URL_RE.test(v)) ? v : null; }
+function safeColor(v){ return (typeof v === 'string' && /^#[0-9a-f]{3,8}$/i.test(v)) ? v : '#ff3b30'; }
+function num(v, d){ const n = Number(v); return isFinite(n) ? n : d; }
+const SHAPE_TYPES = { rect:1, arrow:1, pen:1, text:1, mosaic:1 };
+function normalizeShapes(arr){
+  if(!Array.isArray(arr)) return [];
+  const out = [];
+  arr.forEach(s => {
+    if(!s || typeof s !== 'object' || !SHAPE_TYPES[s.type]) return;
+    const color = safeColor(s.color);
+    if(s.type === 'rect' || s.type === 'mosaic'){
+      out.push({ type:s.type, x:num(s.x,0), y:num(s.y,0), w:num(s.w,0), h:num(s.h,0), color });
+    } else if(s.type === 'arrow'){
+      out.push({ type:'arrow', x1:num(s.x1,0), y1:num(s.y1,0), x2:num(s.x2,0), y2:num(s.y2,0), color });
+    } else if(s.type === 'pen'){
+      const pts = (Array.isArray(s.points) ? s.points : [])
+        .filter(p => p && isFinite(Number(p.x)) && isFinite(Number(p.y)))
+        .map(p => ({ x:Number(p.x), y:Number(p.y) }));
+      if(pts.length) out.push({ type:'pen', points:pts, color });
+    } else {
+      const t = String(s.text == null ? '' : s.text).slice(0, 500);
+      if(t) out.push({ type:'text', x:num(s.x,0), y:num(s.y,0), text:t, color, size:Math.max(6, num(s.size,24)) });
+    }
+  });
+  return out;
+}
+function normalizeState(st){
+  if(!st || typeof st !== 'object' || !Array.isArray(st.cases)) throw new Error('invalid');
+  const str = v => (typeof v === 'string' ? v : '');
+  const m = (st.meta && typeof st.meta === 'object') ? st.meta : {};
+  const out = { meta:{ proj:str(m.proj), tester:str(m.tester), date:str(m.date) }, cases:[] };
+  st.cases.forEach(sc => {
+    if(!sc || typeof sc !== 'object') return;
+    const c = { title:str(sc.title), step:str(sc.step), expected:str(sc.expected), actual:str(sc.actual),
+                result:safeResult(sc.result), collapsed: sc.collapsed === true, images:[] };
+    if(Array.isArray(sc.images)) sc.images.forEach(si => {
+      if(!si || typeof si !== 'object') return;
+      const src = safeDataUrl(si.original);
+      if(!src) return;                        // 中身のない画像は画像ではない
+      const w = Number(si.width);
+      c.images.push({ original:src, shapes:normalizeShapes(si.shapes), comment:str(si.comment),
+                      width:(isFinite(w) && w >= 15 && w <= 100) ? Math.round(w) : 50 });
+    });
+    out.cases.push(c);
+  });
+  if(!out.cases.length) throw new Error('empty');
+  return out;
+}
+
+function loadState(raw, msg){
+  let st;
+  try{ st = normalizeState(raw); }
+  catch(e){
+    alert('データを読み取れませんでした。ファイルが壊れているか、対応していない形式です。');
+    return false;
+  }
+  pushUndo();
+  document.getElementById('projName').value = st.meta.proj;
+  document.getElementById('tester').value = st.meta.tester;
+  document.getElementById('testDate').value = st.meta.date;
+  cases = []; caseSeq = 0; imgSeq = 0;
+  selectedImgs.clear();
+  let pending = 0;
+  st.cases.forEach(sc => {
+    caseSeq++;
+    const c = { id:caseSeq, collapsed:sc.collapsed, title:sc.title, step:sc.step, expected:sc.expected,
+                actual:sc.actual, result:sc.result, images:[] };
+    cases.push(c);
+    sc.images.forEach(si => {
+      imgSeq++;
+      const io = { id:imgSeq, original:si.original, shapes:si.shapes, comment:si.comment, width:si.width, flattened:si.original };
+      c.images.push(io);
+      if(io.shapes.length){
+        pending++;
+        // flattenImage は失敗時も必ず呼び戻すので、pending が残り続けることはない
+        flattenImage(io, d => { io.flattened = d || io.original; if(--pending === 0) render(); });
+      }
+    });
+  });
+  activePasteCaseId = cases.length ? cases[cases.length-1].id : null;
+  render();
+  showToast(msg || `読み込みました（ケース ${cases.length} 件）`);
+  return true;
+}
 function importHtml(file){
   file.text().then(text => {
+    // DOMParser の text/html はブラウジングコンテキストを持たないため、
+    // スクリプトも画像も実行・取得されない。JSON だけを取り出す。
     const doc = new DOMParser().parseFromString(text, 'text/html');
     const el = doc.getElementById('__evidence_data__');
     if(!el){ alert('再編集用データが見つかりません。「配布用保存」のファイルは読み込めないため、「作業用保存」したHTMLを選んでください。'); return; }
     let st;
     try{ st = JSON.parse(el.textContent); }catch(e){ alert('データの読み取りに失敗しました。'); return; }
-    document.getElementById('projName').value = (st.meta && st.meta.proj) || '';
-    document.getElementById('tester').value = (st.meta && st.meta.tester) || '';
-    document.getElementById('testDate').value = (st.meta && st.meta.date) || '';
-    cases = []; caseSeq = 0; imgSeq = 0;
-    let pending = 0;
-    (st.cases || []).forEach(sc => {
-      caseSeq++;
-      const c = { id:caseSeq, collapsed:false, title:sc.title||'', step:sc.step||'', expected:sc.expected||'', actual:sc.actual||'', result:sc.result||'PENDING', images:[] };
-      cases.push(c);
-      (sc.images || []).forEach(si => {
-        imgSeq++;
-        const io = { id:imgSeq, original:si.original, shapes:si.shapes||[], comment:si.comment||'', flattened:si.original };
-        c.images.push(io);
-        if(io.shapes.length){
-          pending++;
-          flattenImage(io, d => { io.flattened = d; if(--pending === 0) render(); });
-        }
-      });
-    });
-    activePasteCaseId = cases.length ? cases[cases.length-1].id : null;
-    render();
-    showToast(`読み込みました（ケース ${cases.length} 件）`);
-  });
+    loadState(st);
+  }).catch(() => alert('ファイルを読み込めませんでした。'));
 }
 
 /* ---------- unload guard ---------- */
+const DEFAULT_TITLE_RE = /^テストケース \d+$/;
 function hasContent(){
-  return cases.some(c => c.images.length || c.step || c.expected || c.actual);
+  if(document.getElementById('tester').value) return true;
+  return cases.some(c =>
+    c.images.length || c.step || c.expected || c.actual ||
+    (c.title && !DEFAULT_TITLE_RE.test(c.title)));   // 表題だけ書いた状態も「作業済み」
 }
 window.addEventListener('beforeunload', e => {
   if(hasContent()){ e.preventDefault(); e.returnValue = ''; }
 });
 
+/* ---------- search & replace ---------- */
+let searchMatches = [], searchIdx = -1, lastQuery = '';
+function openSearch(){
+  document.getElementById('searchBar').classList.add('show');
+  const si = document.getElementById('searchInput');
+  si.focus(); si.select();
+  runSearch();
+}
+function closeSearch(){
+  document.getElementById('searchBar').classList.remove('show');
+  clearSearchHit();
+}
+function clearSearchHit(){ document.querySelectorAll('.search-hit').forEach(el => el.classList.remove('search-hit')); }
+function fieldText(m){
+  if(m.iid != null){ const img = findImage(m.cid, m.iid); return img ? (img.comment || '') : null; }
+  const c = findCase(m.cid); return c ? (c[m.f] || '') : null;
+}
+function buildSearchMatches(q){
+  const res = [], lq = q.toLowerCase();
+  const scan = (text, push) => {
+    const lt = (text || '').toLowerCase();
+    let p = lt.indexOf(lq);
+    while(p !== -1){ push(p); p = lt.indexOf(lq, p + q.length); }
+  };
+  cases.forEach(c => {
+    ['title','step','expected','actual'].forEach(f => scan(c[f], p => res.push({ cid:c.id, iid:null, f, start:p, len:q.length })));
+    c.images.forEach(i => scan(i.comment, p => res.push({ cid:c.id, iid:i.id, f:'comment', start:p, len:q.length })));
+  });
+  return res;
+}
+function runSearch(){
+  const q = document.getElementById('searchInput').value;
+  lastQuery = q;
+  searchMatches = q ? buildSearchMatches(q) : [];
+  searchIdx = -1;
+  document.getElementById('searchCount').textContent = q ? (searchMatches.length + ' 件') : '';
+  clearSearchHit();
+}
+function gotoSearch(dir){
+  if(lastQuery !== document.getElementById('searchInput').value) runSearch();
+  if(!searchMatches.length){ showToast('見つかりませんでした'); return; }
+  searchIdx = (searchIdx + dir + searchMatches.length) % searchMatches.length;
+  const m = searchMatches[searchIdx];
+  const t = fieldText(m);
+  if(t === null || t.toLowerCase().indexOf(lastQuery.toLowerCase()) === -1){
+    // 編集で位置がずれた場合は再構築してやり直し
+    runSearch();
+    if(searchMatches.length){ searchIdx = -1; gotoSearch(1); }
+    else showToast('見つかりませんでした');
+    return;
+  }
+  const c = findCase(m.cid);
+  if(c && c.collapsed && m.f !== 'title'){ c.collapsed = false; render(); }
+  let el;
+  if(m.iid != null) el = document.querySelector(`.shot-card[data-cid="${m.cid}"][data-iid="${m.iid}"] textarea[data-f="comment"]`);
+  else if(m.f === 'title') el = document.querySelector(`.case[data-cid="${m.cid}"] input[data-f="title"]`);
+  else el = document.querySelector(`.case[data-cid="${m.cid}"] [data-f="${m.f}"]`);
+  if(!el) return;
+  clearSearchHit();
+  el.classList.add('search-hit');
+  el.scrollIntoView({ block:'center', behavior:'smooth' });
+  document.getElementById('searchCount').textContent = (searchIdx + 1) + ' / ' + searchMatches.length;
+}
+function replaceAll(){
+  const q = document.getElementById('searchInput').value;
+  const r = document.getElementById('replaceInput').value;
+  if(!q){ showToast('検索文字列を入力してください'); return; }
+  const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+  let n = 0;
+  const count = s => { const mm = (s||'').match(re); return mm ? mm.length : 0; };
+  cases.forEach(c => { ['title','step','expected','actual'].forEach(f => n += count(c[f])); c.images.forEach(i => n += count(i.comment)); });
+  if(!n){ showToast('置換対象が見つかりませんでした'); return; }
+  if(!confirm(`${n} 件を「${r}」に置換します。よろしいですか？（Ctrl+Zで戻せます）`)) return;
+  pushUndo();
+  cases.forEach(c => {
+    ['title','step','expected','actual'].forEach(f => { c[f] = (c[f]||'').replace(re, r); });
+    c.images.forEach(i => { i.comment = (i.comment||'').replace(re, r); });
+  });
+  render();
+  runSearch();
+  showToast(`${n} 件置換しました`);
+}
+document.getElementById('searchInput').addEventListener('input', runSearch);
+document.getElementById('searchInput').addEventListener('keydown', e => {
+  if(e.key === 'Enter'){ gotoSearch(e.shiftKey ? -1 : 1); e.preventDefault(); }
+  else if(e.key === 'Escape'){ closeSearch(); e.preventDefault(); }
+});
+document.getElementById('replaceInput').addEventListener('keydown', e => {
+  if(e.key === 'Enter'){ replaceAll(); e.preventDefault(); }
+  else if(e.key === 'Escape'){ closeSearch(); e.preventDefault(); }
+});
+
+/* ---------- context menu ---------- */
+function hideCtx(){ const m = document.getElementById('ctxMenu'); m.style.display = 'none'; m.innerHTML = ''; }
+function showCtx(e, items){
+  const m = document.getElementById('ctxMenu');
+  m.innerHTML = '';
+  items.forEach(it => {
+    if(it === '-'){ const s = document.createElement('div'); s.className = 'ctx-sep'; m.appendChild(s); return; }
+    const d = document.createElement('div');
+    d.className = 'ctx-item' + (it.danger ? ' danger' : '');
+    d.textContent = it.label;
+    d.addEventListener('click', ev => { ev.stopPropagation(); hideCtx(); it.fn(); });
+    m.appendChild(d);
+  });
+  m.style.display = 'block';
+  m.style.left = Math.max(4, Math.min(e.clientX, window.innerWidth - m.offsetWidth - 8)) + 'px';
+  m.style.top = Math.max(4, Math.min(e.clientY, window.innerHeight - m.offsetHeight - 8)) + 'px';
+}
+document.addEventListener('contextmenu', e => {
+  if(document.getElementById('annotateModal').classList.contains('open')) return;
+  if(e.target.closest('textarea, input, select, button, a')) return; // 入力欄などはブラウザ標準メニューを優先
+  const cardEl = e.target.closest('.shot-card');
+  if(cardEl){
+    e.preventDefault();
+    const cid = Number(cardEl.dataset.cid), iid = Number(cardEl.dataset.iid);
+    showCtx(e, [
+      { label:'注釈を編集', fn:() => openAnnotate(cid, iid) },
+      { label:'この画像を複製', fn:() => duplicateImage(cid, iid) },
+      { label:'前へ移動', fn:() => moveImage(cid, iid, -1) },
+      { label:'後へ移動', fn:() => moveImage(cid, iid, 1) },
+      '-',
+      { label:'画像を削除', danger:true, fn:() => removeImage(cid, iid) },
+    ]);
+    return;
+  }
+  const caseEl = e.target.closest('.case[data-cid]');
+  if(caseEl){
+    e.preventDefault();
+    const cid = Number(caseEl.dataset.cid);
+    showCtx(e, [
+      { label:'上にケースを追加', fn:() => insertCase(cid, false) },
+      { label:'下にケースを追加', fn:() => insertCase(cid, true) },
+      { label:'このケースを複製', fn:() => duplicateCase(cid) },
+      '-',
+      { label:'上へ移動', fn:() => moveCase(cid, -1) },
+      { label:'下へ移動', fn:() => moveCase(cid, 1) },
+      '-',
+      { label:'ケースを削除', danger:true, fn:() => removeCase(cid) },
+    ]);
+  }
+});
+document.addEventListener('click', hideCtx);
+window.addEventListener('scroll', hideCtx, true);
+
+/* ---------- global shortcuts ---------- */
+document.addEventListener('keydown', e => {
+  if(document.getElementById('annotateModal').classList.contains('open')) return;
+  const key = e.key.toLowerCase();
+  if((e.ctrlKey || e.metaKey) && key === 's'){ e.preventDefault(); exportHtml(true); return; }
+  if((e.ctrlKey || e.metaKey) && key === 'f'){ e.preventDefault(); openSearch(); return; }
+  const isText = e.target && (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT');
+  if((e.ctrlKey || e.metaKey) && !e.shiftKey && key === 'z'){ if(isText) return; e.preventDefault(); undo(); return; }
+  if((e.ctrlKey || e.metaKey) && (key === 'y' || (e.shiftKey && key === 'z'))){ if(isText) return; e.preventDefault(); redo(); return; }
+  if(e.key === 'Escape'){
+    hideCtx();
+    if(document.getElementById('searchBar').classList.contains('show')) closeSearch();
+  }
+});
+
+/* ---------- stats ---------- */
+function updateStats(){
+  const ok = cases.filter(c => c.result === 'OK').length;
+  const ng = cases.filter(c => c.result === 'NG').length;
+  const pd = cases.filter(c => c.result === 'PENDING').length;
+  const imgs = cases.reduce((n, c) => n + c.images.length, 0);
+  const prog = cases.length ? Math.round((ok + ng) / cases.length * 100) : 0;
+  document.getElementById('stats').innerHTML =
+    `<span class="st ok">OK ${ok}</span><span class="st ng">NG ${ng}</span><span class="st pd">保留 ${pd}</span><span class="st">画像 ${imgs}</span><span class="st">進捗 ${prog}%</span>`;
+  const btn = document.getElementById('collapseAllBtn');
+  if(btn) btn.textContent = cases.some(c => !c.collapsed) ? '全折りたたみ' : '全展開';
+}
+
+/* ---------- backup restore ---------- */
+let __backupState = null;
+function restoreBackup(){
+  document.getElementById('restoreBanner').classList.remove('show');
+  if(__backupState) loadState(__backupState, '自動バックアップから復元しました');
+  __backupState = null;
+}
+function dismissBackup(){
+  document.getElementById('restoreBanner').classList.remove('show');
+  __backupState = null;
+  bkDel();   // 「復元しない」と答えたものを残すと、次回起動でも同じ確認が出続ける
+}
+
+/* ---------- 表示・圧縮設定（ブラウザに記憶） ---------- */
+// 縮小率と保存形式は毎回同じものを使うのが普通。開くたび既定値に戻ると、
+// 気付かずに違う画質で証跡を作ってしまう。
+const SETTINGS_KEY = 'evidence_tool_settings_v1';
+function saveSettings(){
+  try{
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify({
+      shrink:   document.getElementById('shrinkSel').value,
+      fmt:      document.getElementById('fmtSel').value,
+      defWidth: document.getElementById('defWidth').value
+    }));
+  }catch(e){ /* プライベートウィンドウ等。設定が残らないだけなので無視 */ }
+}
+function loadSettings(){
+  let s = null;
+  try{ s = JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null'); }catch(e){}
+  if(!s || typeof s !== 'object') return;
+  const setSel = (id, v) => {
+    const el = document.getElementById(id);
+    if(v == null || !Array.prototype.some.call(el.options, o => o.value === String(v))) return;
+    el.value = String(v);
+  };
+  setSel('shrinkSel', s.shrink);
+  setSel('fmtSel', s.fmt);
+  setSel('defWidth', s.defWidth);
+}
+loadSettings();
+document.getElementById('shrinkSel').addEventListener('change', saveSettings);
+document.getElementById('fmtSel').addEventListener('change', saveSettings);
+document.getElementById('defWidth').addEventListener('change', saveSettings);
+
+/* ---------- 印刷時に textarea を全文表示 ---------- */
+// textarea はスクロールするので、印刷すると見えている行しか出ない。
+// 編集画面をそのまま印刷したときに手順が途中で切れるのを防ぐ。
+function expandTextareasForPrint(){
+  document.querySelectorAll('#sheet textarea').forEach(t => {
+    t.dataset.prevH = t.style.height || '';
+    t.style.height = 'auto';
+    t.style.height = t.scrollHeight + 'px';
+  });
+}
+function restoreTextareasAfterPrint(){
+  document.querySelectorAll('#sheet textarea').forEach(t => { t.style.height = t.dataset.prevH || ''; });
+}
+window.addEventListener('beforeprint', expandTextareasForPrint);
+window.addEventListener('afterprint', restoreTextareasAfterPrint);
+
 /* ---------- init ---------- */
-document.getElementById('testDate').value = new Date().toISOString().slice(0,10);
+(function(){
+  // toISOString は UTC。JST の朝9時前だと前日の日付が入ってしまう。
+  const d = new Date(), z = n => String(n).padStart(2,'0');
+  document.getElementById('testDate').value = d.getFullYear() + '-' + z(d.getMonth()+1) + '-' + z(d.getDate());
+})();
 addCase();
+undoStack.length = 0; // 初期ケース追加はUndo対象にしない
 updateHeader();
+bkGet().then(st => {
+  if(st && st.cases && st.cases.length && st.cases.some(c => (c.images && c.images.length) || c.step || c.expected || c.actual)){
+    __backupState = st;
+    let when = '';
+    if(st.savedAt){
+      const d = new Date(st.savedAt);
+      const z = n => String(n).padStart(2,'0');
+      when = `${d.getFullYear()}/${z(d.getMonth()+1)}/${z(d.getDate())} ${z(d.getHours())}:${z(d.getMinutes())} 保存 / `;
+    }
+    document.getElementById('restoreInfo').textContent = `前回の自動バックアップがあります（${when}ケース ${st.cases.length} 件）`;
+    document.getElementById('restoreBanner').classList.add('show');
+  }
+});
 </script>
 
 </body>
