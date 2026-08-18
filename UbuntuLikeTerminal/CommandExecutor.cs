@@ -11,11 +11,13 @@ namespace UbuntuLikeTerminal
     public class CommandExecutor
     {
         private readonly CommandHistory _history;
+        private readonly AliasManager _aliases;
         public bool ShouldExit { get; private set; }
 
-        public CommandExecutor(CommandHistory history)
+        public CommandExecutor(CommandHistory history, AliasManager aliases)
         {
             _history = history;
+            _aliases = aliases;
         }
 
         public void Execute(string line)
@@ -24,6 +26,19 @@ namespace UbuntuLikeTerminal
             if (tokens.Count == 0) return;
 
             string cmd = tokens[0];
+            string fallbackLine = line;
+
+            // alias展開（1段階のみ。alias同士のチェインは意図的に非対応とし無限ループを防ぐ）
+            string aliasValue;
+            if (_aliases.TryGet(cmd, out aliasValue))
+            {
+                var expanded = Tokenizer.Tokenize(aliasValue);
+                expanded.AddRange(tokens.Skip(1));
+                tokens = expanded;
+                cmd = tokens.Count > 0 ? tokens[0] : cmd;
+                fallbackLine = string.Join(" ", tokens);
+            }
+
             var args = tokens.Skip(1).ToList();
 
             try
@@ -45,13 +60,15 @@ namespace UbuntuLikeTerminal
                     case "clear":
                     case "cls": Console.Clear(); break;
                     case "history": History(args); break;
+                    case "alias": Alias(args); break;
+                    case "unalias": Unalias(args); break;
                     case "vim":
                     case "vi": VimLauncher.Launch(args.ToArray(), Environment.CurrentDirectory); break;
                     case "help": Help(); break;
                     case "exit":
                     case "quit": ShouldExit = true; break;
                     default:
-                        FallbackToCmd(cmd, line);
+                        FallbackToCmd(cmd, fallbackLine);
                         break;
                 }
             }
@@ -561,6 +578,54 @@ namespace UbuntuLikeTerminal
             }
         }
 
+        // ---- alias / unalias --------------------------------------------------------------
+
+        private void Alias(List<string> args)
+        {
+            if (args.Count == 0)
+            {
+                foreach (var kv in _aliases.Entries.OrderBy(kv => kv.Key, StringComparer.OrdinalIgnoreCase))
+                {
+                    Console.WriteLine("alias " + kv.Key + "='" + kv.Value + "'");
+                }
+                return;
+            }
+
+            foreach (var arg in args)
+            {
+                int eq = arg.IndexOf('=');
+                if (eq <= 0)
+                {
+                    string existing;
+                    if (_aliases.TryGet(arg, out existing))
+                        Console.WriteLine("alias " + arg + "='" + existing + "'");
+                    else
+                        Console.WriteLine("alias: '" + arg + "' が見つかりません");
+                    continue;
+                }
+
+                string name = arg.Substring(0, eq);
+                string value = arg.Substring(eq + 1);
+                _aliases.Set(name, value);
+            }
+        }
+
+        private void Unalias(List<string> args)
+        {
+            if (args.Count == 0)
+            {
+                Console.WriteLine("使い方: unalias 名前...");
+                return;
+            }
+            foreach (var name in args)
+            {
+                if (!_aliases.Remove(name))
+                {
+                    Console.WriteLine("unalias: '" + name + "' が見つかりません");
+                }
+            }
+        }
+
         // ---- help -------------------------------------------------------------------------
 
         private void Help()
@@ -580,6 +645,8 @@ namespace UbuntuLikeTerminal
             Console.WriteLine("  echo テキスト                 テキストを表示");
             Console.WriteLine("  clear / cls                  画面をクリア");
             Console.WriteLine("  history [件数]                コマンド履歴を表示");
+            Console.WriteLine("  alias [名前=値...]           エイリアスを登録/一覧表示");
+            Console.WriteLine("  unalias 名前...               エイリアスを削除");
             Console.WriteLine("  vim / vi [ファイル]           Git Bash の vim を起動");
             Console.WriteLine("  exit / quit                  終了");
             Console.WriteLine();

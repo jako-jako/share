@@ -20,12 +20,13 @@ namespace UbuntuLikeTerminal
         {
             SetupEncoding();
 
-            string historyFile = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                ".ublt_history");
+            string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            string historyFile = Path.Combine(userProfile, ".ublt_history");
+            string aliasFile = Path.Combine(userProfile, ".ublt_aliases");
 
             var history = new CommandHistory(historyFile);
-            var executor = new CommandExecutor(history);
+            var aliases = new AliasManager(aliasFile);
+            var executor = new CommandExecutor(history, aliases);
             var editor = new LineEditor(history, () => Environment.CurrentDirectory);
 
             PrintBanner();
