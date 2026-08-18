@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -50,7 +51,7 @@ namespace UbuntuLikeTerminal
                     case "exit":
                     case "quit": ShouldExit = true; break;
                     default:
-                        Console.WriteLine(cmd + ": コマンドが見つかりません");
+                        FallbackToCmd(cmd, line);
                         break;
                 }
             }
@@ -582,7 +583,33 @@ namespace UbuntuLikeTerminal
             Console.WriteLine("  vim / vi [ファイル]           Git Bash の vim を起動");
             Console.WriteLine("  exit / quit                  終了");
             Console.WriteLine();
+            Console.WriteLine("上記にないコマンドは Windows 標準のコマンドプロンプト(cmd.exe)にフォールバックして実行します。");
             Console.WriteLine("キー操作: Tab=補完  Ctrl+K=カーソルから行末まで削除  Ctrl+U=行頭からカーソルまで削除  ↑↓=履歴");
+        }
+
+        // ---- フォールバック（未知のコマンドは Windows 標準の cmd.exe に委ねる） ----------
+
+        private void FallbackToCmd(string cmd, string rawLine)
+        {
+            var psi = new ProcessStartInfo
+            {
+                FileName = "cmd.exe",
+                Arguments = "/c " + rawLine,
+                WorkingDirectory = Environment.CurrentDirectory,
+                UseShellExecute = false,
+            };
+
+            try
+            {
+                using (var process = Process.Start(psi))
+                {
+                    process.WaitForExit();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(cmd + ": コマンドが見つかりません - " + ex.Message);
+            }
         }
 
         // ---- helpers ------------------------------------------------------------------
