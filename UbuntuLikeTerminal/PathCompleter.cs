@@ -18,7 +18,7 @@ namespace UbuntuLikeTerminal
         private static readonly string[] BuiltinCommands = new[]
         {
             "ls", "pwd", "cd", "cp", "mv", "rm", "cat", "grep", "mkdir", "rmdir",
-            "touch", "echo", "clear", "cls", "history", "alias", "unalias", "vim", "vi", "help", "exit", "quit"
+            "touch", "echo", "clear", "cls", "history", "alias", "unalias", "split", "vim", "vi", "help", "exit", "quit"
         };
 
         /// <summary>Complete a command name (first word on the line).</summary>

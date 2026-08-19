@@ -62,6 +62,7 @@ namespace UbuntuLikeTerminal
                     case "history": History(args); break;
                     case "alias": Alias(args); break;
                     case "unalias": Unalias(args); break;
+                    case "split": Split(args); break;
                     case "vim":
                     case "vi": VimLauncher.Launch(args.ToArray(), Environment.CurrentDirectory); break;
                     case "help": Help(); break;
@@ -647,11 +648,43 @@ namespace UbuntuLikeTerminal
             Console.WriteLine("  history [件数]                コマンド履歴を表示");
             Console.WriteLine("  alias [名前=値...]           エイリアスを登録/一覧表示");
             Console.WriteLine("  unalias 名前...               エイリアスを削除");
+            Console.WriteLine("  split [-h] [コマンド]         Windows Terminal で画面分割(既定:左右分割/自身を起動、-h で上下分割)");
             Console.WriteLine("  vim / vi [ファイル]           Git Bash の vim を起動");
             Console.WriteLine("  exit / quit                  終了");
             Console.WriteLine();
             Console.WriteLine("上記にないコマンドは Windows 標準のコマンドプロンプト(cmd.exe)にフォールバックして実行します。");
             Console.WriteLine("キー操作: Tab=補完  Ctrl+K=カーソルから行末まで削除  Ctrl+U=行頭からカーソルまで削除  ↑↓=履歴");
+        }
+
+        // ---- split（画面分割は Windows Terminal の split-pane に委譲） ----------------------
+
+        private void Split(List<string> args)
+        {
+            HashSet<char> flags;
+            List<string> positional;
+            ParseFlags(args, out flags, out positional);
+
+            string splitFlag = flags.Contains('h') ? "-H" : "-V";
+            string target = positional.Count > 0
+                ? string.Join(" ", positional)
+                : "\"" + Process.GetCurrentProcess().MainModule.FileName + "\"";
+
+            var psi = new ProcessStartInfo
+            {
+                FileName = "wt.exe",
+                Arguments = "split-pane " + splitFlag + " -d \"" + Environment.CurrentDirectory + "\" " + target,
+                UseShellExecute = false,
+            };
+
+            try
+            {
+                Process.Start(psi);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("split: Windows Terminal (wt.exe) の起動に失敗しました - " + ex.Message);
+                Console.WriteLine("Windows Terminal がインストールされ、PATH が通っていることを確認してください。");
+            }
         }
 
         // ---- フォールバック（未知のコマンドは Windows 標準の cmd.exe に委ねる） ----------
