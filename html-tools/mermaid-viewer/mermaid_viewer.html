@@ -369,6 +369,8 @@
       <ul>
         <li><kbd>Ctrl</kbd>+<kbd>Z</kbd>(Macは<kbd>Cmd</kbd>+<kbd>Z</kbd>) — 元に戻す</li>
         <li><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> — やり直す</li>
+        <li><kbd>Tab</kbd> — インデント(スペース4つ。複数行を選択中は各行をまとめてインデント)</li>
+        <li><kbd>Shift</kbd>+<kbd>Tab</kbd> — インデントを戻す</li>
       </ul>
       <h3>サンプル</h3>
       <ul>
@@ -725,6 +727,46 @@ editor.addEventListener('keydown', (e) => {
   if(!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== 'z') return;
   e.preventDefault();
   if(e.shiftKey) redo(); else undo();
+});
+
+// --- Tabでインデント / Shift+Tabで逆インデント ---
+// 選択なしのTabはカーソル位置にスペースを挿入し、選択ありまたはShift+Tabは対象行の行頭をまとめて増減する。
+// 値を直接書き換えるのでブラウザ標準のUndoは効かず、独自履歴に1操作として積む。
+const INDENT = '    ';
+editor.addEventListener('keydown', (e) => {
+  if(e.key !== 'Tab' || e.ctrlKey || e.metaKey || e.altKey || e.isComposing) return;
+  e.preventDefault();
+  commitHistoryNow();
+  const v = editor.value;
+  const s = editor.selectionStart, end = editor.selectionEnd;
+  if(!e.shiftKey && s === end){
+    editor.value = v.slice(0, s) + INDENT + v.slice(end);
+    editor.selectionStart = editor.selectionEnd = s + INDENT.length;
+  }else{
+    const lineStart = v.lastIndexOf('\n', s - 1) + 1;
+    // 選択が次の行頭ちょうどで終わっている場合、その行は対象に含めない
+    const blockEnd = (end > s && v[end - 1] === '\n') ? end - 1 : end;
+    let lineEnd = v.indexOf('\n', blockEnd);
+    if(lineEnd === -1) lineEnd = v.length;
+    let firstDelta = 0, totalDelta = 0;
+    const lines = v.slice(lineStart, lineEnd).split('\n').map((line, i) => {
+      let next;
+      if(e.shiftKey){
+        const m = line.match(/^(\t| {1,4})/);
+        next = m ? line.slice(m[0].length) : line;
+      }else{
+        next = INDENT + line;
+      }
+      const delta = next.length - line.length;
+      if(i === 0) firstDelta = delta;
+      totalDelta += delta;
+      return next;
+    });
+    editor.value = v.slice(0, lineStart) + lines.join('\n') + v.slice(lineEnd);
+    editor.selectionStart = Math.max(lineStart, s + firstDelta);
+    editor.selectionEnd = Math.max(editor.selectionStart, end + totalDelta);
+  }
+  syncAfterEdit({ commitHistory: true });
 });
 
 // 統計/自動保存/履歴は入力のたびに即座に、負荷の大きいMermaidの再描画だけデバウンスする
