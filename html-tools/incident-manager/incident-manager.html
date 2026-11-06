@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>インシデント管理票</title>
+<style>
+  :root{
+    --ink:#1C2530;
+    --ink-soft:#3A4553;
+    --paper:#EDF0F2;
+    --paper-raised:#FFFFFF;
+    --accent:#FF7A00;
+    --accent-soft:#FFE3C2;
+    --done:#2E7D6B;
+    --done-soft:#DCEEE9;
+    --danger:#C62828;
+    --danger-soft:#FBE3E3;
+    --warn:#B26A00;
+    --warn-soft:#FFF1D6;
+    --border:#D8DCE0;
+    --muted:#6B7682;
+    --font-display:"Bahnschrift","Arial Narrow","Segoe UI Condensed",sans-serif;
+    --font-body:"Segoe UI","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
+    --font-mono:"Consolas","Cascadia Mono","Courier New",monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{font-family:var(--font-body);background:var(--paper);color:var(--ink);font-size:13px;}
+  #app{display:flex;flex-direction:column;height:100vh;}
+
+  .topbar{display:flex;align-items:center;gap:12px;background:var(--ink);color:#fff;padding:10px 16px;flex-wrap:wrap;}
+  .brand{font-family:var(--font-display);font-weight:700;font-size:20px;letter-spacing:.5px;display:flex;align-items:center;gap:8px;}
+  .brand-mark{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;background:var(--accent);color:var(--ink);font-family:var(--font-mono);font-weight:700;border-radius:3px;font-size:14px;}
+  .stats{display:flex;gap:6px;flex-wrap:wrap;}
+  .stat{font-size:12px;padding:4px 8px;border-radius:4px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);}
+  .stat b{font-family:var(--font-mono);font-size:13px;margin-left:4px;}
+  .stat.bad b{color:#FF8A80;}
+  .user-field{display:flex;align-items:center;gap:6px;font-size:12px;color:#B9C2CC;}
+  .user-field input{font-family:var(--font-body);font-size:13px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.25);border-radius:4px;color:#fff;padding:6px 8px;width:120px;}
+  .actions{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap;align-items:center;}
+  .topbar button,.btnfile{font-family:var(--font-body);font-size:13px;font-weight:600;padding:8px 12px;border-radius:4px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.06);color:#fff;cursor:pointer;transition:background .15s;}
+  .topbar button:hover,.btnfile:hover{background:rgba(255,255,255,.16);}
+  .topbar button.primary{background:var(--accent);border-color:var(--accent);color:var(--ink);}
+  .topbar button.primary:hover{background:#ff8a1a;}
+  .menu{position:relative;}
+  .menu-list{position:absolute;right:0;top:calc(100% + 4px);background:var(--paper-raised);border:1px solid var(--border);border-radius:6px;box-shadow:0 8px 24px rgba(0,0,0,.25);min-width:220px;padding:4px;z-index:600;}
+  .menu-list.hidden{display:none;}
+  .menu-list button{display:block;width:100%;text-align:left;background:transparent;border:none;color:var(--ink);font-weight:500;padding:8px 10px;border-radius:4px;}
+  .menu-list button:hover{background:var(--accent-soft);}
+  .menu-sep{height:1px;background:var(--border);margin:4px 0;}
+
+  .layout{display:flex;flex:1;min-height:0;}
+  .list-pane{flex:1 1 52%;display:flex;flex-direction:column;min-width:0;border-right:1px solid var(--border);}
+  .detail-pane{flex:1 1 48%;overflow-y:auto;min-width:0;padding:18px 22px 40px;}
+
+  .filters{display:flex;gap:8px;padding:10px 12px;background:var(--paper-raised);border-bottom:1px solid var(--border);flex-wrap:wrap;align-items:center;}
+  .filters input,.filters select{font-family:var(--font-body);font-size:13px;padding:6px 8px;border:1px solid var(--border);border-radius:4px;background:#fff;color:var(--ink);}
+  .filters input[type=search]{flex:1;min-width:160px;}
+  .count{font-size:12px;color:var(--muted);margin-left:auto;}
+  .table-wrap{flex:1;overflow:auto;}
+  table.list{border-collapse:collapse;width:100%;background:var(--paper-raised);}
+  table.list th{position:sticky;top:0;background:var(--ink-soft);color:#fff;font-weight:600;text-align:left;padding:7px 8px;white-space:nowrap;cursor:pointer;user-select:none;font-size:12px;}
+  table.list th .arrow{opacity:.7;font-size:10px;margin-left:3px;}
+  table.list td{padding:7px 8px;border-bottom:1px solid var(--border);white-space:nowrap;max-width:260px;overflow:hidden;text-overflow:ellipsis;}
+  table.list tr{cursor:pointer;}
+  table.list tbody tr:hover{background:#F6F8F9;}
+  table.list tr.selected{background:var(--accent-soft) !important;}
+  table.list tr.closed td{color:var(--muted);}
+  .empty-list{padding:40px 20px;text-align:center;color:var(--muted);}
+
+  .badge{display:inline-block;padding:1px 7px;border-radius:10px;font-size:11px;font-weight:700;font-family:var(--font-mono);}
+  .p1{background:var(--danger);color:#fff;}
+  .p2{background:#EF6C00;color:#fff;}
+  .p3{background:#F9A825;color:var(--ink);}
+  .p4{background:#90A4AE;color:#fff;}
+  .p5{background:#CFD8DC;color:var(--ink);}
+  .st{display:inline-block;padding:1px 7px;border-radius:3px;font-size:11px;font-weight:600;border:1px solid var(--border);background:var(--paper);}
+  .st-新規{background:#E3F2FD;border-color:#90CAF9;}
+  .st-割当済{background:#EDE7F6;border-color:#B39DDB;}
+  .st-対応中{background:var(--accent-soft);border-color:var(--accent);}
+  .st-保留{background:#ECEFF1;border-color:#B0BEC5;}
+  .st-解決済{background:var(--done-soft);border-color:var(--done);}
+  .st-クローズ{background:#E0E0E0;border-color:#BDBDBD;}
+  .st-取消{background:#F5F5F5;border-color:#E0E0E0;color:var(--muted);}
+  .sla-breach{color:var(--danger);font-weight:700;}
+  .sla-warn{color:var(--warn);font-weight:700;}
+
+  .placeholder{color:var(--muted);text-align:center;margin-top:80px;line-height:1.9;}
+  .detail-head{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+  .detail-head h2{margin:0;font-family:var(--font-display);font-size:20px;}
+  .detail-head .sla-info{font-size:12px;}
+  .detail-actions{margin-left:auto;display:flex;gap:6px;}
+  .btn{font-family:var(--font-body);font-size:12px;font-weight:600;padding:6px 10px;border-radius:4px;border:1px solid var(--border);background:var(--paper-raised);color:var(--ink);cursor:pointer;}
+  .btn:hover{background:var(--accent-soft);border-color:var(--accent);}
+  .btn.danger:hover{background:var(--danger-soft);border-color:var(--danger);color:var(--danger);}
+  .btn.primary{background:var(--accent);border-color:var(--accent);}
+
+  fieldset.sec{border:1px solid var(--border);border-radius:6px;background:var(--paper-raised);padding:10px 14px 14px;margin:0 0 12px;}
+  fieldset.sec legend{font-family:var(--font-display);font-weight:700;font-size:13px;padding:0 6px;color:var(--ink-soft);}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;}
+  .fld{display:flex;flex-direction:column;gap:3px;min-width:0;}
+  .fld.wide{grid-column:1 / -1;}
+  .fld label{font-size:11px;font-weight:600;color:var(--ink-soft);}
+  .fld label .req{color:var(--danger);margin-left:2px;}
+  .fld input,.fld select,.fld textarea{font-family:var(--font-body);font-size:13px;padding:6px 8px;border:1px solid var(--border);border-radius:4px;background:#fff;color:var(--ink);width:100%;}
+  .fld textarea{resize:vertical;min-height:70px;line-height:1.5;}
+  .fld input:focus,.fld select:focus,.fld textarea:focus{outline:2px solid var(--accent-soft);border-color:var(--accent);}
+  .fld input[readonly],.fld select:disabled{background:var(--paper);color:var(--ink-soft);}
+  .fld.missing input,.fld.missing select,.fld.missing textarea{border-color:#E57373;background:#FFF8F8;}
+
+  .log-add{display:flex;gap:8px;align-items:flex-start;margin-bottom:10px;}
+  .log-add textarea{flex:1;font-family:var(--font-body);font-size:13px;padding:6px 8px;border:1px solid var(--border);border-radius:4px;min-height:52px;resize:vertical;}
+  .log-list{list-style:none;margin:0;padding:0;}
+  .log-list li{border-left:3px solid var(--border);padding:4px 10px;margin-bottom:6px;}
+  .log-list li.status{border-left-color:var(--accent);}
+  .log-meta{font-size:11px;color:var(--muted);font-family:var(--font-mono);display:flex;gap:8px;align-items:center;}
+  .log-meta button{border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:11px;padding:0 4px;margin-left:auto;}
+  .log-meta button:hover{color:var(--danger);}
+  .log-text{white-space:pre-wrap;word-break:break-word;margin-top:2px;}
+
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:700;padding:20px;}
+  .modal.hidden{display:none;}
+  .modal-panel{background:var(--paper-raised);border:1px solid var(--border);border-radius:10px;width:100%;max-width:1040px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.4);}
+  .modal-panel.narrow{max-width:560px;}
+  .modal-header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border);}
+  .modal-header h2{margin:0;font-size:16px;font-family:var(--font-display);}
+  .modal-body{padding:16px 20px;overflow-y:auto;}
+  .modal-body h3{font-size:13px;color:var(--ink-soft);margin:18px 0 8px;font-family:var(--font-display);}
+  .modal-body h3:first-child{margin-top:0;}
+  .modal-body ul{margin:0;padding-left:20px;line-height:1.7;}
+  .close-x{width:30px;height:30px;border-radius:50%;border:1px solid var(--border);background:var(--paper);cursor:pointer;font-size:14px;}
+
+  table.fields{border-collapse:collapse;width:100%;}
+  table.fields th{font-size:11px;text-align:left;color:var(--ink-soft);padding:4px;border-bottom:2px solid var(--border);white-space:nowrap;}
+  table.fields td{padding:4px;border-bottom:1px solid var(--border);vertical-align:top;}
+  table.fields input[type=text],table.fields select,table.fields textarea{font-family:var(--font-body);font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:3px;width:100%;background:#fff;}
+  table.fields textarea{min-height:28px;height:28px;resize:vertical;}
+  table.fields td.c{text-align:center;}
+  table.fields .key{font-family:var(--font-mono);font-size:11px;color:var(--muted);}
+  table.fields .mv{padding:2px 6px;font-size:11px;}
+  table.fields tr.sys .lbl::after{content:"標準";font-size:10px;color:var(--muted);margin-left:4px;}
+  .sla-grid{display:flex;gap:12px;flex-wrap:wrap;}
+  .sla-grid label{display:flex;align-items:center;gap:6px;}
+  .sla-grid input,.inline-input{width:80px;font-family:var(--font-body);font-size:13px;padding:5px 6px;border:1px solid var(--border);border-radius:4px;}
+  .matrix{border-collapse:collapse;margin-top:6px;}
+  .matrix th,.matrix td{border:1px solid var(--border);padding:4px 10px;text-align:center;font-size:12px;}
+  .matrix th{background:var(--paper);}
+  .hint{font-size:11px;color:var(--muted);margin-top:4px;}
+
+  #toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:8px 14px;border-radius:6px;font-size:12px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:800;}
+  #toast.show{opacity:1;}
+  #printView{display:none;}
+
+  @media (max-width:900px){
+    .layout{flex-direction:column;}
+    .list-pane{flex:0 0 45vh;border-right:none;border-bottom:1px solid var(--border);}
+    .detail-pane{padding:14px 16px 40px;}
+    .grid{grid-template-columns:1fr;}
+  }
+
+  @media print{
+    @page{size:A4;margin:14mm;}
+    body{background:#fff;}
+    #app,.modal,#toast{display:none !important;}
+    #printView{display:block;color:#000;font-size:11px;}
+    #printView h1{font-size:18px;margin:0 0 4px;}
+    #printView .sub{font-size:11px;color:#444;margin-bottom:10px;}
+    #printView h2{font-size:13px;margin:12px 0 4px;border-bottom:2px solid #333;padding-bottom:2px;}
+    #printView table{border-collapse:collapse;width:100%;}
+    #printView th,#printView td{border:1px solid #888;padding:4px 6px;text-align:left;vertical-align:top;}
+    #printView th{background:#eee;width:24%;white-space:nowrap;}
+    #printView td{white-space:pre-wrap;word-break:break-word;}
+    #printView .log th{width:auto;}
+    #printView tr{page-break-inside:avoid;}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark">IM</span>インシデント管理票</div>
+    <div class="stats" id="stats"></div>
+    <label class="user-field">記録者<input id="userName" type="text" placeholder="氏名"></label>
+    <div class="actions">
+      <button class="primary" id="btnNew">＋ 新規インシデント</button>
+      <div class="menu">
+        <button id="btnData">エクスポート / インポート ▾</button>
+        <div class="menu-list hidden" id="dataMenu">
+          <button data-act="csv">CSVエクスポート（表示中の一覧）</button>
+          <button data-act="csvAll">CSVエクスポート（全件）</button>
+          <button data-act="json">JSONエクスポート（全データ・項目定義込み）</button>
+          <button data-act="print">選択中の管理票を印刷 / PDF</button>
+          <div class="menu-sep"></div>
+          <button data-act="importJson">JSONインポート</button>
+          <button data-act="importCsv">CSVインポート</button>
+        </div>
+      </div>
+      <button id="btnSettings">項目・設定</button>
+      <button id="btnHelp" title="使い方">？</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <section class="list-pane">
+      <div class="filters">
+        <input type="search" id="q" placeholder="キーワード検索（全項目）">
+        <select id="fStatus"></select>
+        <select id="fPriority"></select>
+        <span class="count" id="count"></span>
+      </div>
+      <div class="table-wrap" id="tableWrap"></div>
+    </section>
+    <section class="detail-pane" id="detail"></section>
+  </div>
+</div>
+
+<div class="modal hidden" id="settingsModal">
+  <div class="modal-panel">
+    <div class="modal-header"><h2>項目・設定</h2><button class="close-x" data-close>✕</button></div>
+    <div class="modal-body" id="settingsBody"></div>
+  </div>
+</div>
+
+<div class="modal hidden" id="helpModal">
+  <div class="modal-panel narrow">
+    <div class="modal-header"><h2>使い方</h2><button class="close-x" data-close>✕</button></div>
+    <div class="modal-body">
+      <h3>基本</h3>
+      <ul>
+        <li>「＋ 新規インシデント」で起票します。受付日時は現在時刻で入ります。</li>
+        <li>入力内容は自動でブラウザ（localStorage）に保存されます。</li>
+        <li>優先度は影響度×緊急度から自動で決まり、解決期限（SLA）は受付日時＋優先度ごとの目標時間で計算されます。</li>
+        <li>ステータスを「解決済」「クローズ」にすると解決日時・クローズ日時が自動で入ります。必須項目が空のままだとこの変更はできません。</li>
+        <li>ステータスの変更は対応履歴に自動で記録されます。</li>
+      </ul>
+      <h3>項目のカスタマイズ</h3>
+      <ul>
+        <li>「項目・設定」から項目の追加・削除・並べ替え・名称変更・必須指定・一覧表示の切り替えができます。</li>
+        <li>「標準」と表示された項目は、自動計算やステータス管理に使うため削除できません（名称の変更は可能）。</li>
+      </ul>
+      <h3>データの保管</h3>
+      <ul>
+        <li>データはこのブラウザの中にだけ保存されます。ブラウザのデータを消去すると失われるため、定期的にJSONエクスポートしてください。</li>
+        <li>JSONは項目定義・設定も含むので、別の端末でインポートすれば同じ状態を再現できます。</li>
+        <li>CSVはExcelでそのまま開けます（UTF-8 BOM付き）。CSVインポートは見出しを項目名で照合し、同じインシデントIDは上書きします。</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="fileJson" accept=".json,application/json" hidden>
+<input type="file" id="fileCsv" accept=".csv,text/csv" hidden>
+<div id="printView"></div>
+<div id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  const STORE_KEY = "incident-manager:v1";
+  const STATUSES = ["新規","割当済","対応中","保留","解決済","クローズ","取消"];
+  const OPEN_STATUSES = ["新規","割当済","対応中","保留"];
+  const RESOLVED_STATUSES = ["解決済","クローズ"];
+  const LEVELS = ["高","中","低"];
+  const PRIORITIES = ["P1","P2","P3","P4","P5"];
+  // ITILの影響度×緊急度マトリクス（キー: 影響度+緊急度）
+  const PRIORITY_MATRIX = {"高高":1,"高中":2,"高低":3,"中高":2,"中中":3,"中低":4,"低高":3,"低中":4,"低低":5};
+  const SECTIONS = ["基本情報","分類・優先度","担当","内容","解決","関連","その他"];
+  const TYPES = {text:"テキスト",textarea:"複数行",select:"選択肢",date:"日付",datetime:"日時",number:"数値"};
+  // 標準項目のうち選択肢を固定するもの（ロジックが値に依存するため）
+  const FIXED_OPTIONS = ["status","impact","urgency"];
+  const LOG_LABEL = "対応履歴";
+
+  function defaultFields(){
+    return [
+      {key:"id",label:"インシデントID",type:"text",section:"基本情報",system:true,readonly:true,list:true},
+      {key:"title",label:"件名",type:"text",section:"基本情報",system:true,required:true,list:true,wide:true},
+      {key:"status",label:"ステータス",type:"select",options:STATUSES.slice(),section:"基本情報",system:true,list:true},
+      {key:"receivedAt",label:"受付日時",type:"datetime",section:"基本情報",system:true,required:true,list:true},
+      {key:"channel",label:"受付経路",type:"select",options:["電話","メール","ポータル","チャット","監視アラート","その他"],section:"基本情報"},
+      {key:"reporter",label:"報告者",type:"text",section:"基本情報",required:true},
+      {key:"contact",label:"連絡先",type:"text",section:"基本情報"},
+      {key:"category",label:"カテゴリ",type:"select",options:["ハードウェア","ソフトウェア","ネットワーク","アカウント・権限","セキュリティ","その他"],section:"分類・優先度",list:true},
+      {key:"subcategory",label:"サブカテゴリ",type:"text",section:"分類・優先度"},
+      {key:"service",label:"影響サービス",type:"text",section:"分類・優先度"},
+      {key:"ci",label:"構成アイテム（CI）",type:"text",section:"分類・優先度"},
+      {key:"impact",label:"影響度",type:"select",options:LEVELS.slice(),section:"分類・優先度",system:true},
+      {key:"urgency",label:"緊急度",type:"select",options:LEVELS.slice(),section:"分類・優先度",system:true},
+      {key:"priority",label:"優先度",type:"text",section:"分類・優先度",system:true,readonly:true,list:true},
+      {key:"slaDue",label:"解決期限（SLA）",type:"datetime",section:"分類・優先度",system:true,readonly:true,list:true},
+      {key:"assignGroup",label:"担当グループ",type:"text",section:"担当"},
+      {key:"assignee",label:"担当者",type:"text",section:"担当",list:true},
+      {key:"description",label:"詳細",type:"textarea",section:"内容",required:true,wide:true},
+      {key:"workaround",label:"回避策",type:"textarea",section:"内容",wide:true},
+      {key:"rootCause",label:"原因",type:"textarea",section:"解決",wide:true},
+      {key:"resolution",label:"解決内容",type:"textarea",section:"解決",required:true,wide:true},
+      {key:"closureCode",label:"クローズコード",type:"select",options:["恒久対応で解決","回避策で解決","再現せず","重複","ユーザー取下げ"],section:"解決"},
+      {key:"resolvedAt",label:"解決日時",type:"datetime",section:"解決",system:true},
+      {key:"closedAt",label:"クローズ日時",type:"datetime",section:"解決",system:true},
+      {key:"relatedProblem",label:"関連問題番号",type:"text",section:"関連"},
+      {key:"relatedChange",label:"関連変更番号",type:"text",section:"関連"}
+    ];
+  }
+  function defaultSettings(){
+    return {idPrefix:"INC", seq:0, userName:"", sla:{P1:4,P2:8,P3:24,P4:72,P5:120}};
+  }
+
+  let state = {fields:defaultFields(), settings:defaultSettings(), incidents:[]};
+  let selectedId = null;
+  let sort = {key:"receivedAt", dir:-1};
+
+  // ---------- utilities ----------
+  const $ = (id) => document.getElementById(id);
+  function esc(s){
+    return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  }
+  const pad = (n) => String(n).padStart(2, "0");
+  function toLocal(d){
+    return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+"T"+pad(d.getHours())+":"+pad(d.getMinutes());
+  }
+  const nowLocal = () => toLocal(new Date());
+  const fmtDT = (s) => s ? String(s).replace("T", " ") : "";
+  function parseDT(s){
+    if(!s) return null;
+    const d = new Date(String(s).replace(" ", "T"));
+    return isNaN(d) ? null : d;
+  }
+  function addHours(s, h){
+    const d = parseDT(s);
+    return d ? toLocal(new Date(d.getTime() + h * 3600e3)) : "";
+  }
+  function stamp(){ const d = new Date(); return d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+"-"+pad(d.getHours())+pad(d.getMinutes()); }
+  function toast(msg){
+    const t = $("toast"); t.textContent = msg; t.classList.add("show");
+    clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove("show"), 2200);
+  }
+  function download(name, text, mime){
+    const blob = new Blob([text], {type:mime});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+  const fieldByKey = (k) => state.fields.find(f => f.key === k);
+  const current = () => state.incidents.find(i => i.id === selectedId) || null;
+  const isOpen = (inc) => OPEN_STATUSES.includes(inc.status);
+
+  // ---------- storage ----------
+  let saveTimer = null, saveWarned = false;
+  function save(){
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      try{
+        localStorage.setItem(STORE_KEY, JSON.stringify(state));
+        saveWarned = false;
+      }catch(e){
+        if(!saveWarned){ alert("ブラウザへの保存に失敗しました。JSONエクスポートでデータを退避してください。\n" + e.message); saveWarned = true; }
+      }
+    }, 250);
+  }
+  function load(){
+    let s = null;
+    try{ s = JSON.parse(localStorage.getItem(STORE_KEY) || "null"); }catch(e){}
+    if(s && Array.isArray(s.fields) && Array.isArray(s.incidents)){
+      state = {fields:s.fields, settings:Object.assign(defaultSettings(), s.settings || {}), incidents:s.incidents};
+      ensureSystemFields();
+    }
+  }
+  // 古いデータや外部JSONで標準項目が欠けていたら補う
+  function ensureSystemFields(){
+    defaultFields().filter(f => f.system).forEach(df => {
+      const f = fieldByKey(df.key);
+      if(!f) state.fields.push(df);
+      else{
+        f.system = true; f.type = df.type; f.readonly = !!df.readonly;
+        if(FIXED_OPTIONS.includes(df.key)) f.options = df.options;
+      }
+    });
+  }
+
+  // ---------- domain logic ----------
+  function recompute(inc){
+    const p = PRIORITY_MATRIX[(inc.impact || "") + (inc.urgency || "")];
+    inc.priority = p ? "P" + p : "";
+    const h = Number(state.settings.sla[inc.priority]);
+    inc.slaDue = inc.receivedAt && inc.priority && h > 0 ? addHours(inc.receivedAt, h) : "";
+  }
+  function slaState(inc){
+    const due = parseDT(inc.slaDue);
+    if(!due || inc.status === "取消") return "";
+    const end = RESOLVED_STATUSES.includes(inc.status) ? (parseDT(inc.resolvedAt) || new Date()) : new Date();
+    if(end > due) return "breach";
+    if(isOpen(inc)){
+      const total = Number(state.settings.sla[inc.priority]) * 3600e3;
+      if(due - end < total * 0.25) return "warn";
+    }
+    return "ok";
+  }
+  function nextId(){
+    state.settings.seq = (Number(state.settings.seq) || 0) + 1;
+    return (state.settings.idPrefix || "INC") + "-" + String(state.settings.seq).padStart(6, "0");
+  }
+  function bumpSeq(id){
+    const m = String(id || "").match(/(\d+)$/);
+    if(m) state.settings.seq = Math.max(Number(state.settings.seq) || 0, Number(m[1]));
+  }
+  function addLog(inc, text, type){
+    inc.log = inc.log || [];
+    inc.log.unshift({at:nowLocal(), author:state.settings.userName || "", text, type:type || "note"});
+  }
+  function missingRequired(inc){
+    return state.fields.filter(f => f.required && !f.readonly && !String(inc[f.key] == null ? "" : inc[f.key]).trim());
+  }
+  function newIncident(){
+    const inc = {id:nextId(), status:"新規", receivedAt:nowLocal(), impact:"中", urgency:"中", log:[], createdAt:nowLocal()};
+    recompute(inc);
+    addLog(inc, "起票", "status");
+    state.incidents.push(inc);
+    selectedId = inc.id;
+    save(); renderAll();
+    const t = document.querySelector('#detail [data-key="title"]');
+    if(t) t.focus();
+  }
+
+  // ---------- list ----------
+  function initFilters(){
+    $("fStatus").innerHTML = '<option value="">全ステータス</option><option value="__open" selected>未完了のみ</option>' +
+      STATUSES.map(s => `<option>${esc(s)}</option>`).join("");
+    $("fPriority").innerHTML = '<option value="">全優先度</option>' + PRIORITIES.map(p => `<option>${p}</option>`).join("");
+  }
+  function filtered(){
+    const q = $("q").value.trim().toLowerCase();
+    const fs = $("fStatus").value, fp = $("fPriority").value;
+    let list = state.incidents.filter(inc => {
+      if(fs === "__open" && !isOpen(inc)) return false;
+      if(fs && fs !== "__open" && inc.status !== fs) return false;
+      if(fp && inc.priority !== fp) return false;
+      if(q){
+        const hay = state.fields.map(f => inc[f.key]).concat((inc.log || []).map(l => l.text)).join("\n").toLowerCase();
+        if(!q.split(/\s+/).every(w => hay.includes(w))) return false;
+      }
+      return true;
+    });
+    const k = sort.key;
+    list.sort((a, b) => {
+      const va = a[k] == null ? "" : a[k], vb = b[k] == null ? "" : b[k];
+      if(va === vb) return 0;
+      if(va === "") return 1;
+      if(vb === "") return -1;
+      const f = fieldByKey(k);
+      if(f && f.type === "number") return (Number(va) - Number(vb)) * sort.dir;
+      if(k === "status") return (STATUSES.indexOf(va) - STATUSES.indexOf(vb)) * sort.dir;
+      return String(va).localeCompare(String(vb), "ja") * sort.dir;
+    });
+    return list;
+  }
+  function cellHTML(f, inc){
+    const v = inc[f.key];
+    if(f.key === "priority") return v ? `<span class="badge ${v.toLowerCase()}">${esc(v)}</span>` : "";
+    if(f.key === "status") return `<span class="st st-${esc(v)}">${esc(v)}</span>`;
+    if(f.key === "slaDue"){
+      const s = slaState(inc);
+      return `<span class="${s === "breach" ? "sla-breach" : s === "warn" ? "sla-warn" : ""}">${s === "breach" ? "⚠ " : ""}${esc(fmtDT(v))}</span>`;
+    }
+    if(f.type === "datetime") return esc(fmtDT(v));
+    if(f.type === "textarea") return esc(String(v || "").split("\n")[0]);
+    return esc(v);
+  }
+  function renderList(){
+    const cols = state.fields.filter(f => f.list);
+    const list = filtered();
+    $("count").textContent = list.length + " / " + state.incidents.length + " 件";
+    if(!state.incidents.length){
+      $("tableWrap").innerHTML = '<div class="empty-list">インシデントはまだありません。<br>「＋ 新規インシデント」から起票してください。</div>';
+      return;
+    }
+    const head = cols.map(f => `<th data-sort="${esc(f.key)}">${esc(f.label)}${sort.key === f.key ? `<span class="arrow">${sort.dir > 0 ? "▲" : "▼"}</span>` : ""}</th>`).join("");
+    const rows = list.map(inc => `<tr data-id="${esc(inc.id)}" class="${inc.id === selectedId ? "selected" : ""} ${isOpen(inc) ? "" : "closed"}">` +
+      cols.map(f => `<td title="${esc(f.type === "datetime" ? fmtDT(inc[f.key]) : inc[f.key])}">${cellHTML(f, inc)}</td>`).join("") + "</tr>").join("");
+    $("tableWrap").innerHTML = `<table class="list"><thead><tr>${head}</tr></thead><tbody>${rows || `<tr><td colspan="${cols.length}" class="empty-list">条件に一致するインシデントはありません</td></tr>`}</tbody></table>`;
+  }
+  function renderStats(){
+    const open = state.incidents.filter(isOpen);
+    const breach = state.incidents.filter(i => slaState(i) === "breach" && isOpen(i)).length;
+    const high = open.filter(i => i.priority === "P1" || i.priority === "P2").length;
+    $("stats").innerHTML =
+      `<span class="stat">未完了<b>${open.length}</b></span>` +
+      `<span class="stat ${high ? "bad" : ""}">P1・P2 未完了<b>${high}</b></span>` +
+      `<span class="stat ${breach ? "bad" : ""}">SLA超過（未完了）<b>${breach}</b></span>`;
+  }
+
+  // ---------- detail ----------
+  function inputHTML(f, inc){
+    const v = inc[f.key] == null ? "" : inc[f.key];
+    const ro = f.readonly ? " readonly tabindex=\"-1\"" : "";
+    const k = esc(f.key);
+    switch(f.type){
+      case "textarea": return `<textarea data-key="${k}" rows="4"${ro}>${esc(v)}</textarea>`;
+      case "select":{
+        const opts = f.options || [];
+        return `<select data-key="${k}"${f.readonly ? " disabled" : ""}>` +
+          (f.system ? "" : '<option value=""></option>') +
+          opts.map(o => `<option${o === v ? " selected" : ""}>${esc(o)}</option>`).join("") +
+          (v && !opts.includes(v) ? `<option selected>${esc(v)}</option>` : "") + "</select>";
+      }
+      case "date": return `<input type="date" data-key="${k}" value="${esc(v)}"${ro}>`;
+      case "datetime": return `<input type="datetime-local" data-key="${k}" value="${esc(v)}"${ro}>`;
+      case "number": return `<input type="number" data-key="${k}" value="${esc(v)}"${ro}>`;
+      default: return `<input type="text" data-key="${k}" value="${esc(v)}"${ro}>`;
+    }
+  }
+  function slaInfoHTML(inc){
+    const s = slaState(inc);
+    if(!inc.slaDue) return "";
+    if(s === "breach") return `<span class="sla-info sla-breach">⚠ SLA超過（期限 ${esc(fmtDT(inc.slaDue))}）</span>`;
+    if(s === "warn") return `<span class="sla-info sla-warn">SLA期限間近（${esc(fmtDT(inc.slaDue))}）</span>`;
+    return `<span class="sla-info">期限 ${esc(fmtDT(inc.slaDue))}</span>`;
+  }
+  function renderDetail(){
+    const inc = current();
+    const el = $("detail");
+    if(!inc){
+      el.innerHTML = '<div class="placeholder">一覧からインシデントを選択するか、<br>「＋ 新規インシデント」で起票してください。</div>';
+      return;
+    }
+    const sections = SECTIONS.slice();
+    state.fields.forEach(f => { if(!sections.includes(f.section)) sections.push(f.section); });
+    const body = sections.map(sec => {
+      const fs = state.fields.filter(f => (f.section || "その他") === sec);
+      if(!fs.length) return "";
+      return `<fieldset class="sec"><legend>${esc(sec)}</legend><div class="grid">` + fs.map(f =>
+        `<div class="fld${f.wide || f.type === "textarea" ? " wide" : ""}" data-fld="${esc(f.key)}"><label>${esc(f.label)}${f.required ? '<span class="req">*</span>' : ""}</label>${inputHTML(f, inc)}</div>`
+      ).join("") + "</div></fieldset>";
+    }).join("");
+    const logs = (inc.log || []).map((l, i) =>
+      `<li class="${l.type === "status" ? "status" : ""}"><div class="log-meta"><span>${esc(fmtDT(l.at))}</span><span>${esc(l.author || "—")}</span>${l.type === "status" ? "" : `<button data-dellog="${i}" title="削除">✕</button>`}</div><div class="log-text">${esc(l.text)}</div></li>`
+    ).join("");
+    el.innerHTML =
+      `<div class="detail-head"><h2>${esc(inc.id)}</h2>${inc.priority ? `<span class="badge ${inc.priority.toLowerCase()}">${esc(inc.priority)}</span>` : ""}<span class="st st-${esc(inc.status)}">${esc(inc.status)}</span><span id="slaInfo">${slaInfoHTML(inc)}</span>` +
+      `<div class="detail-actions"><button class="btn" id="btnPrint">印刷 / PDF</button><button class="btn danger" id="btnDelete">削除</button></div></div>` +
+      body +
+      `<fieldset class="sec"><legend>${LOG_LABEL}</legend><div class="log-add"><textarea id="logText" placeholder="対応内容・連絡事項を記録（Ctrl+Enterで追加）"></textarea><button class="btn primary" id="btnLog">追加</button></div><ul class="log-list">${logs || '<li class="log-text" style="border:none;color:var(--muted)">記録なし</li>'}</ul></fieldset>`;
+    markMissing(inc);
+  }
+  function markMissing(inc){
+    const miss = new Set(missingRequired(inc).map(f => f.key));
+    document.querySelectorAll("#detail .fld").forEach(d => d.classList.toggle("missing", miss.has(d.dataset.fld)));
+  }
+  function refreshComputed(inc){
+    ["priority","slaDue","resolvedAt","closedAt","status"].forEach(k => {
+      const e = document.querySelector(`#detail [data-key="${k}"]`);
+      if(e) e.value = inc[k] || "";
+    });
+  }
+  function onStatusChange(inc, sel){
+    const prev = inc.status, next = sel.value;
+    if(prev === next) return;
+    if(RESOLVED_STATUSES.includes(next)){
+      const miss = missingRequired(inc);
+      if(miss.length){
+        alert("次の必須項目が未入力のため「" + next + "」にできません。\n\n・" + miss.map(f => f.label).join("\n・"));
+        sel.value = prev;
+        return;
+      }
+    }
+    inc.status = next;
+    if(next === "解決済" && !inc.resolvedAt) inc.resolvedAt = nowLocal();
+    if(next === "クローズ"){
+      if(!inc.resolvedAt) inc.resolvedAt = nowLocal();
+      if(!inc.closedAt) inc.closedAt = nowLocal();
+    }
+    let msg = "ステータス: " + prev + " → " + next;
+    if(OPEN_STATUSES.includes(next) && !OPEN_STATUSES.includes(prev)){
+      inc.resolvedAt = ""; inc.closedAt = "";
+      msg += "（再オープン）";
+    }
+    addLog(inc, msg, "status");
+    renderDetail();
+  }
+  function bindDetail(){
+    const el = $("detail");
+    el.addEventListener("input", (e) => {
+      const k = e.target.dataset && e.target.dataset.key;
+      if(!k || e.target.tagName === "SELECT") return;
+      const inc = current(); if(!inc) return;
+      inc[k] = e.target.value;
+      inc.updatedAt = nowLocal();
+      if(k === "receivedAt"){ recompute(inc); refreshComputed(inc); }
+      markMissing(inc);
+      save();
+    });
+    el.addEventListener("change", (e) => {
+      const k = e.target.dataset && e.target.dataset.key;
+      if(!k) return;
+      const inc = current(); if(!inc) return;
+      if(k === "status") onStatusChange(inc, e.target);
+      else{
+        inc[k] = e.target.value;
+        inc.updatedAt = nowLocal();
+        if(k === "impact" || k === "urgency" || k === "receivedAt"){
+          const before = inc.priority;
+          recompute(inc);
+          if(before !== inc.priority) addLog(inc, "優先度: " + (before || "—") + " → " + (inc.priority || "—") + "（影響度 " + (inc.impact || "—") + " × 緊急度 " + (inc.urgency || "—") + "）", "status");
+          renderDetail();
+        }
+        markMissing(inc);
+      }
+      save(); renderList(); renderStats();
+      const si = $("slaInfo"); if(si) si.innerHTML = slaInfoHTML(inc);
+    });
+    el.addEventListener("click", (e) => {
+      const inc = current(); if(!inc) return;
+      if(e.target.id === "btnLog") addNote(inc);
+      else if(e.target.id === "btnDelete"){
+        if(confirm(inc.id + "「" + (inc.title || "無題") + "」を削除します。元に戻せません。よろしいですか？")){
+          state.incidents = state.incidents.filter(i => i !== inc);
+          selectedId = null; save(); renderAll();
+        }
+      }else if(e.target.id === "btnPrint") printIncident(inc);
+      else if(e.target.dataset.dellog != null){
+        if(confirm("この記録を削除しますか？")){
+          inc.log.splice(Number(e.target.dataset.dellog), 1);
+          save(); renderDetail();
+        }
+      }
+    });
+    el.addEventListener("keydown", (e) => {
+      if(e.target.id === "logText" && e.key === "Enter" && (e.ctrlKey || e.metaKey)){
+        e.preventDefault(); const inc = current(); if(inc) addNote(inc);
+      }
+    });
+  }
+  function addNote(inc){
+    const t = $("logText"); const text = t.value.trim();
+    if(!text) return;
+    addLog(inc, text, "note");
+    inc.updatedAt = nowLocal();
+    save(); renderDetail();
+    const nt = $("logText"); if(nt) nt.focus();
+  }
+
+  // ---------- settings ----------
+  function renderSettings(){
+    const secOpts = (cur) => {
+      const list = SECTIONS.slice(); if(cur && !list.includes(cur)) list.push(cur);
+      return list.map(s => `<option${s === cur ? " selected" : ""}>${esc(s)}</option>`).join("");
+    };
+    const rows = state.fields.map((f, i) => `<tr data-i="${i}" class="${f.system ? "sys" : ""}">
+      <td style="white-space:nowrap"><button class="btn mv" data-mv="-1" ${i === 0 ? "disabled" : ""}>▲</button><button class="btn mv" data-mv="1" ${i === state.fields.length - 1 ? "disabled" : ""}>▼</button></td>
+      <td class="lbl"><input type="text" data-p="label" value="${esc(f.label)}"><div class="key">${esc(f.key)}</div></td>
+      <td><select data-p="type" ${f.system ? "disabled" : ""}>${Object.keys(TYPES).map(t => `<option value="${t}"${t === f.type ? " selected" : ""}>${TYPES[t]}</option>`).join("")}</select></td>
+      <td><select data-p="section">${secOpts(f.section)}</select></td>
+      <td>${f.type === "select" ? `<textarea data-p="options" placeholder="1行に1つ" ${FIXED_OPTIONS.includes(f.key) ? "disabled" : ""}>${esc((f.options || []).join("\n"))}</textarea>` : '<span class="key">—</span>'}</td>
+      <td class="c"><input type="checkbox" data-p="required" ${f.required ? "checked" : ""} ${f.readonly ? "disabled" : ""}></td>
+      <td class="c"><input type="checkbox" data-p="list" ${f.list ? "checked" : ""}></td>
+      <td class="c"><input type="checkbox" data-p="wide" ${f.wide ? "checked" : ""}></td>
+      <td>${f.system ? "" : '<button class="btn danger" data-del>削除</button>'}</td>
+    </tr>`).join("");
+    const s = state.settings;
+    const matrix = `<table class="matrix"><tr><th>影響度＼緊急度</th>${LEVELS.map(u => `<th>${u}</th>`).join("")}</tr>` +
+      LEVELS.map(im => `<tr><th>${im}</th>${LEVELS.map(u => `<td><span class="badge p${PRIORITY_MATRIX[im + u]}">P${PRIORITY_MATRIX[im + u]}</span></td>`).join("")}</tr>`).join("") + "</table>";
+    $("settingsBody").innerHTML = `
+      <h3>項目</h3>
+      <table class="fields"><thead><tr><th>順序</th><th>項目名</th><th>型</th><th>セクション</th><th>選択肢</th><th>必須</th><th>一覧</th><th>全幅</th><th></th></tr></thead><tbody>${rows}</tbody></table>
+      <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn primary" id="addField">＋ 項目を追加</button>
+        <button class="btn danger" id="resetFields">項目を初期状態に戻す</button>
+      </div>
+      <div class="hint">必須: 空のままでは「解決済」「クローズ」にできません。一覧: 左の一覧表に列として表示します。項目を削除しても既存インシデントの値はデータ内に残ります。</div>
+      <h3>SLA（解決目標時間・時間単位）</h3>
+      <div class="sla-grid">${PRIORITIES.map(p => `<label><span class="badge ${p.toLowerCase()}">${p}</span><input type="number" min="0" step="0.5" data-sla="${p}" value="${esc(s.sla[p])}"> 時間</label>`).join("")}</div>
+      <div class="hint">変更後の値は、影響度・緊急度・受付日時を変更したインシデントと新規起票分に適用されます。<button class="btn" id="reapplySla" style="margin-left:6px">全件に再計算を適用</button></div>
+      <h3>優先度マトリクス（ITIL）</h3>${matrix}
+      <h3>インシデントID</h3>
+      <label>接頭辞 <input class="inline-input" type="text" id="idPrefix" value="${esc(s.idPrefix)}"></label>
+      <span class="hint">次に発行: ${esc((s.idPrefix || "INC") + "-" + String((Number(s.seq) || 0) + 1).padStart(6, "0"))}</span>`;
+  }
+  function bindSettings(){
+    const body = $("settingsBody");
+    body.addEventListener("change", (e) => {
+      const tr = e.target.closest("tr[data-i]");
+      if(tr){
+        const f = state.fields[Number(tr.dataset.i)], p = e.target.dataset.p;
+        if(!p) return;
+        if(e.target.type === "checkbox") f[p] = e.target.checked;
+        else if(p === "options") f.options = e.target.value.split("\n").map(x => x.trim()).filter(Boolean);
+        else f[p] = e.target.value;
+        if(p === "type" && f.type === "select" && !f.options) f.options = [];
+        if(p === "label" && !f.label.trim()) f.label = f.key;
+        save();
+        if(p === "type") renderSettings();
+        return;
+      }
+      if(e.target.dataset.sla){
+        state.settings.sla[e.target.dataset.sla] = Number(e.target.value) || 0; save();
+      }else if(e.target.id === "idPrefix"){
+        state.settings.idPrefix = e.target.value.trim() || "INC"; save(); renderSettings();
+      }
+    });
+    body.addEventListener("click", (e) => {
+      const tr = e.target.closest("tr[data-i]");
+      const i = tr ? Number(tr.dataset.i) : -1;
+      if(e.target.dataset.mv){
+        const j = i + Number(e.target.dataset.mv);
+        if(j < 0 || j >= state.fields.length) return;
+        const t = state.fields[i]; state.fields[i] = state.fields[j]; state.fields[j] = t;
+        save(); renderSettings();
+      }else if(e.target.hasAttribute("data-del")){
+        const f = state.fields[i];
+        if(confirm("項目「" + f.label + "」を削除しますか？（入力済みの値はデータ内に残ります）")){
+          state.fields.splice(i, 1); save(); renderSettings();
+        }
+      }else if(e.target.id === "addField"){
+        state.fields.push({key:"f_" + Date.now().toString(36), label:"新しい項目", type:"text", section:"その他"});
+        save(); renderSettings();
+        const inputs = body.querySelectorAll('input[data-p="label"]');
+        const last = inputs[inputs.length - 1]; if(last){ last.focus(); last.select(); }
+      }else if(e.target.id === "resetFields"){
+        if(confirm("項目定義を初期状態に戻します。追加した項目は削除されます（入力済みの値はデータ内に残ります）。よろしいですか？")){
+          state.fields = defaultFields(); save(); renderSettings();
+        }
+      }else if(e.target.id === "reapplySla"){
+        state.incidents.forEach(recompute); save(); toast("全件の優先度・SLA期限を再計算しました");
+      }
+    });
+  }
+
+  // ---------- export / import ----------
+  function csvCell(v){
+    const s = String(v == null ? "" : v);
+    return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+  function logToText(log){
+    return (log || []).map(l => fmtDT(l.at) + " [" + (l.author || "") + "] " + l.text).join("\n");
+  }
+  function exportCSV(list){
+    const fs = state.fields;
+    const lines = [fs.map(f => f.label).concat(LOG_LABEL).map(csvCell).join(",")];
+    list.forEach(inc => {
+      lines.push(fs.map(f => f.type === "datetime" ? fmtDT(inc[f.key]) : inc[f.key]).concat(logToText(inc.log)).map(csvCell).join(","));
+    });
+    download("incidents-" + stamp() + ".csv", "﻿" + lines.join("\r\n"), "text/csv;charset=utf-8");
+    toast(list.length + " 件をCSVで出力しました");
+  }
+  function exportJSON(){
+    const data = {app:"incident-manager", version:1, exportedAt:new Date().toISOString(), fields:state.fields, settings:state.settings, incidents:state.incidents};
+    download("incidents-" + stamp() + ".json", JSON.stringify(data, null, 2), "application/json");
+    toast("JSONで出力しました（" + state.incidents.length + " 件）");
+  }
+  function parseCSV(text){
+    text = text.replace(/^﻿/, "");
+    const rows = []; let row = [], f = "", q = false;
+    for(let i = 0; i < text.length; i++){
+      const c = text[i];
+      if(q){
+        if(c === '"'){ if(text[i + 1] === '"'){ f += '"'; i++; } else q = false; }
+        else f += c;
+      }else if(c === '"') q = true;
+      else if(c === ","){ row.push(f); f = ""; }
+      else if(c === "\n" || c === "\r"){
+        if(c === "\r" && text[i + 1] === "\n") i++;
+        row.push(f); rows.push(row); row = []; f = "";
+      }else f += c;
+    }
+    if(f !== "" || row.length){ row.push(f); rows.push(row); }
+    return rows.filter(r => r.some(v => v !== ""));
+  }
+  function textToLog(text){
+    const out = [];
+    String(text || "").split(/\r?\n/).forEach(line => {
+      const m = line.match(/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}) \[(.*?)\] (.*)$/);
+      if(m) out.push({at:m[1].replace(" ", "T"), author:m[2], text:m[3], type:/^(ステータス|優先度):|^起票$/.test(m[3]) ? "status" : "note"});
+      else if(out.length) out[out.length - 1].text += "\n" + line;
+      else if(line.trim()) out.push({at:nowLocal(), author:"", text:line, type:"note"});
+    });
+    return out;
+  }
+  function normalizeDT(v){
+    const d = parseDT(v);
+    return d ? toLocal(d) : (v || "");
+  }
+  function importCSV(text){
+    const rows = parseCSV(text);
+    if(rows.length < 2){ alert("データ行がありません。"); return; }
+    const head = rows[0].map(h => h.trim());
+    const map = head.map(h => {
+      if(h === LOG_LABEL) return "__log";
+      const f = state.fields.find(x => x.label === h || x.key === h);
+      return f ? f.key : null;
+    });
+    const unknown = head.filter((h, i) => !map[i]);
+    if(!map.includes("id")){ alert("「" + fieldByKey("id").label + "」列が見つかりません。"); return; }
+    let added = 0, updated = 0;
+    rows.slice(1).forEach(r => {
+      const rec = {};
+      map.forEach((k, i) => {
+        if(!k) return;
+        const f = fieldByKey(k);
+        if(k === "__log") rec.log = textToLog(r[i]);
+        else rec[k] = f && f.type === "datetime" ? normalizeDT(r[i]) : (r[i] || "");
+      });
+      if(!rec.id) rec.id = nextId();
+      const ex = state.incidents.find(i => i.id === rec.id);
+      if(ex){ Object.assign(ex, rec); recompute(ex); updated++; }
+      else{
+        const inc = Object.assign({status:"新規", log:[]}, rec);
+        if(!STATUSES.includes(inc.status)) inc.status = "新規";
+        recompute(inc); state.incidents.push(inc); bumpSeq(inc.id); added++;
+      }
+    });
+    save(); renderAll();
+    alert("CSVインポート完了\n追加: " + added + " 件 / 上書き: " + updated + " 件" + (unknown.length ? "\n\n項目に該当せず取り込まなかった列: " + unknown.join("、") : ""));
+  }
+  function importJSON(text){
+    let data;
+    try{ data = JSON.parse(text); }catch(e){ alert("JSONの読み込みに失敗しました。\n" + e.message); return; }
+    if(!data || !Array.isArray(data.incidents)){ alert("このツールのJSONではありません（incidents がありません）。"); return; }
+    const replace = confirm("JSONを取り込みます（" + data.incidents.length + " 件）。\n\n[OK] 既存データをすべて置き換える（項目定義・設定も含む）\n[キャンセル] 既存データに追加する（同じIDは上書き）");
+    if(replace){
+      state = {fields:Array.isArray(data.fields) ? data.fields : defaultFields(), settings:Object.assign(defaultSettings(), data.settings || {}), incidents:data.incidents};
+      ensureSystemFields();
+      selectedId = null;
+    }else{
+      // 取り込み側にだけある項目定義は追加する
+      (data.fields || []).forEach(f => { if(!fieldByKey(f.key)) state.fields.push(f); });
+      data.incidents.forEach(inc => {
+        const i = state.incidents.findIndex(x => x.id === inc.id);
+        if(i >= 0) state.incidents[i] = inc; else state.incidents.push(inc);
+        bumpSeq(inc.id);
+      });
+    }
+    state.settings.userName = $("userName").value;
+    save(); renderAll(); toast("JSONを取り込みました");
+  }
+  function printIncident(inc){
+    if(!inc){ alert("印刷するインシデントを一覧から選択してください。"); return; }
+    const sections = SECTIONS.slice();
+    state.fields.forEach(f => { if(!sections.includes(f.section)) sections.push(f.section); });
+    const val = (f) => f.type === "datetime" ? fmtDT(inc[f.key]) : (inc[f.key] == null ? "" : inc[f.key]);
+    $("printView").innerHTML =
+      `<h1>インシデント管理票　${esc(inc.id)}</h1><div class="sub">出力日時: ${esc(fmtDT(nowLocal()))}　出力者: ${esc(state.settings.userName || "")}</div>` +
+      sections.map(sec => {
+        const fs = state.fields.filter(f => (f.section || "その他") === sec);
+        if(!fs.length) return "";
+        return `<h2>${esc(sec)}</h2><table>` + fs.map(f => `<tr><th>${esc(f.label)}</th><td>${esc(val(f))}</td></tr>`).join("") + "</table>";
+      }).join("") +
+      `<h2>${LOG_LABEL}</h2><table class="log"><tr><th style="width:18%">日時</th><th style="width:14%">記録者</th><th>内容</th></tr>` +
+      ((inc.log || []).slice().reverse().map(l => `<tr><td>${esc(fmtDT(l.at))}</td><td>${esc(l.author)}</td><td>${esc(l.text)}</td></tr>`).join("") || '<tr><td colspan="3">記録なし</td></tr>') + "</table>";
+    window.print();
+  }
+
+  // ---------- wiring ----------
+  function renderAll(){ renderStats(); renderList(); renderDetail(); }
+  function openModal(id){ $(id).classList.remove("hidden"); }
+  function closeModal(m){ m.classList.add("hidden"); if(m.id === "settingsModal") renderAll(); }
+
+  function init(){
+    load();
+    initFilters();
+    $("userName").value = state.settings.userName || "";
+    $("userName").addEventListener("input", (e) => { state.settings.userName = e.target.value; save(); });
+    $("btnNew").addEventListener("click", newIncident);
+    ["q","fStatus","fPriority"].forEach(id => $(id).addEventListener("input", renderList));
+    $("tableWrap").addEventListener("click", (e) => {
+      const th = e.target.closest("th[data-sort]");
+      if(th){
+        const k = th.dataset.sort;
+        sort = sort.key === k ? {key:k, dir:-sort.dir} : {key:k, dir:1};
+        renderList(); return;
+      }
+      const tr = e.target.closest("tr[data-id]");
+      if(tr){ selectedId = tr.dataset.id; renderList(); renderDetail(); }
+    });
+    bindDetail();
+    bindSettings();
+
+    $("btnData").addEventListener("click", (e) => { e.stopPropagation(); $("dataMenu").classList.toggle("hidden"); });
+    document.addEventListener("click", () => $("dataMenu").classList.add("hidden"));
+    $("dataMenu").addEventListener("click", (e) => {
+      const act = e.target.dataset.act; if(!act) return;
+      $("dataMenu").classList.add("hidden");
+      if(act === "csv") exportCSV(filtered());
+      else if(act === "csvAll") exportCSV(state.incidents);
+      else if(act === "json") exportJSON();
+      else if(act === "print") printIncident(current());
+      else if(act === "importJson") $("fileJson").click();
+      else if(act === "importCsv") $("fileCsv").click();
+    });
+    [["fileJson", importJSON], ["fileCsv", importCSV]].forEach(([id, fn]) => {
+      $(id).addEventListener("change", (e) => {
+        const file = e.target.files[0]; if(!file) return;
+        const r = new FileReader();
+        r.onload = () => fn(String(r.result));
+        r.readAsText(file, "utf-8");
+        e.target.value = "";
+      });
+    });
+
+    $("btnSettings").addEventListener("click", () => { renderSettings(); openModal("settingsModal"); });
+    $("btnHelp").addEventListener("click", () => openModal("helpModal"));
+    document.querySelectorAll(".modal").forEach(m => {
+      m.addEventListener("click", (e) => { if(e.target === m || e.target.hasAttribute("data-close")) closeModal(m); });
+    });
+    document.addEventListener("keydown", (e) => {
+      if(e.key === "Escape") document.querySelectorAll(".modal:not(.hidden)").forEach(closeModal);
+    });
+    // SLA期限は時間経過で変わるため一覧を定期更新（入力中の詳細欄は触らない）
+    setInterval(() => { renderStats(); renderList(); const inc = current(), si = $("slaInfo"); if(inc && si) si.innerHTML = slaInfoHTML(inc); }, 60000);
+
+    renderAll();
+  }
+  init();
+})();
+</script>
+</body>
+</html>
