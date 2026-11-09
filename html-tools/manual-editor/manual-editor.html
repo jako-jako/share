@@ -32,6 +32,14 @@
   .meta-fields input::placeholder{color:rgba(255,255,255,.5);}
   .title-input{font-family:var(--font-display);font-size:16px;font-weight:600;min-width:220px;max-width:340px;}
   .sys-input, .ver-input{width:130px;}
+  .vars-wrap{position:relative;}
+  #varsBtn{padding:6px 10px;font-family:var(--font-mono);font-size:12px;}
+  #varsBtn.has-vars{border-color:var(--accent);color:var(--accent);}
+  .vars-panel{position:absolute;top:calc(100% + 6px);left:0;z-index:600;width:360px;max-width:80vw;background:var(--paper-raised);color:var(--ink);border:1px solid var(--border);border-radius:6px;padding:10px;box-shadow:0 8px 24px rgba(0,0,0,.3);}
+  .vars-panel.hidden{display:none;}
+  .vars-help{font-size:11px;color:var(--ink-soft);margin-bottom:6px;line-height:1.5;}
+  .vars-help code{font-family:var(--font-mono);background:var(--paper);padding:0 3px;border-radius:2px;}
+  #varsInput{width:100%;font-family:var(--font-mono);font-size:12px;border:1px solid var(--border);border-radius:4px;padding:6px 8px;resize:vertical;}
   .actions{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap;}
   button, .btnfile{font-family:var(--font-body);font-size:13px;font-weight:600;padding:8px 12px;border-radius:4px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.06);color:#fff;cursor:pointer;transition:background .15s;}
   button:hover, .btnfile:hover{background:rgba(255,255,255,.16);}
@@ -81,6 +89,41 @@
   .step-preview pre{background:var(--ink);color:#fff;padding:8px 10px;border-radius:4px;overflow-x:auto;font-family:var(--font-mono);font-size:12px;margin:6px 0;}
   .step-preview pre code{background:transparent;border:none;padding:0;color:inherit;}
   .step-preview p{margin:4px 0;}
+  .step-preview .md-h{margin:8px 0 4px;line-height:1.35;font-family:var(--font-display);}
+  .step-preview h1.md-h{font-size:17px;}
+  .step-preview h2.md-h{font-size:15px;}
+  .step-preview h3.md-h,.step-preview h4.md-h,.step-preview h5.md-h,.step-preview h6.md-h{font-size:13px;}
+  .step-preview blockquote{margin:6px 0;padding:2px 10px;border-left:3px solid var(--border);color:var(--ink-soft);}
+  .step-preview hr{border:none;border-top:1px solid var(--border);margin:8px 0;}
+  .step-preview a{color:#B35400;text-decoration:underline;}
+  .step-preview li.md-task{list-style:none;margin-left:-16px;}
+  .step-preview .md-cb{font-size:14px;}
+  .step-preview .md-alert{margin:6px 0;padding:6px 10px;border:1px solid;border-left-width:5px;border-radius:4px;background:#fff;}
+  .step-preview .md-alert>p:first-of-type{margin-top:2px;}
+  .step-preview .md-alert-title{font-weight:700;font-size:12px;margin-bottom:2px;}
+  .step-preview .md-alert-note{border-color:#2F6FB3;background:#EEF4FB;}
+  .step-preview .md-alert-note .md-alert-title{color:#2F6FB3;}
+  .step-preview .md-alert-tip{border-color:#2E7D6B;background:#E8F4F0;}
+  .step-preview .md-alert-tip .md-alert-title{color:#2E7D6B;}
+  .step-preview .md-alert-important{border-color:#6B4BB3;background:#F1EDFA;}
+  .step-preview .md-alert-important .md-alert-title{color:#6B4BB3;}
+  .step-preview .md-alert-warning{border-color:#C26A00;background:#FFF4E5;}
+  .step-preview .md-alert-warning .md-alert-title{color:#A35800;}
+  .step-preview .md-alert-caution{border-color:#B23A2E;background:#FBEAE8;}
+  .step-preview .md-alert-caution .md-alert-title{color:#B23A2E;}
+  .step-preview .md-fill{display:inline-flex;align-items:flex-end;gap:4px;margin:0 2px;vertical-align:bottom;}
+  .step-preview .md-fill-label{font-size:11px;color:var(--ink-soft);}
+  .step-preview .md-fill-line{display:inline-block;min-width:140px;height:1.3em;border-bottom:1px solid var(--ink);}
+  .step-preview kbd{display:inline-block;font-family:var(--font-mono);font-size:11px;line-height:1.4;padding:0 5px;border:1px solid #9aa4ad;border-bottom-width:2px;border-radius:3px;background:#fff;color:var(--ink);}
+  .step-preview mark{background:#FFE58A;color:inherit;padding:0 1px;}
+  .step-preview .md-code{position:relative;}
+  .step-preview .md-expected{margin:6px 0;}
+  .step-preview .md-expected-label{display:inline-block;font-size:11px;font-weight:700;color:#2E7D6B;border:1px solid #2E7D6B;border-bottom:none;border-radius:3px 3px 0 0;padding:1px 8px;background:#E8F4F0;}
+  .step-preview .md-expected pre{margin-top:0 !important;background:#F4F7F6 !important;color:var(--ink) !important;border:1px dashed #2E7D6B;}
+  .md-var-warn{margin-top:4px;font-size:11px;color:#B23A2E;}
+  .step-preview table{border-collapse:collapse;margin:6px 0;font-size:12px;}
+  .step-preview th,.step-preview td{border:1px solid var(--border);padding:3px 6px;}
+  .step-preview th{background:#fff;}
   .step-note{width:100%;margin-top:8px;border:1px solid var(--border);border-radius:4px;padding:6px 10px;font-family:var(--font-body);font-size:12px;background:#fff;color:var(--ink-soft);}
   .step-image{margin-top:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
   .step-image img{max-width:160px;max-height:110px;border:1px solid var(--border);border-radius:4px;display:block;}
@@ -177,6 +220,13 @@
       <input id="projectTitle" class="title-input" value="本番作業手順書" placeholder="手順書タイトル">
       <input id="metaSystem" class="sys-input" placeholder="対象システム名">
       <input id="metaVersion" class="ver-input" placeholder="版数 (例: v1.0)">
+      <div class="vars-wrap">
+        <button id="varsBtn" type="button" title="本文中の {{名前}} を置き換える変数">{{ }} 変数</button>
+        <div id="varsPanel" class="vars-panel hidden">
+          <div class="vars-help">1行に1つ <code>名前=値</code> と書くと、本文の <code>{{名前}}</code> が値に置き換わります（コードブロック内も含む）。<code>#</code> で始まる行はコメント。</div>
+          <textarea id="varsInput" rows="7" spellcheck="false" placeholder="HOST=web01&#10;USER=admin&#10;# DB=db01"></textarea>
+        </div>
+      </div>
     </div>
     <span id="stats" class="stats"></span>
     <span id="autosaveStatus" class="autosave-status"></span>
@@ -244,6 +294,24 @@
         <li><kbd>Ctrl</kbd>+<kbd>F</kbd> — 検索バーを開く（<kbd>Esc</kbd>で閉じる）</li>
         <li><kbd>Enter</kbd> / <kbd>Shift</kbd>+<kbd>Enter</kbd> — 次/前の一致へ移動</li>
         <li>置換欄に入力して「全置換」（または置換欄で <kbd>Enter</kbd>）</li>
+      </ul>
+      <h3>作業内容欄のMarkdown</h3>
+      <ul>
+        <li>基本: <code># 見出し</code> / <code>**太字**</code> / <code>*斜体*</code> / <code>~~取消線~~</code> / <code>==マーカー==</code> / <code>`コード`</code> / <code>```コードブロック```</code></li>
+        <li>リスト: <code>- 項目</code>（半角スペース2つで階層化）/ <code>1. 番号付き</code> / <code>- [ ] チェック項目</code></li>
+        <li>その他: <code>&gt; 引用</code> / <code>---</code> 区切り線 / <code>[文字](URL)</code> リンク（URLは直書きでも自動リンク）/ <code>| 表 |</code></li>
+        <li>警告枠: <code>&gt; [!WARNING] 再起動前にバックアップ</code>（NOTE / TIP / IMPORTANT / WARNING / CAUTION）</li>
+        <li>記入欄: <code>[[記入]]</code> / <code>[[記入:確認したPID]]</code> — 印刷すると下線の空欄になり、ペンで書き込めます</li>
+        <li>キー表示: <code>[[Ctrl+Alt+Del]]</code></li>
+        <li>期待結果: <code>```expected</code> で囲むと「期待結果」ラベル付きで表示（<code>output</code> / <code>期待結果</code> も可）</li>
+        <li>変数: 上部の「{{ }} 変数」に <code>HOST=web01</code> と書くと、本文の <code>{{HOST}}</code> が置き換わります（コードブロック内も）。<code>\{{HOST}}</code> と書くとそのまま表示</li>
+        <li>エクスポートしたHTMLでは、コードブロックの右上に「コピー」ボタンが付きます（印刷には出ません）</li>
+      </ul>
+      <h3>作業内容欄の入力補助</h3>
+      <ul>
+        <li><kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd> — 字下げ／字下げ解除（複数行選択でまとめて）</li>
+        <li>リストの行で <kbd>Enter</kbd> — 次の行に <code>- </code> や番号を自動入力（空の項目で <kbd>Enter</kbd> するとリスト終了）</li>
+        <li><kbd>Ctrl</kbd>+<kbd>B</kbd> — 太字、<kbd>Ctrl</kbd>+<kbd>E</kbd> — コード（もう一度押すと解除）</li>
       </ul>
       <h3>キーボードショートカット</h3>
       <ul>
@@ -377,106 +445,285 @@
     img.src = dataUrl;
   }
 
-  // ---- lightweight Markdown (bold/italic/inline-code/code-block/lists), no external deps ----
+  // ---- Markdown renderer (no external deps) ----
+  // Self-contained on purpose: buildExportHtml() embeds this exact function into the
+  // exported HTML via mdToHtml.toString(), so the editor preview and the export can never
+  // drift apart again (they used to be two hand-copied implementations).
+  // Supported: headings, paragraphs (single newline = line break), **bold**/__bold__,
+  // *italic*, ~~strike~~, `code`, fenced code (``` / ~~~), lists (nested, ordered with a
+  // start number, task lists "- [ ]"), > quotes, --- rules, [links](url), bare URLs,
+  // pipe tables, and backslash escapes.
+  // Manual-specific extensions: > [!WARNING] alert boxes, [[記入:ラベル]] write-in blanks for
+  // the printed copy, [[Ctrl+C]] key caps, ==highlight==, ```expected blocks, and {{NAME}}
+  // variables (vars = "NAME=value" lines, substituted before anything else so they also
+  // work inside code blocks).
+  function mdToHtml(src, vars){
+    if (!src) return "";
+    src = applyMdVars(String(src), vars);
+    var LANG_TAG = /^(bash|sh|shell|zsh|fish|powershell|pwsh|ps1|cmd|bat|batch|sql|json|yaml|yml|toml|xml|html|css|js|jsx|javascript|ts|tsx|typescript|java|kt|py|python|rb|ruby|go|rust|rs|c|cpp|cs|php|perl|ini|conf|properties|dockerfile|diff|patch|text|plain|txt|log|md|markdown)$/i;
+    var stash = [];
+    function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+    function keep(html){ stash.push(html); return "\u0000" + (stash.length - 1) + "\u0000"; }
+    function restore(s){
+      for (var n = 0; n < 8 && s.indexOf("\u0000") >= 0; n++){
+        s = s.replace(/\u0000(\d+)\u0000/g, function(_, k){ return stash[+k]; });
+      }
+      return s;
+    }
+    // Only schemes that cannot run script. Relative paths (no scheme) are allowed so a
+    // manual can point at a file next to it on a share.
+    function safeUrl(u){
+      if (!u || u.indexOf("\u0000") >= 0) return null;
+      if (/^[a-z][a-z0-9+.-]*:/i.test(u) && !/^(https?|mailto|file|ftp):/i.test(u)) return null;
+      return u;
+    }
+    function link(url, inner){
+      return keep('<a href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">' + inner + "</a>");
+    }
+    function inline(s, inLink){
+      s = s.replace(/\\([\\`*_~\[\]()#>|!.+\-{}])/g, function(_, c){ return keep(esc(c)); });
+      // A fence written mid-sentence (```x```) is inline code, same as `x`.
+      s = s.replace(/```([^\n]+?)```|``([^\n]+?)``|`([^`\n]+)`/g, function(_, a, b, c){
+        var code = a != null ? a : (b != null ? b.replace(/^ (.*) $/, "$1") : c);
+        return keep("<code>" + esc(code) + "</code>");
+      });
+      // [[記入]] / [[記入:ラベル]] -> blank line to write on; [[Ctrl+C]] -> key caps.
+      // No space allowed right inside the brackets, so bash's "[[ -f x ]]" stays as text.
+      s = s.replace(/\[\[(?![\s\[])([^\[\]\n]*?[^\s\[\]])\]\]/g, function(m, body){
+        var f = /^記入(?:[:：]\s*(.*))?$/.exec(body);
+        if (f){
+          var label = f[1] ? '<span class="md-fill-label">' + esc(f[1]) + "</span>" : "";
+          return keep('<span class="md-fill">' + label + '<span class="md-fill-line"></span></span>');
+        }
+        if (inLink) return m;
+        // Split on "+" only when a key follows, so "Ctrl++" means Ctrl and the + key.
+        var keys = body.split(/\s*\+\s*(?=\S)/).map(function(k){ return "<kbd>" + esc(k) + "</kbd>"; });
+        return keep('<span class="md-keys">' + keys.join("+") + "</span>");
+      });
+      if (!inLink){
+        s = s.replace(/\[([^\]\n]+)\]\(\s*<?([^)\s>]+)>?(?:\s+"[^"\n]*")?\s*\)/g, function(m, text, url){
+          var u = safeUrl(url);
+          return u ? link(u, inline(text, true)) : m;
+        });
+        s = s.replace(/<((?:https?|mailto|file):[^\s<>]+)>/g, function(m, url){ return link(url, esc(url)); });
+        s = s.replace(/(^|[^\w\/"'=\u0000])(https?:\/\/[^\s<>"'`\u0000　-ヿ！-～一-鿿]+)/g, function(m, pre, url){
+          var tail = "";
+          var t = url.match(/[.,;:!?)\]]+$/);
+          if (t){ tail = t[0]; url = url.slice(0, -tail.length); }
+          return pre + link(url, esc(url)) + tail;
+        });
+      }
+      s = esc(s);
+      s = s.replace(/\*\*(?=\S)([^\n]*?\S)\*\*/g, "<strong>$1</strong>");
+      s = s.replace(/(^|[^\w])__(?=\S)([^\n]*?\S)__(?!\w)/g, "$1<strong>$2</strong>");
+      s = s.replace(/~~(?=\S)([^\n]*?\S)~~/g, "<del>$1</del>");
+      s = s.replace(/(^|[^=])==(?=[^\s=])([^\n]*?[^\s=])==(?!=)/g, "$1<mark>$2</mark>");
+      // The non-space rule keeps shell globs such as "rm *.log *.tmp" from turning italic.
+      s = s.replace(/(^|[^*])\*(?=[^\s*])([^*\n]*?[^\s*])\*(?!\*)/g, "$1<em>$2</em>");
+      return restore(s);
+    }
+
+    var RE_FENCE = /^[ \t]*(`{3,}|~{3,})(.*)$/;
+    var RE_HEAD = /^[ \t]{0,3}(#{1,6})[ \t]+(.*?)(?:[ \t]+#+)?[ \t]*$/;
+    var RE_HR = /^[ \t]{0,3}([-*_])(?:[ \t]*\1){2,}[ \t]*$/;
+    var RE_QUOTE = /^[ \t]{0,3}>[ \t]?/;
+    var RE_LIST = /^([ \t]*)([-*+]|\d{1,9}[.)])[ \t]+(.*)$/;
+    var RE_TSEP = /^[ \t]*\|?[ \t]*:?-+:?[ \t]*(\|[ \t]*:?-+:?[ \t]*)*\|?[ \t]*$/;
+
+    function indentOf(s){ return s.replace(/\t/g, "    ").match(/^ */)[0].length; }
+    function parseItem(line){
+      var m = RE_LIST.exec(line);
+      if (!m || RE_HR.test(line)) return null;
+      var ordered = /\d/.test(m[2]);
+      var text = m[3], task = null;
+      var t = !ordered && /^\[([ xX])\][ \t]+(.*)$/.exec(text);
+      if (t){ task = t[1] !== " "; text = t[2]; }
+      return { level: Math.floor(indentOf(m[1]) / 2), ordered: ordered,
+               start: ordered ? parseInt(m[2], 10) : 1, task: task, text: text };
+    }
+    function splitRow(line){
+      var s = line.trim().replace(/^\|/, "").replace(/\|$/, "");
+      var cells = [], cur = "";
+      for (var k = 0; k < s.length; k++){
+        if (s[k] === "\\" && s[k+1] === "|"){ cur += "|"; k++; }
+        else if (s[k] === "|"){ cells.push(cur.trim()); cur = ""; }
+        else cur += s[k];
+      }
+      cells.push(cur.trim());
+      return cells;
+    }
+    function isTableStart(lines, i){
+      // Both lines must contain "|", otherwise "text" followed by "---" would become a table.
+      return i + 1 < lines.length && lines[i].indexOf("|") >= 0 &&
+             lines[i+1].indexOf("|") >= 0 && RE_TSEP.test(lines[i+1]);
+    }
+    function startsBlock(lines, i){
+      var l = lines[i];
+      return RE_FENCE.test(l) || RE_HEAD.test(l) || RE_HR.test(l) || RE_QUOTE.test(l) ||
+             !!parseItem(l) || isTableStart(lines, i);
+    }
+
+    function itemHtml(it){
+      var body = it.html;
+      if (it.task === null) return "<li>" + body;
+      return '<li class="md-task"><span class="md-cb">' + (it.task ? "&#9745;" : "&#9744;") + "</span> " + body;
+    }
+    function buildList(items, start, level){
+      var first = items[start], ordered = first.ordered;
+      var html = ordered ? (first.start !== 1 ? '<ol start="' + first.start + '">' : "<ol>") : "<ul>";
+      var i = start, open = false;
+      while (i < items.length && items[i].level >= level){
+        if (items[i].level > level){
+          var sub = buildList(items, i, items[i].level);
+          if (!open){ html += "<li>"; open = true; }
+          html += sub.html; i = sub.next; continue;
+        }
+        if (items[i].ordered !== ordered) break;
+        if (open) html += "</li>";
+        html += itemHtml(items[i]); open = true; i++;
+      }
+      if (open) html += "</li>";
+      return { html: html + (ordered ? "</ol>" : "</ul>"), next: i };
+    }
+
+    function render(lines){
+      var out = [], i = 0, m;
+      while (i < lines.length){
+        var line = lines[i];
+        if (line.trim() === ""){ i++; continue; }
+
+        if ((m = RE_FENCE.exec(line))){
+          var fence = m[1], rest = m[2];
+          var same = rest.indexOf(fence.charAt(0) === "`" ? "```" : "~~~");
+          if (same >= 0 && rest.slice(same).replace(new RegExp("^" + fence.charAt(0) + "+"), "").trim() === ""){
+            // ```code``` alone on its line: a one-line block.
+            out.push('<div class="md-code"><pre><code>' + esc(rest.slice(0, same)) + "</code></pre></div>");
+            i++; continue;
+          }
+          var code = [], info = rest.trim();
+          var expected = /^(expected|output|result|期待結果|期待値|出力)$/i.test(info);
+          // Only a known language tag is dropped; anything else after the fence was code
+          // in older data ("```ls -la"), so keep it as the first line.
+          if (info && !expected && !LANG_TAG.test(info)) code.push(info);
+          var closeRe = new RegExp("^[ \\t]*" + (fence.charAt(0) === "`" ? "`" : "~") + "{" + fence.length + ",}[ \\t]*$");
+          i++;
+          while (i < lines.length && !closeRe.test(lines[i])){ code.push(lines[i]); i++; }
+          i++;
+          // Backward compat: older data put the language on the line after the fence.
+          if (!info && code.length > 1 && LANG_TAG.test(code[0].trim())) code.shift();
+          var text = code.join("\n").replace(/^\n+|\n+$/g, "");
+          if (expected){
+            out.push('<div class="md-expected"><div class="md-expected-label">期待結果</div><pre><code>' + esc(text) + "</code></pre></div>");
+          } else {
+            out.push('<div class="md-code"><pre><code>' + esc(text) + "</code></pre></div>");
+          }
+          continue;
+        }
+        if ((m = RE_HEAD.exec(line))){
+          var lv = m[1].length;
+          out.push("<h" + lv + ' class="md-h">' + inline(m[2]) + "</h" + lv + ">");
+          i++; continue;
+        }
+        if (RE_HR.test(line)){ out.push("<hr>"); i++; continue; }
+        if (RE_QUOTE.test(line)){
+          var q = [];
+          while (i < lines.length && lines[i].trim() !== "" && (RE_QUOTE.test(lines[i]) || !startsBlock(lines, i))){
+            q.push(lines[i].replace(RE_QUOTE, "")); i++;
+          }
+          var al = /^\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\][ \t]*(.*)$/i.exec(q[0] || "");
+          if (al){
+            var kind = al[1].toLowerCase();
+            var title = { note:"ℹ 補足", tip:"✓ ヒント", important:"！ 重要", warning:"⚠ 警告", caution:"⛔ 危険" }[kind];
+            if (al[2]) q[0] = al[2]; else q.shift();
+            out.push('<div class="md-alert md-alert-' + kind + '"><div class="md-alert-title">' + title + "</div>" + render(q) + "</div>");
+          } else {
+            out.push("<blockquote>" + render(q) + "</blockquote>");
+          }
+          continue;
+        }
+        if (isTableStart(lines, i)){
+          var head = splitRow(lines[i]);
+          var aligns = splitRow(lines[i+1]).map(function(c){
+            var l = /^:/.test(c), r = /:$/.test(c);
+            return l && r ? "center" : r ? "right" : l ? "left" : "";
+          });
+          function cell(tag, txt, k){
+            var a = aligns[k] ? ' style="text-align:' + aligns[k] + '"' : "";
+            return "<" + tag + a + ">" + inline(txt || "") + "</" + tag + ">";
+          }
+          var html = '<table class="pm-inline-table md-table"><thead><tr>';
+          head.forEach(function(c, k){ html += cell("th", c, k); });
+          html += "</tr></thead><tbody>";
+          i += 2;
+          while (i < lines.length && lines[i].trim() !== "" && lines[i].indexOf("|") >= 0){
+            var row = splitRow(lines[i]);
+            html += "<tr>";
+            for (var k = 0; k < head.length; k++) html += cell("td", row[k], k);
+            html += "</tr>"; i++;
+          }
+          out.push(html + "</tbody></table>");
+          continue;
+        }
+        if (parseItem(line)){
+          var items = [];
+          while (i < lines.length){
+            var it = parseItem(lines[i]);
+            if (it){ items.push(it); it.lines = [it.text]; i++; continue; }
+            // An indented line under an item continues that item (shown as a line break).
+            if (items.length && lines[i].trim() !== "" && indentOf(lines[i]) >= 2 && !startsBlock(lines, i)){
+              items[items.length-1].lines.push(lines[i].trim()); i++; continue;
+            }
+            break;
+          }
+          items.forEach(function(it){ it.html = it.lines.map(function(x){ return inline(x); }).join("<br>"); });
+          var base = Math.min.apply(null, items.map(function(it){ return it.level; }));
+          items.forEach(function(it){ it.level -= base; });
+          // buildList() stops at a marker change ("- foo" then "1. bar"); restart from there.
+          var consumed = 0, guard = items.length + 2, lh = "";
+          while (consumed < items.length && guard-- > 0){
+            var res = buildList(items, consumed, items[consumed].level);
+            lh += res.html;
+            if (res.next <= consumed) break;
+            consumed = res.next;
+          }
+          out.push(lh);
+          continue;
+        }
+        var para = [line]; i++;
+        while (i < lines.length && lines[i].trim() !== "" && !startsBlock(lines, i)){ para.push(lines[i]); i++; }
+        out.push("<p>" + para.map(function(x){ return inline(x); }).join("<br>") + "</p>");
+      }
+      return out.join("");
+    }
+    return render(String(src).replace(/\u0000/g, "").replace(/\r\n?/g, "\n").split("\n"));
+  }
+  // "NAME=value" per line (# starts a comment). Kept separate from mdToHtml so the export's
+  // plain-text work log can substitute variables too.
+  function parseMdVars(vars){
+    var map = {};
+    String(vars || "").split(/\r?\n/).forEach(function(line){
+      var m = /^\s*([^\s=#{}][^\s={}]*)\s*=\s?(.*?)\s*$/.exec(line);
+      if (m) map[m[1]] = m[2];
+    });
+    return map;
+  }
+  function applyMdVars(text, vars){
+    var map = parseMdVars(vars);
+    // "\{{NAME}}" stays literal (Markdown's backslash escape then drops the backslash).
+    return String(text || "").replace(/(\\?)\{\{\s*([^\s{}]+)\s*\}\}/g, function(m, bs, name){
+      if (bs) return m;
+      return Object.prototype.hasOwnProperty.call(map, name) ? map[name] : m;
+    });
+  }
+  function undefinedMdVars(text, vars){
+    var map = parseMdVars(vars), seen = {}, list = [];
+    String(text || "").replace(/(\\?)\{\{\s*([^\s{}]+)\s*\}\}/g, function(m, bs, name){
+      if (!bs && !Object.prototype.hasOwnProperty.call(map, name) && !seen[name]){ seen[name] = 1; list.push(name); }
+    });
+    return list;
+  }
   function escapeHtmlMd(s){
     return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
-  }
-  function parseListItem(line){
-    var m = String(line).match(/^([ \t]*)([-*]|\d+\.)[ \t]+(.*)$/);
-    if (!m) return null;
-    var indentRaw = m[1].replace(/\t/g, "    ");
-    return { level: Math.floor(indentRaw.length / 2), ordered: /\d/.test(m[2]), text: m[3] };
-  }
-  function buildList(items, start, level){
-    var ordered = items[start].ordered;
-    var html = ordered ? "<ol>" : "<ul>";
-    var i = start;
-    while (i < items.length && items[i].level >= level){
-      if (items[i].level > level){
-        var sub = buildList(items, i, items[i].level);
-        html = html.replace(/<\/li>$/, "") + sub.html + "</li>";
-        i = sub.next; continue;
-      }
-      if (items[i].ordered !== ordered) break;
-      html += "<li>" + items[i].text + "</li>";
-      i++;
-    }
-    html += ordered ? "</ol>" : "</ul>";
-    return { html: html, next: i };
-  }
-  function renderLists(lines, i){
-    var items = [];
-    while (i < lines.length){
-      var it = parseListItem(lines[i]);
-      if (!it) break;
-      items.push(it); i++;
-    }
-    if (!items.length) return null;
-    var base = items[0].level;
-    items.forEach(function(it){ it.level = Math.max(0, it.level - base); });
-    // buildList() stops at a marker change ("- foo" followed by "1. bar"). Keep restarting
-    // from where it stopped, otherwise every item after the switch is silently dropped.
-    var html = "", consumed = 0, guard = items.length + 2;
-    while (consumed < items.length && guard-- > 0){
-      var res = buildList(items, consumed, items[consumed].level);
-      html += res.html;
-      if (res.next <= consumed) break;
-      consumed = res.next;
-    }
-    return { html: html, next: i };
-  }
-  // Only strip a first line that is plausibly a language tag. The old check accepted any
-  // single word, so a fence whose first line was "ls" silently lost that line.
-  var LANG_TAG = /^(bash|sh|shell|zsh|fish|powershell|pwsh|ps1|cmd|bat|batch|sql|json|yaml|yml|toml|xml|html|css|js|jsx|javascript|ts|tsx|typescript|java|kt|py|python|rb|ruby|go|rust|rs|c|cpp|cs|php|perl|ini|conf|properties|dockerfile|diff|patch|text|plain|txt|log|md|markdown)$/i;
-
-  function mdToHtml(src){
-    if (!src) return "";
-    var blocks = [];
-    var withPlaceholders = String(src).replace(/```([\s\S]*?)```/g, function(m, code, offset, whole){
-      // A fence alone on its line becomes a <pre> block; one written mid-sentence becomes
-      // inline code. Only the former used to be handled, so the latter leaked the raw
-      // "CODEBLOCK0" placeholder into the visible text.
-      var head = whole.slice(0, offset), tail = whole.slice(offset + m.length);
-      var idx = blocks.length;
-      blocks.push({ code: code, block: /(^|\n)[ \t]*$/.test(head) && /^[ \t]*(\n|$)/.test(tail) });
-      return "\u0000CODEBLOCK" + idx + "\u0000";
-    });
-    var escaped = escapeHtmlMd(withPlaceholders);
-    escaped = escaped.replace(/`([^`]+)`/g, function(_, c){ return "<code>" + c + "</code>"; });
-    escaped = escaped.replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>");
-    escaped = escaped.replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, "$1<em>$2</em>");
-    // Expand inline fences after the emphasis passes, so their contents stay literal.
-    escaped = escaped.replace(/\u0000CODEBLOCK(\d+)\u0000/g, function(m, idx){
-      var b = blocks[parseInt(idx,10)];
-      if (!b || b.block) return m;
-      return "<code>" + escapeHtmlMd(b.code) + "</code>";
-    });
-    var lines = escaped.split("\n");
-    var out = []; var i = 0;
-    while (i < lines.length){
-      var line = lines[i];
-      var codeMatch = line.trim().match(/^\u0000CODEBLOCK(\d+)\u0000$/);
-      if (codeMatch){
-        var codeLines = blocks[parseInt(codeMatch[1],10)].code.split("\n");
-        if (codeLines.length>1 && LANG_TAG.test(codeLines[0].trim())) codeLines.shift();
-        var codeText = codeLines.join("\n").replace(/^\n+|\n+$/g,"");
-        out.push("<pre><code>" + escapeHtmlMd(codeText) + "</code></pre>");
-        i++; continue;
-      }
-      if (parseListItem(line)){
-        var listRes = renderLists(lines, i);
-        out.push(listRes.html); i = listRes.next; continue;
-      }
-      if (line.trim() === ""){ i++; continue; }
-      var para = [line]; i++;
-      while (i < lines.length && lines[i].trim() !== "" &&
-             !parseListItem(lines[i]) &&
-             !/^\u0000CODEBLOCK/.test(lines[i].trim())){
-        para.push(lines[i]); i++;
-      }
-      out.push("<p>" + para.join("<br>") + "</p>");
-    }
-    return out.join("");
   }
   function tableToHtml(t){
     if (!t || !t.rows || !t.rows.length) return "";
@@ -500,7 +747,7 @@
   var project = {
     manualId: uid(),
     title: "本番作業手順書",
-    meta: { system: "", version: "" },
+    meta: { system: "", version: "", vars: "" },
     sheets: [
       { id: uid(), name: "シート1", checkMode: "check", stampLabels: { a:"作業者", b:"確認者" }, steps: [
         { id: uid(), text: "", hasCheckbox: true, imageRef: null, note: "", table: null }
@@ -523,6 +770,7 @@
     projectTitleInput.value = project.title || "";
     metaSystemInput.value = (project.meta && project.meta.system) || "";
     metaVersionInput.value = (project.meta && project.meta.version) || "";
+    syncVarsInput();
     renderAll();
   }
   function doUndo(){
@@ -845,7 +1093,7 @@
     editorMain.appendChild(header);
 
     var hint = document.createElement("div"); hint.className = "hint";
-    hint.innerHTML = "本番環境にはファイルを持ち込めない前提のため、実際のチェックは印刷した紙にペンで行います（画面のチェックは事前レビュー用・将来タブレット等を使う場合の時刻自動記録用）。作業内容欄は <b>Markdown</b> が使えます：<code>**太字**</code>／<code>- 箇条書き（スペース2つで階層化）</code>／<code>`コード`</code>／<code>```コードブロック```</code>。表はMarkdownではなく「表を追加」ボタンでGUI作成。<b>ショートカット</b>：<code>Ctrl+S</code> JSON保存 / <code>Ctrl+Z</code> 元に戻す / <code>Ctrl+Y</code> やり直し / <code>Ctrl+F</code> 手順検索（<b>全置換</b>も同じパネルから）。手順は<b>番号部分をドラッグ</b>で並び替え。<b>左のシート一覧のタブへドロップすると、そのシートの末尾へ移動</b>します（別シートへの移動・空シートへの移動はこの方法）。<b>右クリック</b>で追加・複製・削除メニューが出ます。画像は手順カードをクリックして貼り付け先にしてから<b>Ctrl+V</b>、または画像欄へ<b>ドラッグ＆ドロップ</b>でも入ります。取り込む画像の<b>縮小サイズ・保存形式</b>は右上で選べます（選択はこのブラウザに記憶されます）。<b>エクスポートしたHTMLは「ファイル読込」でそのまま読み戻せます</b>。エクスポート後のHTMLは画像を<b>クリックで拡大</b>できます。";
+    hint.innerHTML = "本番環境にはファイルを持ち込めない前提のため、実際のチェックは印刷した紙にペンで行います（画面のチェックは事前レビュー用・将来タブレット等を使う場合の時刻自動記録用）。作業内容欄は <b>Markdown</b> が使えます（警告枠・記入欄・期待結果・変数など。記法一覧は右上の <b>?</b>）。<b>ショートカット</b>：<code>Ctrl+S</code> JSON保存 / <code>Ctrl+Z</code> 元に戻す / <code>Ctrl+Y</code> やり直し / <code>Ctrl+F</code> 手順検索（<b>全置換</b>も同じパネルから）。手順は<b>番号部分をドラッグ</b>で並び替え。<b>左のシート一覧のタブへドロップすると、そのシートの末尾へ移動</b>します（別シートへの移動・空シートへの移動はこの方法）。<b>右クリック</b>で追加・複製・削除メニューが出ます。画像は手順カードをクリックして貼り付け先にしてから<b>Ctrl+V</b>、または画像欄へ<b>ドラッグ＆ドロップ</b>でも入ります。取り込む画像の<b>縮小サイズ・保存形式</b>は右上で選べます（選択はこのブラウザに記憶されます）。<b>エクスポートしたHTMLは「ファイル読込」でそのまま読み戻せます</b>。エクスポート後のHTMLは画像を<b>クリックで拡大</b>できます。";
     editorMain.appendChild(hint);
 
     editorMain.appendChild(renderModeBar(sheet));
@@ -938,6 +1186,115 @@
     }
     return null;
   }
+  function renderPreview(preview){
+    var step = preview._step;
+    preview.innerHTML = mdToHtml(step.text, projectVars());
+    var missing = undefinedMdVars(step.text, projectVars());
+    if (missing.length){
+      var w = document.createElement("div"); w.className = "md-var-warn";
+      w.textContent = "未定義の変数: " + missing.map(function(n){ return "{{" + n + "}}"; }).join(" ") + "（上部の「変数」で定義）";
+      preview.appendChild(w);
+    }
+  }
+  function refreshAllPreviews(){
+    Array.prototype.forEach.call(editorMain.querySelectorAll(".step-preview"), function(p){
+      if (p._step) renderPreview(p);
+    });
+  }
+
+  // ---- Markdown input helpers for the step textarea ----
+  // Edits go through execCommand("insertText") so the normal input event fires (step.text,
+  // preview and the app's undo snapshot all update exactly as for typed text).
+  function mdReplace(ta, start, end, text, selStart, selEnd){
+    ta.focus();
+    ta.setSelectionRange(start, end);
+    var ok = false;
+    try{ ok = document.execCommand("insertText", false, text); }catch(e){}
+    if (!ok || ta.value.slice(start, start + text.length) !== text){
+      ta.setRangeText(text, start, end, "end");
+      ta.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    ta.setSelectionRange(selStart, selEnd);
+  }
+  function insideFence(text, pos){
+    var before = text.slice(0, pos).split("\n"), n = 0;
+    before.pop();
+    before.forEach(function(l){ if (/^[ \t]*(```|~~~)/.test(l)) n++; });
+    return n % 2 === 1;
+  }
+  function mdIndent(ta, outdent){
+    var v = ta.value, s0 = ta.selectionStart, e0 = ta.selectionEnd;
+    var ls = v.lastIndexOf("\n", s0 - 1) + 1;
+    var endPos = (e0 > s0 && v[e0 - 1] === "\n") ? e0 - 1 : e0;
+    var le = v.indexOf("\n", endPos); if (le < 0) le = v.length;
+    var lines = v.slice(ls, le).split("\n");
+    var single = s0 === e0 && lines.length === 1;
+    if (!outdent && single && !parseMdListLine(lines[0])){
+      mdReplace(ta, s0, e0, "  ", s0 + 2, s0 + 2);
+      return;
+    }
+    var firstDelta = 0, total = 0;
+    var out = lines.map(function(l, i){
+      var d;
+      if (outdent){
+        var m = /^( {1,2}|\t)/.exec(l); d = m ? -m[0].length : 0;
+        l = l.slice(-d);
+      } else { d = 2; l = "  " + l; }
+      if (i === 0) firstDelta = d;
+      total += d;
+      return l;
+    });
+    if (!total) return;
+    var ns = Math.max(ls, s0 + firstDelta), ne = Math.max(ns, e0 + total);
+    if (single) ne = ns;
+    mdReplace(ta, ls, le, out.join("\n"), ns, ne);
+  }
+  function parseMdListLine(line){
+    return /^([ \t]*)(?:([-*+])|(\d{1,9})([.)]))([ \t]+)(\[[ xX]\][ \t]+)?(.*)$/.exec(line);
+  }
+  function mdContinueList(ta){
+    var v = ta.value, pos = ta.selectionStart;
+    if (pos !== ta.selectionEnd || insideFence(v, pos)) return false;
+    var ls = v.lastIndexOf("\n", pos - 1) + 1;
+    var le = v.indexOf("\n", pos); if (le < 0) le = v.length;
+    var line = v.slice(ls, le);
+    var m = parseMdListLine(line);
+    if (!m) return false;
+    var markerEnd = ls + line.length - m[7].length;
+    if (pos < markerEnd) return false;
+    if (m[7].trim() === "" && pos === le){
+      // Enter on an empty item ends the list.
+      mdReplace(ta, ls, le, "", ls, ls);
+      return true;
+    }
+    var marker = m[2] ? m[2] : (parseInt(m[3], 10) + 1) + m[4];
+    var ins = "\n" + m[1] + marker + m[5] + (m[6] ? "[ ] " : "");
+    mdReplace(ta, pos, pos, ins, pos + ins.length, pos + ins.length);
+    return true;
+  }
+  function mdWrap(ta, left, right){
+    var s0 = ta.selectionStart, e0 = ta.selectionEnd, v = ta.value, sel = v.slice(s0, e0);
+    // Toggle off when the selection is already wrapped.
+    if (v.slice(s0 - left.length, s0) === left && v.slice(e0, e0 + right.length) === right){
+      mdReplace(ta, s0 - left.length, e0 + right.length, sel, s0 - left.length, e0 - left.length);
+      return;
+    }
+    mdReplace(ta, s0, e0, left + sel + right, s0 + left.length, e0 + left.length);
+  }
+  function mdEditorKeydown(e){
+    if (e.isComposing || e.keyCode === 229) return;
+    var ta = e.target, mod = e.ctrlKey || e.metaKey;
+    if (e.key === "Tab" && !mod && !e.altKey){
+      e.preventDefault(); mdIndent(ta, e.shiftKey);
+    } else if (e.key === "Enter" && !mod && !e.shiftKey && !e.altKey){
+      if (mdContinueList(ta)) e.preventDefault();
+    } else if (mod && !e.shiftKey && !e.altKey){
+      var k = (e.key || "").toLowerCase();
+      if (k === "b"){ e.preventDefault(); mdWrap(ta, "**", "**"); }
+      else if (k === "e"){ e.preventDefault(); mdWrap(ta, "`", "`"); }
+    }
+  }
+
   function setStepImageFromFile(stepId, file){
     if (!file || !/^image\//.test(file.type)){ showToast("画像ファイルではありません"); return; }
     var reader = new FileReader();
@@ -1040,14 +1397,16 @@
     textarea.value = step.text;
     var preview = document.createElement("div");
     preview.className = "step-preview";
-    preview.innerHTML = mdToHtml(step.text);
+    preview._step = step;
+    renderPreview(preview);
     textarea.addEventListener("input", function(){
       step.text = textarea.value;
-      preview.innerHTML = mdToHtml(step.text);
+      renderPreview(preview);
     });
+    textarea.addEventListener("keydown", mdEditorKeydown);
     body.appendChild(textarea);
     var mdHint = document.createElement("div"); mdHint.className = "md-hint";
-    mdHint.textContent = "対応記法: **太字** / *斜体* / - 箇条書き（半角スペース2つで階層化） / 1. 番号付き / `コード` / ```コードブロック```";
+    mdHint.textContent = "記法: # 見出し / **太字** / ==マーカー== / - 箇条書き / - [ ] チェック / > [!WARNING] 警告枠 / [[記入:ラベル]] 記入欄 / [[Ctrl+C]] キー / ```expected 期待結果 / {{変数}} …一覧は右上の ?　|　Tab 字下げ / Ctrl+B 太字 / Ctrl+E コード";
     body.appendChild(mdHint);
     body.appendChild(preview);
 
@@ -1263,6 +1622,33 @@
   metaSystemInput.addEventListener("input", function(){ project.meta.system = metaSystemInput.value; });
   metaVersionInput.addEventListener("input", function(){ project.meta.version = metaVersionInput.value; });
 
+  // ---- variables ({{NAME}} in step text) ----
+  var varsBtn = $("#varsBtn"), varsPanel = $("#varsPanel"), varsInput = $("#varsInput");
+  function projectVars(){ return (project.meta && project.meta.vars) || ""; }
+  function syncVarsInput(){
+    varsInput.value = projectVars();
+    var n = Object.keys(parseMdVars(projectVars())).length;
+    varsBtn.classList.toggle("has-vars", n > 0);
+    varsBtn.textContent = "{{ }} 変数" + (n ? " (" + n + ")" : "");
+  }
+  varsBtn.addEventListener("click", function(e){
+    e.stopPropagation();
+    varsPanel.classList.toggle("hidden");
+    if (!varsPanel.classList.contains("hidden")) varsInput.focus();
+  });
+  varsPanel.addEventListener("click", function(e){ e.stopPropagation(); });
+  document.addEventListener("click", function(){ varsPanel.classList.add("hidden"); });
+  document.addEventListener("keydown", function(e){ if (e.key === "Escape") varsPanel.classList.add("hidden"); });
+  varsInput.addEventListener("input", function(){
+    if (!project.meta) project.meta = {};
+    project.meta.vars = varsInput.value;
+    var n = Object.keys(parseMdVars(projectVars())).length;
+    varsBtn.classList.toggle("has-vars", n > 0);
+    varsBtn.textContent = "{{ }} 変数" + (n ? " (" + n + ")" : "");
+    refreshAllPreviews();
+  });
+  syncVarsInput();
+
   $("#addSheet").addEventListener("click", function(){
     snapshot();
     var s = { id: uid(), name: "シート" + (project.sheets.length+1), checkMode: "check", stampLabels: { a:"作業者", b:"確認者" }, steps: [] };
@@ -1324,7 +1710,8 @@
       title: typeof data.title === "string" ? data.title : "本番作業手順書",
       meta: {
         system: typeof meta.system === "string" ? meta.system : "",
-        version: typeof meta.version === "string" ? meta.version : ""
+        version: typeof meta.version === "string" ? meta.version : "",
+        vars: typeof meta.vars === "string" ? meta.vars : ""
       },
       sheets: []
     };
@@ -1395,6 +1782,7 @@
       projectTitleInput.value = project.title || "";
       metaSystemInput.value = project.meta.system || "";
       metaVersionInput.value = project.meta.version || "";
+      syncVarsInput();
       renderAll();
       showToast("読み込みました（シート " + project.sheets.length + " 件）");
     };
@@ -1490,6 +1878,39 @@
     ".pm-step-text pre{background:var(--ink);color:#fff;padding:8px 10px;border-radius:4px;overflow-x:auto;font-family:var(--font-mono);font-size:12px;margin:6px 0;}",
     ".pm-step-text pre code{background:transparent;padding:0;color:inherit;}",
     "tr.done .pm-step-text{color:var(--ink-soft);}",
+    ".pm-step-text .md-h{margin:8px 0 4px;line-height:1.35;font-family:var(--font-display);}",
+    ".pm-step-text h1.md-h{font-size:17px;}",
+    ".pm-step-text h2.md-h{font-size:15px;}",
+    ".pm-step-text h3.md-h,.pm-step-text h4.md-h,.pm-step-text h5.md-h,.pm-step-text h6.md-h{font-size:13px;}",
+    ".pm-step-text blockquote{margin:6px 0;padding:2px 10px;border-left:3px solid var(--border);color:var(--ink-soft);}",
+    ".pm-step-text hr{border:none;border-top:1px solid var(--border);margin:8px 0;}",
+    ".pm-step-text a{color:#B35400;text-decoration:underline;}",
+    ".pm-step-text li.md-task{list-style:none;margin-left:-16px;}",
+    ".pm-step-text .md-cb{font-size:14px;}",
+    ".pm-step-text .md-alert{margin:6px 0;padding:6px 10px;border:1px solid;border-left-width:5px;border-radius:4px;background:#fff;}",
+    ".pm-step-text .md-alert>p:first-of-type{margin-top:2px;}",
+    ".pm-step-text .md-alert-title{font-weight:700;font-size:12px;margin-bottom:2px;}",
+    ".pm-step-text .md-alert-note{border-color:#2F6FB3;background:#EEF4FB;}",
+    ".pm-step-text .md-alert-note .md-alert-title{color:#2F6FB3;}",
+    ".pm-step-text .md-alert-tip{border-color:#2E7D6B;background:#E8F4F0;}",
+    ".pm-step-text .md-alert-tip .md-alert-title{color:#2E7D6B;}",
+    ".pm-step-text .md-alert-important{border-color:#6B4BB3;background:#F1EDFA;}",
+    ".pm-step-text .md-alert-important .md-alert-title{color:#6B4BB3;}",
+    ".pm-step-text .md-alert-warning{border-color:#C26A00;background:#FFF4E5;}",
+    ".pm-step-text .md-alert-warning .md-alert-title{color:#A35800;}",
+    ".pm-step-text .md-alert-caution{border-color:#B23A2E;background:#FBEAE8;}",
+    ".pm-step-text .md-alert-caution .md-alert-title{color:#B23A2E;}",
+    ".pm-step-text .md-fill{display:inline-flex;align-items:flex-end;gap:4px;margin:0 2px;vertical-align:bottom;}",
+    ".pm-step-text .md-fill-label{font-size:11px;color:var(--ink-soft);}",
+    ".pm-step-text .md-fill-line{display:inline-block;min-width:140px;height:1.3em;border-bottom:1px solid var(--ink);}",
+    ".pm-step-text kbd{display:inline-block;font-family:var(--font-mono);font-size:11px;line-height:1.4;padding:0 5px;border:1px solid #9aa4ad;border-bottom-width:2px;border-radius:3px;background:#fff;color:var(--ink);}",
+    ".pm-step-text mark{background:#FFE58A;color:inherit;padding:0 1px;}",
+    ".pm-step-text .md-code{position:relative;}",
+    ".pm-step-text .md-expected{margin:6px 0;}",
+    ".pm-step-text .md-expected-label{display:inline-block;font-size:11px;font-weight:700;color:#2E7D6B;border:1px solid #2E7D6B;border-bottom:none;border-radius:3px 3px 0 0;padding:1px 8px;background:#E8F4F0;}",
+    ".pm-step-text .md-expected pre{margin-top:0 !important;background:#F4F7F6 !important;color:var(--ink) !important;border:1px dashed #2E7D6B;}",
+    ".pm-copy-btn{position:absolute;top:4px;right:4px;font-size:11px;padding:2px 8px;border:1px solid rgba(255,255,255,.4);border-radius:3px;background:rgba(255,255,255,.12);color:#fff;cursor:pointer;opacity:.75;}",
+    ".pm-copy-btn:hover{opacity:1;}",
     ".pm-img-row td{border-top:none;padding:0 10px 12px;}",
     "tr.has-img td{border-bottom:none;}",
     ".pm-img-row img{max-width:100%;max-height:480px;border:1px solid var(--border);border-radius:4px;display:block;margin:0 auto;cursor:zoom-in;}",
@@ -1543,6 +1964,11 @@
     "  .pm-check-mark{display:none !important;}",
     "  .pm-step-text pre{background:#F2F2F2 !important;color:#000 !important;border:1px solid #000;}",
     "  .pm-step-text code{background:#F2F2F2 !important;}",
+    "  .pm-step-text .md-alert{background:#fff !important;border-color:#000 !important;}",
+    "  .pm-step-text .md-alert-title{color:#000 !important;}",
+    "  .pm-step-text mark{background:#DDD !important;}",
+    "  .pm-step-text a{color:#000 !important;}",
+    "  .pm-step-text .md-fill-line{min-width:180px;border-bottom-color:#000;}",
     "  tr.done .pm-step-text{color:#000 !important;}",
     "  tr.done .pm-num{color:#000 !important;}",
     "}"
@@ -1550,95 +1976,11 @@
 
   var EXPORT_JS = [
     "(function(){",
-    "  var LANG_TAG = /^(bash|sh|shell|zsh|fish|powershell|pwsh|ps1|cmd|bat|batch|sql|json|yaml|yml|toml|xml|html|css|js|jsx|javascript|ts|tsx|typescript|java|kt|py|python|rb|ruby|go|rust|rs|c|cpp|cs|php|perl|ini|conf|properties|dockerfile|diff|patch|text|plain|txt|log|md|markdown)$/i;",
     "  function escapeHtmlMd(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }",
-    "  function parseListItem(line){",
-    "    var m = String(line).match(/^([ \\t]*)([-*]|\\d+\\.)[ \\t]+(.*)$/);",
-    "    if (!m) return null;",
-    "    var indentRaw = m[1].replace(/\\t/g, '    ');",
-    "    return { level: Math.floor(indentRaw.length / 2), ordered: /\\d/.test(m[2]), text: m[3] };",
-    "  }",
-    "  function buildList(items, start, level){",
-    "    var ordered = items[start].ordered;",
-    "    var html = ordered ? '<ol>' : '<ul>';",
-    "    var i = start;",
-    "    while (i < items.length && items[i].level >= level){",
-    "      if (items[i].level > level){",
-    "        var sub = buildList(items, i, items[i].level);",
-    "        html = html.replace(/<\\/li>$/, '') + sub.html + '</li>';",
-    "        i = sub.next; continue;",
-    "      }",
-    "      if (items[i].ordered !== ordered) break;",
-    "      html += '<li>' + items[i].text + '</li>';",
-    "      i++;",
-    "    }",
-    "    html += ordered ? '</ol>' : '</ul>';",
-    "    return { html: html, next: i };",
-    "  }",
-    "  function renderLists(lines, i){",
-    "    var items = [];",
-    "    while (i < lines.length){",
-    "      var it = parseListItem(lines[i]);",
-    "      if (!it) break;",
-    "      items.push(it); i++;",
-    "    }",
-    "    if (!items.length) return null;",
-    "    var base = items[0].level;",
-    "    items.forEach(function(it){ it.level = Math.max(0, it.level - base); });",
-    "    var html = '', consumed = 0, guard = items.length + 2;",
-    "    while (consumed < items.length && guard-- > 0){",
-    "      var res = buildList(items, consumed, items[consumed].level);",
-    "      html += res.html;",
-    "      if (res.next <= consumed) break;",
-    "      consumed = res.next;",
-    "    }",
-    "    return { html: html, next: i };",
-    "  }",
-    "  function mdToHtml(src){",
-    "    if (!src) return '';",
-    "    var blocks = [];",
-    "    var withPlaceholders = String(src).replace(/```([\\s\\S]*?)```/g, function(m, code, offset, whole){",
-    "      var head = whole.slice(0, offset), tail = whole.slice(offset + m.length);",
-    "      var idx = blocks.length;",
-    "      blocks.push({ code: code, block: /(^|\\n)[ \\t]*$/.test(head) && /^[ \\t]*(\\n|$)/.test(tail) });",
-    "      return '\\u0000CODEBLOCK' + idx + '\\u0000';",
-    "    });",
-    "    var escaped = escapeHtmlMd(withPlaceholders);",
-    "    escaped = escaped.replace(/`([^`]+)`/g, function(_, c){ return '<code>' + c + '</code>'; });",
-    "    escaped = escaped.replace(/\\*\\*([^*\\n]+)\\*\\*/g, '<strong>$1</strong>');",
-    "    escaped = escaped.replace(/(^|[^*])\\*([^*\\n]+)\\*(?!\\*)/g, '$1<em>$2</em>');",
-    "    escaped = escaped.replace(/\\u0000CODEBLOCK(\\d+)\\u0000/g, function(m, idx){",
-    "      var b = blocks[parseInt(idx,10)];",
-    "      if (!b || b.block) return m;",
-    "      return '<code>' + escapeHtmlMd(b.code) + '</code>';",
-    "    });",
-    "    var lines = escaped.split('\\n');",
-    "    var out = []; var i = 0;",
-    "    while (i < lines.length){",
-    "      var line = lines[i];",
-    "      var codeMatch = line.trim().match(/^\\u0000CODEBLOCK(\\d+)\\u0000$/);",
-    "      if (codeMatch){",
-    "        var codeLines = blocks[parseInt(codeMatch[1],10)].code.split('\\n');",
-    "        if (codeLines.length>1 && LANG_TAG.test(codeLines[0].trim())) codeLines.shift();",
-    "        var codeText = codeLines.join('\\n').replace(/^\\n+|\\n+$/g,'');",
-    "        out.push('<pre><code>' + escapeHtmlMd(codeText) + '</code></pre>');",
-    "        i++; continue;",
-    "      }",
-    "      if (parseListItem(line)){",
-    "        var listRes = renderLists(lines, i);",
-    "        out.push(listRes.html); i = listRes.next; continue;",
-    "      }",
-    "      if (line.trim() === ''){ i++; continue; }",
-    "      var para = [line]; i++;",
-    "      while (i < lines.length && lines[i].trim() !== '' &&",
-    "             !parseListItem(lines[i]) &&",
-    "             !/^\\u0000CODEBLOCK/.test(lines[i].trim())){",
-    "        para.push(lines[i]); i++;",
-    "      }",
-    "      out.push('<p>' + para.join('<br>') + '</p>');",
-    "    }",
-    "    return out.join('');",
-    "  }",
+    // The editor's own renderer, embedded verbatim so preview and export always agree.
+    "  var mdToHtml = " + mdToHtml.toString() + ";",
+    "  var parseMdVars = " + parseMdVars.toString() + ";",
+    "  var applyMdVars = " + applyMdVars.toString() + ";",
     "  function tableToHtmlStr(t){",
     "    if (!t || !t.rows || !t.rows.length) return '';",
     "    var html = '<table class=\"pm-inline-table\">';",
@@ -1719,13 +2061,41 @@
     "        if (step.hasCheckbox && isChecked(sheet.id, step.id)){",
     "          if(!any){ lines.push('[' + sheet.name + ']'); any = true; }",
     "          var t = getTime(sheet.id, step.id) || '--:--';",
-    "          var oneLine = (step.text || '').replace(/\\n/g, ' ');",
+    "          var oneLine = applyMdVars(step.text || '', project.meta && project.meta.vars).replace(/\\n/g, ' ');",
     "          lines.push(t + '  No.' + String(idx+1).padStart(2,'0') + '  ' + oneLine);",
     "        }",
     "      });",
     "      if (any) lines.push('');",
     "    });",
     "    return lines.join('\\n');",
+    "  }",
+    "  function copyText(text, done){",
+    "    function fallback(){",
+    "      var ta = document.createElement('textarea'); ta.value = text;",
+    "      ta.style.position = 'fixed'; ta.style.opacity = '0';",
+    "      document.body.appendChild(ta); ta.select();",
+    "      var ok = false; try{ ok = document.execCommand('copy'); }catch(e){}",
+    "      document.body.removeChild(ta);",
+    "      done(ok);",
+    "    }",
+    "    if (navigator.clipboard && navigator.clipboard.writeText){",
+    "      navigator.clipboard.writeText(text).then(function(){ done(true); }, fallback);",
+    "    } else fallback();",
+    "  }",
+    "  function addCopyButtons(root){",
+    "    Array.prototype.forEach.call(root.querySelectorAll('.md-code'), function(box){",
+    "      var pre = box.querySelector('pre'); if (!pre) return;",
+    "      var b = document.createElement('button'); b.type = 'button';",
+    "      b.className = 'pm-copy-btn no-print'; b.textContent = 'コピー';",
+    "      b.addEventListener('click', function(ev){",
+    "        ev.stopPropagation();",
+    "        copyText(pre.textContent, function(ok){",
+    "          b.textContent = ok ? 'コピーしました' : 'コピー失敗';",
+    "          setTimeout(function(){ b.textContent = 'コピー'; }, 1500);",
+    "        });",
+    "      });",
+    "      box.appendChild(b);",
+    "    });",
     "  }",
     "  function copyLog(){",
     "    var text = buildLogText();",
@@ -1919,7 +2289,8 @@
     "",
     "    var tdText = document.createElement('td');",
     "    var textDiv = document.createElement('div'); textDiv.className = 'pm-step-text';",
-    "    textDiv.innerHTML = mdToHtml(step.text || '');",
+    "    textDiv.innerHTML = mdToHtml(step.text || '', project.meta && project.meta.vars);",
+    "    addCopyButtons(textDiv);",
     "    tdText.appendChild(textDiv);",
     "    var imgRow = null;",
     "    if (step.image){",
@@ -2105,6 +2476,7 @@
     projectTitleInput.value = project.title || "";
     metaSystemInput.value = (project.meta && project.meta.system) || "";
     metaVersionInput.value = (project.meta && project.meta.version) || "";
+    syncVarsInput();
     undoStack.length = 0; redoStack.length = 0; pendingFieldSnapshot = null;
     dirty = true;
     renderAll();
