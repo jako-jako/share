@@ -84,6 +84,9 @@
   .swatch{ width:22px; height:22px; border-radius:50%; border:2px solid transparent; cursor:pointer; }
   .swatch.active{ border-color:#fff; }
   .anno-spacer{ flex:1; }
+  .anno-sep{ width:1px; height:20px; background:#363c47; margin:0 4px; }
+  .anno-label{ font-size:11px; color:#aeb6c2; }
+  #annoTextInput{ position:fixed; z-index:120; display:none; margin:0; padding:2px 4px; border:1px dashed #fff; border-radius:3px; font-family:sans-serif; font-weight:bold; line-height:1.25; resize:none; overflow:hidden; outline:none; white-space:pre; }
   .anno-canvas-wrap{ flex:1; display:flex; align-items:center; justify-content:center; overflow:auto; padding:16px; }
   #annoCanvas{ background:#000; max-width:100%; max-height:100%; cursor:crosshair; box-shadow:0 0 0 1px #333; }
 
@@ -189,15 +192,18 @@
       <ul>
         <li>カードをクリックすると「貼り付け先」になり、その状態で <kbd>Ctrl</kbd>+<kbd>V</kbd> で画像を貼り付けられます</li>
         <li>ドラッグ&ドロップ、または「ファイル選択」からも追加できます</li>
-        <li>画像をクリックすると注釈エディタ（四角・矢印・ペン・テキスト・モザイク）が開きます</li>
+        <li>画像をクリックすると注釈エディタ（選択・四角・丸・矢印・ペン・テキスト・番号・モザイク・切り抜き）が開きます</li>
+        <li>「差替」（または右クリック）で、コメント・表示幅を残したまま画像だけ差し替え（注釈は引き継ぐか選択）</li>
         <li>◀▶で並び替え、⧉で複製、幅ボタン（100/50/33/25%）またはドラッグで表示幅を変更</li>
         <li>チェックボックスで複数選択すると、画面下部のバーで幅の一括変更・一括削除ができます</li>
       </ul>
       <h3>注釈エディタ</h3>
       <ul>
         <li><kbd>←</kbd> / <kbd>→</kbd> — 変更を自動保存して前後の画像へ移動</li>
-        <li><kbd>Ctrl</kbd>+<kbd>Z</kbd> — 直前の書き込みを取り消し</li>
-        <li><kbd>Esc</kbd> — 未保存の変更を破棄して閉じる</li>
+        <li><kbd>Ctrl</kbd>+<kbd>Z</kbd> — 直前の書き込みを取り消し／<kbd>Ctrl</kbd>+<kbd>Y</kbd> — やり直し</li>
+        <li>「選択」ツール — クリックで選択、ドラッグで移動、<kbd>Delete</kbd> で削除。選択中に色・線・文字サイズを押すとその図形に反映。テキストはダブルクリックで再編集</li>
+        <li>テキスト入力中 — <kbd>Enter</kbd> で改行、<kbd>Ctrl</kbd>+<kbd>Enter</kbd> または外側クリックで確定、<kbd>Esc</kbd> で取り消し</li>
+        <li><kbd>Esc</kbd> — 未保存の変更を破棄して閉じる（図形を選択中は選択解除のみ）</li>
       </ul>
       <h3>検索・置換</h3>
       <ul>
@@ -242,6 +248,7 @@
 </div>
 
 <div id="ctxMenu"></div>
+<input type="file" id="imgSwapInput" accept="image/*" style="display:none" onchange="handleSwapFile(this.files); this.value='';">
 
 <div id="bulkBar">
   <span><b id="bulkCount">0</b> 枚選択中</span>
@@ -264,18 +271,36 @@
 <!-- annotation modal -->
 <div id="annotateModal">
   <div class="anno-toolbar">
+    <button data-tool="select" title="図形をクリックで選択 → ドラッグで移動／Deleteで削除／テキストはダブルクリックで再編集">選択</button>
     <button data-tool="rect">四角</button>
+    <button data-tool="ellipse">丸</button>
     <button data-tool="arrow">矢印</button>
     <button data-tool="pen">ペン</button>
-    <button data-tool="text">テキスト</button>
+    <button data-tool="text" title="クリックした位置に直接入力（Enterで改行、Ctrl+Enterまたは外側クリックで確定）。既存のテキストをクリックすると再編集">テキスト</button>
+    <button data-tool="num" title="クリックで ①②③… の連番を置く">番号</button>
     <button data-tool="mosaic">モザイク</button>
-    <span style="width:1px;height:20px;background:#363c47;margin:0 4px;"></span>
+    <button data-tool="crop" title="ドラッグした範囲で画像を切り抜く">切り抜き</button>
+    <span class="anno-sep"></span>
+    <span class="anno-label">線</span>
+    <button data-lw="0.5" title="線の太さ：細">細</button>
+    <button data-lw="1" title="線の太さ：中">中</button>
+    <button data-lw="2" title="線の太さ：太">太</button>
+    <button id="fillBtn" title="四角・丸の半透明の塗り ON/OFF">塗り</button>
+    <span class="anno-sep"></span>
+    <span class="anno-label">文字</span>
+    <button data-size="0.6" title="テキスト・番号のサイズ：小">小</button>
+    <button data-size="1" title="テキスト・番号のサイズ：中">中</button>
+    <button data-size="1.6" title="テキスト・番号のサイズ：大">大</button>
+    <button data-size="2.4" title="テキスト・番号のサイズ：特大">特大</button>
+    <button id="boxBtn" title="テキストを白背景の枠付きにする ON/OFF">背景</button>
+    <span class="anno-sep"></span>
     <div class="swatch" style="background:#ff3b30" data-color="#ff3b30"></div>
     <div class="swatch" style="background:#ffd60a" data-color="#ffd60a"></div>
     <div class="swatch" style="background:#3a6ea5" data-color="#3a6ea5"></div>
     <div class="swatch" style="background:#34c759" data-color="#34c759"></div>
     <span style="width:1px;height:20px;background:#363c47;margin:0 4px;"></span>
-    <button id="undoBtn">元に戻す</button>
+    <button id="undoBtn" title="Ctrl+Z">元に戻す</button>
+    <button id="redoBtn" title="Ctrl+Y / Ctrl+Shift+Z">やり直す</button>
     <button id="clearBtn">全消去</button>
     <span style="width:1px;height:20px;background:#363c47;margin:0 4px;"></span>
     <button id="annoPrev" title="この画像を自動保存して前の画像へ（←キー）">‹ 前へ</button>
@@ -289,6 +314,7 @@
   <div class="anno-canvas-wrap">
     <canvas id="annoCanvas"></canvas>
   </div>
+  <textarea id="annoTextInput" rows="1" spellcheck="false"></textarea>
 </div>
 
 <div id="toast"></div>
@@ -466,6 +492,62 @@ function addImages(caseId, dataUrls){
   });
   if(c.collapsed) c.collapsed = false;  // 折りたたみ中のケースに貼ると行方不明になる
   render();
+}
+/* 画像だけ差し替え（コメント・表示幅・並び位置は保持。注釈は引き継ぐか選べる） */
+let swapTarget = null;
+function pickSwapImage(caseId, imgId){
+  swapTarget = { caseId, imgId };
+  document.getElementById('imgSwapInput').click();
+}
+function handleSwapFile(files){
+  const f = files && files[0];
+  const t = swapTarget; swapTarget = null;
+  if(!f || !t) return;
+  if(typeof f.type !== 'string' || f.type.indexOf('image/') !== 0){ showToast('画像ファイルを選んでください'); return; }
+  readFileAsDataUrl(f, d => {
+    if(!d){ showToast('画像を読み込めませんでした'); return; }
+    preprocessImage(d, u => u ? replaceImage(t.caseId, t.imgId, u) : showToast('画像を読み込めませんでした'));
+  });
+}
+async function swapFromClipboard(caseId, imgId){
+  try{
+    if(!navigator.clipboard || !navigator.clipboard.read) throw new Error('unsupported');
+    const items = await navigator.clipboard.read();
+    for(const it of items){
+      const type = it.types.find(t => t.indexOf('image/') === 0);
+      if(!type) continue;
+      const blob = await it.getType(type);
+      readFileAsDataUrl(blob, d => {
+        if(!d){ showToast('画像を読み込めませんでした'); return; }
+        preprocessImage(d, u => u ? replaceImage(caseId, imgId, u) : showToast('画像を読み込めませんでした'));
+      });
+      return;
+    }
+    showToast('クリップボードに画像がありません');
+  }catch(e){
+    showToast('このブラウザではクリップボードから直接読めません。「差替」からファイルを選んでください');
+  }
+}
+function replaceImage(caseId, imgId, dataUrl){
+  const img = findImage(caseId, imgId);
+  if(!img) return;
+  const keep = (img.shapes && img.shapes.length)
+    ? confirm('この画像には注釈があります。新しい画像に注釈を引き継ぎますか？\n\nOK：引き継ぐ（同じ位置に重ねる）\nキャンセル：注釈を消して差し替える')
+    : false;
+  pushUndo();
+  img.original = dataUrl;
+  if(!keep){
+    img.shapes = [];
+    img.flattened = dataUrl;
+    render();
+    showToast('画像を差し替えました（コメントは保持）');
+    return;
+  }
+  flattenImage(img, d => {
+    img.flattened = d || dataUrl;
+    render();
+    showToast('画像を差し替えました（コメント・注釈は保持）');
+  });
 }
 function removeImage(caseId, imgId){
   const c = findCase(caseId); if(!c) return;
@@ -720,6 +802,7 @@ function render(){
           <button class="icon-btn safe" onclick="moveImage(${c.id},${img.id},-1)" title="前へ">◀</button>
           <button class="icon-btn safe" onclick="moveImage(${c.id},${img.id},1)" title="後へ">▶</button>
           <button class="icon-btn safe" onclick="duplicateImage(${c.id},${img.id})" title="この画像を複製">⧉</button>
+          <button class="icon-btn safe" onclick="pickSwapImage(${c.id},${img.id})" title="コメントを残したまま画像だけ差し替え">差替</button>
           <button class="icon-btn" onclick="removeImage(${c.id},${img.id})">削除</button>
         </div>
       </div>`).join('');
@@ -881,9 +964,38 @@ function updateHeader(){
 });
 
 /* ---------- annotation ---------- */
-let annoState = { caseId:null, imgId:null, tool:'rect', color:'#ff3b30', shapes:[], baseImage:null, drawing:false, startX:0, startY:0, currentPenPath:null };
+let annoState = { caseId:null, imgId:null, tool:'rect', color:'#ff3b30', textScale:1, lineScale:1, fill:true, textBox:false,
+  shapes:[], baseImage:null, drawing:false, startX:0, startY:0, currentPenPath:null,
+  sel:-1, dragMoved:false, lastX:0, lastY:0, hist:[], redo:[], textEdit:null };
 const canvas = document.getElementById('annoCanvas');
 const ctx = canvas.getContext('2d');
+const annoTextInput = document.getElementById('annoTextInput');
+const ANNO_HIST_MAX = 100;
+
+function baseTextSize(){ return Math.max(20, canvas.width*0.025); }
+
+/* エディタ内の取り消し／やり直し（図形配列のスナップショット） */
+function annoCommit(){
+  annoState.hist.push(JSON.stringify(annoState.shapes));
+  if(annoState.hist.length > ANNO_HIST_MAX) annoState.hist.shift();
+  annoState.redo.length = 0;
+}
+function annoUndo(){
+  if(!annoState.hist.length) return;
+  annoState.redo.push(JSON.stringify(annoState.shapes));
+  annoState.shapes = JSON.parse(annoState.hist.pop());
+  annoState.sel = -1; redrawAnno();
+}
+function annoRedo(){
+  if(!annoState.redo.length) return;
+  annoState.hist.push(JSON.stringify(annoState.shapes));
+  annoState.shapes = JSON.parse(annoState.redo.pop());
+  annoState.sel = -1; redrawAnno();
+}
+function updateAnnoHistUI(){
+  document.getElementById('undoBtn').disabled = !annoState.hist.length;
+  document.getElementById('redoBtn').disabled = !annoState.redo.length;
+}
 
 function openAnnotate(caseId, imgId){
   const img = findImage(caseId, imgId);
@@ -897,6 +1009,7 @@ function openAnnotate(caseId, imgId){
     annoState.imgId = imgId;
     annoState.baseImage = image;
     annoState.shapes = JSON.parse(JSON.stringify(img.shapes || []));
+    annoState.hist = []; annoState.redo = []; annoState.sel = -1; annoState.drawing = false;
     document.getElementById('annotateModal').classList.add('open');
     redrawAnno();
     updateAnnoNavUI();
@@ -904,8 +1017,10 @@ function openAnnotate(caseId, imgId){
   image.src = img.original;
 }
 function closeAnnotate(){
+  finishTextEdit(false);
   document.getElementById('annotateModal').classList.remove('open');
   annoState.drawing = false;
+  annoState.sel = -1;
   render();
 }
 function updateAnnoNavUI(){
@@ -917,13 +1032,15 @@ function updateAnnoNavUI(){
   document.getElementById('annoNext').disabled = idx >= c.images.length - 1;
 }
 function annoSaveCurrent(){
+  finishTextEdit(true);
   const img = findImage(annoState.caseId, annoState.imgId);
   if(img){
     const changed = JSON.stringify(img.shapes || []) !== JSON.stringify(annoState.shapes || []);
     if(changed) pushUndo();
     img.shapes = annoState.shapes;
-    redrawAnno();
+    redrawAnno(false);   // 選択枠などの編集用表示は焼き込まない
     img.flattened = encodeCanvas(canvas, img.original);
+    redrawAnno();
   }
 }
 function annoNav(dir){
@@ -936,19 +1053,50 @@ function annoNav(dir){
   openAnnotate(annoState.caseId, c.images[ni].id);
 }
 
-function redrawAnno(){
+function redrawAnno(ui = true){
   ctx.clearRect(0,0,canvas.width,canvas.height);
   ctx.drawImage(annoState.baseImage, 0, 0);
-  annoState.shapes.forEach(s => drawShape(ctx, s, annoState.baseImage, canvas.width));
+  annoState.shapes.forEach((s, i) => {
+    if(ui && annoState.textEdit && annoState.textEdit.idx === i) return;   // 編集中のテキストは入力欄で表示
+    drawShape(ctx, s, annoState.baseImage, canvas.width);
+  });
+  if(ui && annoState.sel >= 0 && annoState.shapes[annoState.sel]) drawSelection(annoState.shapes[annoState.sel]);
+  updateAnnoHistUI();
+}
+
+function annoLineWidth(s, cw){ return Math.max(3, cw*0.004) * (s.lw || 1); }
+function textLayout(c, s){
+  const font = `bold ${s.size}px sans-serif`;
+  const lines = String(s.text).split('\n');
+  const lh = s.size * 1.25;
+  c.save(); c.font = font;
+  const w = Math.max(...lines.map(l => c.measureText(l).width), s.size*0.5);
+  c.restore();
+  const pad = s.box ? s.size*0.3 : s.size*0.1;
+  return { font, lines, lh, x:s.x - pad, y:s.y - s.size*0.9 - pad, w:w + pad*2, h:s.size*1.15 + (lines.length-1)*lh + pad*2 };
+}
+function roundRectPath(c, x, y, w, h, r){
+  r = Math.min(r, w/2, h/2);
+  c.beginPath();
+  c.moveTo(x+r, y); c.lineTo(x+w-r, y); c.quadraticCurveTo(x+w, y, x+w, y+r);
+  c.lineTo(x+w, y+h-r); c.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+  c.lineTo(x+r, y+h); c.quadraticCurveTo(x, y+h, x, y+h-r);
+  c.lineTo(x, y+r); c.quadraticCurveTo(x, y, x+r, y);
+  c.closePath();
 }
 
 function drawShape(c, s, baseImg, cw){
-  c.strokeStyle = s.color; c.fillStyle = s.color; c.lineWidth = Math.max(3, cw*0.004);
+  c.strokeStyle = s.color; c.fillStyle = s.color; c.lineWidth = annoLineWidth(s, cw);
   if(s.type === 'rect'){
-    c.save(); c.globalAlpha = 0.15; c.fillRect(s.x, s.y, s.w, s.h); c.restore();
+    if(s.fill !== false){ c.save(); c.globalAlpha = 0.15; c.fillRect(s.x, s.y, s.w, s.h); c.restore(); }
     c.strokeRect(s.x, s.y, s.w, s.h);
+  } else if(s.type === 'ellipse'){
+    if(s.w < 1 || s.h < 1) return;
+    c.beginPath(); c.ellipse(s.x + s.w/2, s.y + s.h/2, s.w/2, s.h/2, 0, 0, Math.PI*2);
+    if(s.fill !== false){ c.save(); c.globalAlpha = 0.15; c.fill(); c.restore(); }
+    c.stroke();
   } else if(s.type === 'arrow'){
-    const headlen = Math.max(12, cw*0.015);
+    const headlen = Math.max(12, cw*0.015) * Math.max(1, (s.lw || 1)*0.8);
     const angle = Math.atan2(s.y2-s.y1, s.x2-s.x1);
     c.beginPath(); c.moveTo(s.x1,s.y1); c.lineTo(s.x2,s.y2); c.stroke();
     c.beginPath();
@@ -957,13 +1105,37 @@ function drawShape(c, s, baseImg, cw){
     c.lineTo(s.x2 - headlen*Math.cos(angle+Math.PI/6), s.y2 - headlen*Math.sin(angle+Math.PI/6));
     c.closePath(); c.fill();
   } else if(s.type === 'pen'){
+    c.save(); c.lineJoin = 'round'; c.lineCap = 'round';
     c.beginPath();
     s.points.forEach((p,i) => i===0 ? c.moveTo(p.x,p.y) : c.lineTo(p.x,p.y));
     c.stroke();
+    c.restore();
   } else if(s.type === 'text'){
-    c.font = `bold ${s.size}px sans-serif`;
-    c.save(); c.strokeStyle = 'rgba(0,0,0,.65)'; c.lineWidth = 4; c.strokeText(s.text, s.x, s.y); c.restore();
-    c.fillText(s.text, s.x, s.y);
+    const L = textLayout(c, s);
+    c.save();
+    c.font = L.font; c.textBaseline = 'alphabetic';
+    if(s.box){
+      roundRectPath(c, L.x, L.y, L.w, L.h, s.size*0.25);
+      c.fillStyle = 'rgba(255,255,255,.93)'; c.fill();
+      c.strokeStyle = s.color; c.lineWidth = Math.max(2, s.size*0.08); c.stroke();
+      c.fillStyle = (s.color === '#ffd60a') ? '#222' : s.color;   // 白地に黄色文字は読めない
+      L.lines.forEach((ln, i) => c.fillText(ln, s.x, s.y + i*L.lh));
+    } else {
+      c.strokeStyle = 'rgba(0,0,0,.65)'; c.lineWidth = Math.max(2, s.size*0.15); c.lineJoin = 'round';
+      L.lines.forEach((ln, i) => { c.strokeText(ln, s.x, s.y + i*L.lh); c.fillText(ln, s.x, s.y + i*L.lh); });
+    }
+    c.restore();
+  } else if(s.type === 'num'){
+    const r = s.size*0.75;
+    c.save();
+    c.beginPath(); c.arc(s.x, s.y, r, 0, Math.PI*2);
+    c.fillStyle = s.color; c.fill();
+    c.lineWidth = Math.max(2, r*0.12); c.strokeStyle = '#fff'; c.stroke();
+    c.fillStyle = (s.color === '#ffd60a') ? '#000' : '#fff';
+    c.font = `bold ${s.n >= 10 ? s.size*0.8 : s.size}px sans-serif`;
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillText(String(s.n), s.x, s.y + s.size*0.05);
+    c.restore();
   } else if(s.type === 'mosaic'){
     if(!baseImg || s.w < 2 || s.h < 2) return;
     const blockPx = Math.max(8, cw*0.012);
@@ -978,39 +1150,254 @@ function drawShape(c, s, baseImg, cw){
   }
 }
 
+/* ---------- 図形の当たり判定・選択・移動 ---------- */
+function shapeBounds(s){
+  if(s.type === 'rect' || s.type === 'ellipse' || s.type === 'mosaic') return { x:s.x, y:s.y, w:s.w, h:s.h };
+  if(s.type === 'arrow') return { x:Math.min(s.x1,s.x2), y:Math.min(s.y1,s.y2), w:Math.abs(s.x2-s.x1), h:Math.abs(s.y2-s.y1) };
+  if(s.type === 'pen'){
+    const xs = s.points.map(p => p.x), ys = s.points.map(p => p.y);
+    const x = Math.min(...xs), y = Math.min(...ys);
+    return { x, y, w:Math.max(...xs) - x, h:Math.max(...ys) - y };
+  }
+  if(s.type === 'text'){ const L = textLayout(ctx, s); return { x:L.x, y:L.y, w:L.w, h:L.h }; }
+  if(s.type === 'num'){ const r = s.size*0.75; return { x:s.x - r, y:s.y - r, w:r*2, h:r*2 }; }
+  return { x:0, y:0, w:0, h:0 };
+}
+function distSeg(px, py, x1, y1, x2, y2){
+  const dx = x2-x1, dy = y2-y1, len2 = dx*dx + dy*dy;
+  const t = len2 ? Math.max(0, Math.min(1, ((px-x1)*dx + (py-y1)*dy) / len2)) : 0;
+  return Math.hypot(px - (x1 + t*dx), py - (y1 + t*dy));
+}
+function hitShape(s, x, y){
+  const tol = Math.max(8, canvas.width*0.008) + annoLineWidth(s, canvas.width)/2;
+  if(s.type === 'arrow') return distSeg(x, y, s.x1, s.y1, s.x2, s.y2) <= tol;
+  if(s.type === 'pen'){
+    const p = s.points;
+    if(p.length === 1) return Math.hypot(x - p[0].x, y - p[0].y) <= tol;
+    for(let i = 1; i < p.length; i++) if(distSeg(x, y, p[i-1].x, p[i-1].y, p[i].x, p[i].y) <= tol) return true;
+    return false;
+  }
+  // 塗り無しの四角・丸は枠線付近だけ反応（内側の図形を選べるように）
+  if(s.type === 'rect' && s.fill === false){
+    const inOuter = x >= s.x - tol && x <= s.x + s.w + tol && y >= s.y - tol && y <= s.y + s.h + tol;
+    const inInner = x > s.x + tol && x < s.x + s.w - tol && y > s.y + tol && y < s.y + s.h - tol;
+    return inOuter && !inInner;
+  }
+  if(s.type === 'ellipse'){
+    const rx = s.w/2, ry = s.h/2, cx = s.x + rx, cy = s.y + ry;
+    if(rx < 1 || ry < 1) return false;
+    const d = Math.hypot((x-cx)/rx, (y-cy)/ry);
+    return s.fill === false ? Math.abs(d - 1) * Math.min(rx, ry) <= tol : d <= 1 + tol/Math.min(rx, ry);
+  }
+  const b = shapeBounds(s);
+  return x >= b.x - tol && x <= b.x + b.w + tol && y >= b.y - tol && y <= b.y + b.h + tol;
+}
+function hitTest(x, y){
+  for(let i = annoState.shapes.length - 1; i >= 0; i--) if(hitShape(annoState.shapes[i], x, y)) return i;
+  return -1;
+}
+function moveShape(s, dx, dy){
+  if(s.type === 'arrow'){ s.x1 += dx; s.y1 += dy; s.x2 += dx; s.y2 += dy; }
+  else if(s.type === 'pen'){ s.points.forEach(p => { p.x += dx; p.y += dy; }); }
+  else { s.x += dx; s.y += dy; }
+}
+function drawSelection(s){
+  const b = shapeBounds(s), m = Math.max(4, canvas.width*0.004);
+  ctx.save();
+  ctx.lineWidth = Math.max(2, canvas.width*0.0015);
+  ctx.setLineDash([ctx.lineWidth*4, ctx.lineWidth*3]);
+  ctx.strokeStyle = '#fff'; ctx.strokeRect(b.x - m, b.y - m, b.w + m*2, b.h + m*2);
+  ctx.lineDashOffset = ctx.lineWidth*4;
+  ctx.strokeStyle = '#00a2ff'; ctx.strokeRect(b.x - m, b.y - m, b.w + m*2, b.h + m*2);
+  ctx.restore();
+}
+function drawCropPreview(r){
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,.55)';
+  ctx.beginPath();
+  ctx.rect(0, 0, canvas.width, canvas.height);
+  ctx.rect(r.x, r.y, r.w, r.h);
+  ctx.fill('evenodd');
+  ctx.lineWidth = Math.max(2, canvas.width*0.0015);
+  ctx.setLineDash([ctx.lineWidth*4, ctx.lineWidth*3]);
+  ctx.strokeStyle = '#fff'; ctx.strokeRect(r.x, r.y, r.w, r.h);
+  ctx.restore();
+}
+/* 選択中の図形に、ツールバーで選んだ色・太さなどを反映 */
+function applyToSel(fn){
+  if(annoState.tool !== 'select' || annoState.sel < 0) return;
+  const s = annoState.shapes[annoState.sel];
+  if(!s) return;
+  const before = JSON.stringify(s);
+  const copy = JSON.parse(before);
+  fn(copy);
+  if(JSON.stringify(copy) === before) return;
+  annoCommit();
+  annoState.shapes[annoState.sel] = copy;
+  redrawAnno();
+}
+
+/* ---------- 切り抜き ---------- */
+function applyCrop(r){
+  const x = Math.max(0, Math.round(r.x)), y = Math.max(0, Math.round(r.y));
+  const w = Math.min(canvas.width - x, Math.round(r.w)), h = Math.min(canvas.height - y, Math.round(r.h));
+  if(w < 10 || h < 10){ redrawAnno(); return; }
+  if(!confirm('選択した範囲で画像を切り抜きます。\n範囲の外にある注釈は削除されます。\n\n※エディタ内の「元に戻す」では戻せません。エディタを閉じた後、本体の Ctrl+Z で戻せます。')){ redrawAnno(); return; }
+  annoSaveCurrent();
+  const caseId = annoState.caseId, imgId = annoState.imgId;
+  const img = findImage(caseId, imgId);
+  if(!img) return;
+  pushUndo();
+  const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+  cv.getContext('2d').drawImage(annoState.baseImage, x, y, w, h, 0, 0, w, h);
+  const shapes = JSON.parse(JSON.stringify(annoState.shapes));
+  shapes.forEach(s => moveShape(s, -x, -y));
+  img.original = encodeCanvas(cv, img.original);
+  img.shapes = shapes.filter(s => {
+    const b = shapeBounds(s);
+    return b.x + b.w >= 0 && b.y + b.h >= 0 && b.x <= w && b.y <= h;
+  }).map(s => {
+    if(s.type !== 'mosaic') return s;
+    const nx = Math.max(0, s.x), ny = Math.max(0, s.y);   // モザイクは画像内に収める（範囲外を参照しない）
+    return Object.assign(s, { x:nx, y:ny, w:Math.min(w, s.x + s.w) - nx, h:Math.min(h, s.y + s.h) - ny });
+  }).filter(s => s.type !== 'mosaic' || (s.w >= 2 && s.h >= 2));
+  flattenImage(img, d => {
+    img.flattened = d || img.original;
+    scheduleBackup();
+    openAnnotate(caseId, imgId);
+    showToast('切り抜きました');
+  });
+}
+
+/* ---------- テキストの入力・再編集（画像上に直接入力） ---------- */
+function startTextEdit(idx, x, y){
+  let s;
+  if(idx >= 0) s = annoState.shapes[idx];
+  else s = { type:'text', x, y, text:'', color:annoState.color, size:baseTextSize() * annoState.textScale, box:annoState.textBox };
+  annoState.textEdit = { idx, shape:s };
+  annoState.sel = -1;
+  const rect = canvas.getBoundingClientRect();
+  const scale = rect.width / canvas.width;
+  const ta = annoTextInput;
+  ta.value = s.text;
+  ta.style.left = (rect.left + s.x*scale - 4) + 'px';
+  ta.style.top = (rect.top + (s.y - s.size*1.0)*scale - 2) + 'px';
+  ta.style.fontSize = (s.size*scale) + 'px';
+  ta.style.color = (s.box && s.color === '#ffd60a') ? '#222' : s.color;
+  ta.style.background = s.box ? 'rgba(255,255,255,.93)' : 'rgba(0,0,0,.45)';
+  ta.style.display = 'block';
+  fitTextInput();
+  redrawAnno();
+  const focusEnd = () => { if(annoState.textEdit && document.activeElement !== ta){ ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); } };
+  focusEnd();
+  setTimeout(focusEnd, 0);
+}
+function fitTextInput(){
+  const ta = annoTextInput;
+  ctx.save(); ctx.font = `bold ${ta.style.fontSize} sans-serif`;
+  const w = Math.max(...ta.value.split('\n').map(l => ctx.measureText(l).width), 0);
+  ctx.restore();
+  ta.style.width = Math.max(140, w + parseFloat(ta.style.fontSize)*1.5) + 'px';
+  ta.style.height = 'auto';
+  ta.style.height = ta.scrollHeight + 'px';
+}
+function finishTextEdit(commit){
+  const te = annoState.textEdit;
+  if(!te) return;
+  annoState.textEdit = null;
+  annoTextInput.style.display = 'none';
+  const text = annoTextInput.value.replace(/\s+$/, '').slice(0, 500);
+  if(commit){
+    if(te.idx >= 0){
+      const s = annoState.shapes[te.idx];
+      if(s && !text){ annoCommit(); annoState.shapes.splice(te.idx, 1); }
+      else if(s && text !== s.text){ annoCommit(); s.text = text; }
+    } else if(text){
+      annoCommit(); te.shape.text = text; annoState.shapes.push(te.shape);
+    }
+  }
+  redrawAnno();
+}
+annoTextInput.addEventListener('input', fitTextInput);
+annoTextInput.addEventListener('blur', () => finishTextEdit(true));
+annoTextInput.addEventListener('keydown', e => {
+  e.stopPropagation();   // ←→での画像移動や Esc での終了を入力中は発火させない
+  if(e.key === 'Escape'){ e.preventDefault(); finishTextEdit(false); }
+  else if(e.key === 'Enter' && (e.ctrlKey || e.metaKey)){ e.preventDefault(); finishTextEdit(true); }
+});
+
 function canvasCoords(e){
   const rect = canvas.getBoundingClientRect();
   return { x:(e.clientX-rect.left) * (canvas.width/rect.width), y:(e.clientY-rect.top) * (canvas.height/rect.height) };
 }
+function dragRect(x, y){
+  return { x:Math.min(annoState.startX,x), y:Math.min(annoState.startY,y), w:Math.abs(x-annoState.startX), h:Math.abs(y-annoState.startY) };
+}
 
 canvas.addEventListener('pointerdown', e => {
-  try{ canvas.setPointerCapture(e.pointerId); }catch(err){}
+  if(annoState.textEdit){ finishTextEdit(true); return; }   // 入力中の外側クリックは確定のみ
   const {x,y} = canvasCoords(e);
+  const tool = annoState.tool;
+  if(tool === 'select'){
+    annoState.sel = hitTest(x, y);
+    if(annoState.sel >= 0){
+      try{ canvas.setPointerCapture(e.pointerId); }catch(err){}
+      annoState.drawing = true; annoState.dragMoved = false;
+      annoState.lastX = x; annoState.lastY = y;
+    }
+    redrawAnno();
+    return;
+  }
+  annoState.sel = -1;
+  if(tool === 'text'){
+    e.preventDefault();   // 既定のフォーカス移動で入力欄がすぐ閉じないように
+    const i = hitTest(x, y);
+    if(i >= 0 && annoState.shapes[i].type === 'text') startTextEdit(i);
+    else startTextEdit(-1, x, y);
+    return;
+  }
+  if(tool === 'num'){
+    const n = annoState.shapes.reduce((m, s) => s.type === 'num' ? Math.max(m, s.n) : m, 0) + 1;
+    annoCommit();
+    annoState.shapes.push({ type:'num', x, y, n, color:annoState.color, size:baseTextSize() * annoState.textScale });
+    redrawAnno();
+    return;
+  }
+  try{ canvas.setPointerCapture(e.pointerId); }catch(err){}
   annoState.drawing = true;
   annoState.startX = x; annoState.startY = y;
-  if(annoState.tool === 'pen'){
-    annoState.currentPenPath = { type:'pen', color:annoState.color, points:[{x,y}] };
+  if(tool === 'pen'){
+    annoCommit();
+    annoState.currentPenPath = { type:'pen', color:annoState.color, lw:annoState.lineScale, points:[{x,y}] };
     annoState.shapes.push(annoState.currentPenPath);
-  } else if(annoState.tool === 'text'){
-    annoState.drawing = false;
-    const text = prompt('テキストを入力してください');
-    if(text){
-      annoState.shapes.push({ type:'text', x, y, text, color:annoState.color, size:Math.max(20, canvas.width*0.025) });
-      redrawAnno();
-    }
+    redrawAnno();
   }
 });
 canvas.addEventListener('pointermove', e => {
-  if(!annoState.drawing) return;
   const {x,y} = canvasCoords(e);
-  if(annoState.tool === 'pen'){
+  const tool = annoState.tool;
+  if(!annoState.drawing){
+    if(tool === 'select') canvas.style.cursor = hitTest(x, y) >= 0 ? 'move' : 'default';
+    return;
+  }
+  if(tool === 'select'){
+    const s = annoState.shapes[annoState.sel];
+    if(!s) return;
+    if(!annoState.dragMoved){ annoCommit(); annoState.dragMoved = true; }
+    moveShape(s, x - annoState.lastX, y - annoState.lastY);
+    annoState.lastX = x; annoState.lastY = y;
+    redrawAnno();
+  } else if(tool === 'pen'){
     annoState.currentPenPath.points.push({x,y});
     redrawAnno();
-  } else if(annoState.tool === 'rect' || annoState.tool === 'arrow' || annoState.tool === 'mosaic'){
+  } else if(tool === 'crop'){
     redrawAnno();
-    const preview = (annoState.tool === 'arrow')
-      ? { type:'arrow', x1:annoState.startX, y1:annoState.startY, x2:x, y2:y, color:annoState.color }
-      : { type:annoState.tool, x:Math.min(annoState.startX,x), y:Math.min(annoState.startY,y), w:Math.abs(x-annoState.startX), h:Math.abs(y-annoState.startY), color:annoState.color };
+    drawCropPreview(dragRect(x, y));
+  } else {
+    redrawAnno();
+    const preview = (tool === 'arrow')
+      ? { type:'arrow', x1:annoState.startX, y1:annoState.startY, x2:x, y2:y, color:annoState.color, lw:annoState.lineScale }
+      : Object.assign({ type:tool, color:annoState.color, lw:annoState.lineScale, fill:annoState.fill }, dragRect(x, y));
     drawShape(ctx, preview, annoState.baseImage, canvas.width);
   }
 });
@@ -1018,41 +1405,106 @@ canvas.addEventListener('pointerup', e => {
   if(!annoState.drawing) return;
   annoState.drawing = false;
   const {x,y} = canvasCoords(e);
-  if(annoState.tool === 'rect' || annoState.tool === 'mosaic'){
-    annoState.shapes.push({ type:annoState.tool, x:Math.min(annoState.startX,x), y:Math.min(annoState.startY,y), w:Math.abs(x-annoState.startX), h:Math.abs(y-annoState.startY), color:annoState.color });
-  } else if(annoState.tool === 'arrow'){
-    annoState.shapes.push({ type:'arrow', x1:annoState.startX, y1:annoState.startY, x2:x, y2:y, color:annoState.color });
+  const tool = annoState.tool;
+  if(tool === 'rect' || tool === 'ellipse' || tool === 'mosaic'){
+    const r = dragRect(x, y);
+    if(r.w >= 3 || r.h >= 3){
+      annoCommit();
+      const s = Object.assign({ type:tool, color:annoState.color }, r);
+      if(tool !== 'mosaic'){ s.lw = annoState.lineScale; s.fill = annoState.fill; }
+      annoState.shapes.push(s);
+    }
+  } else if(tool === 'arrow'){
+    if(Math.hypot(x - annoState.startX, y - annoState.startY) >= 3){
+      annoCommit();
+      annoState.shapes.push({ type:'arrow', x1:annoState.startX, y1:annoState.startY, x2:x, y2:y, color:annoState.color, lw:annoState.lineScale });
+    }
+  } else if(tool === 'crop'){
+    applyCrop(dragRect(x, y));
+    return;
   }
   redrawAnno();
 });
 canvas.addEventListener('pointercancel', () => { annoState.drawing = false; redrawAnno(); });
+canvas.addEventListener('dblclick', e => {
+  if(annoState.tool !== 'select') return;
+  const {x,y} = canvasCoords(e);
+  const i = hitTest(x, y);
+  if(i >= 0 && annoState.shapes[i].type === 'text') startTextEdit(i);
+});
 
+function setAnnoTool(tool){
+  finishTextEdit(true);
+  annoState.tool = tool;
+  annoState.sel = -1;
+  document.querySelectorAll('.anno-toolbar [data-tool]').forEach(b => b.classList.toggle('active', b.dataset.tool === tool));
+  canvas.style.cursor = tool === 'select' ? 'default' : (tool === 'text' ? 'text' : 'crosshair');
+  if(annoState.baseImage) redrawAnno();
+}
 document.querySelectorAll('.anno-toolbar [data-tool]').forEach(btn => {
-  btn.addEventListener('click', () => {
-    annoState.tool = btn.dataset.tool;
-    document.querySelectorAll('.anno-toolbar [data-tool]').forEach(b => b.classList.toggle('active', b===btn));
-  });
+  btn.addEventListener('click', () => setAnnoTool(btn.dataset.tool));
 });
 document.querySelectorAll('.swatch').forEach(sw => {
   sw.addEventListener('click', () => {
     annoState.color = sw.dataset.color;
     document.querySelectorAll('.swatch').forEach(s => s.classList.toggle('active', s===sw));
+    applyToSel(s => { if(s.type !== 'mosaic') s.color = sw.dataset.color; });
   });
 });
+document.querySelectorAll('.anno-toolbar [data-size]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    annoState.textScale = parseFloat(btn.dataset.size);
+    document.querySelectorAll('.anno-toolbar [data-size]').forEach(b => b.classList.toggle('active', b===btn));
+    applyToSel(s => { if(s.type === 'text' || s.type === 'num') s.size = baseTextSize() * annoState.textScale; });
+  });
+});
+document.querySelectorAll('.anno-toolbar [data-lw]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    annoState.lineScale = parseFloat(btn.dataset.lw);
+    document.querySelectorAll('.anno-toolbar [data-lw]').forEach(b => b.classList.toggle('active', b===btn));
+    applyToSel(s => { if(['rect','ellipse','arrow','pen'].includes(s.type)) s.lw = annoState.lineScale; });
+  });
+});
+document.getElementById('fillBtn').addEventListener('click', e => {
+  annoState.fill = !annoState.fill;
+  e.currentTarget.classList.toggle('active', annoState.fill);
+  applyToSel(s => { if(s.type === 'rect' || s.type === 'ellipse') s.fill = annoState.fill; });
+});
+document.getElementById('boxBtn').addEventListener('click', e => {
+  annoState.textBox = !annoState.textBox;
+  e.currentTarget.classList.toggle('active', annoState.textBox);
+  applyToSel(s => { if(s.type === 'text') s.box = annoState.textBox; });
+});
+document.querySelector('[data-size="1"]').classList.add('active');
+document.querySelector('[data-lw="1"]').classList.add('active');
+document.getElementById('fillBtn').classList.add('active');
 document.querySelector('[data-tool="rect"]').classList.add('active');
 document.querySelector('.swatch').classList.add('active');
 
-document.getElementById('undoBtn').addEventListener('click', () => { annoState.shapes.pop(); redrawAnno(); });
-document.getElementById('clearBtn').addEventListener('click', () => { annoState.shapes = []; redrawAnno(); });
+document.getElementById('undoBtn').addEventListener('click', annoUndo);
+document.getElementById('redoBtn').addEventListener('click', annoRedo);
+document.getElementById('clearBtn').addEventListener('click', () => {
+  if(!annoState.shapes.length) return;
+  annoCommit(); annoState.shapes = []; annoState.sel = -1; redrawAnno();
+});
 document.getElementById('annoPrev').addEventListener('click', () => annoNav(-1));
 document.getElementById('annoNext').addEventListener('click', () => annoNav(1));
 document.getElementById('cancelBtn').addEventListener('click', closeAnnotate);
 document.addEventListener('keydown', e => {
   if(!document.getElementById('annotateModal').classList.contains('open')) return;
-  if(e.key === 'Escape'){ closeAnnotate(); }
+  if(e.target && (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT')) return;
+  const k = e.key.toLowerCase();
+  if(e.key === 'Escape'){
+    if(annoState.sel >= 0){ annoState.sel = -1; redrawAnno(); }
+    else closeAnnotate();
+  }
+  else if((e.ctrlKey || e.metaKey) && (k === 'y' || (e.shiftKey && k === 'z'))){ annoRedo(); e.preventDefault(); }
+  else if((e.ctrlKey || e.metaKey) && k === 'z'){ annoUndo(); e.preventDefault(); }
+  else if((e.key === 'Delete' || e.key === 'Backspace') && annoState.sel >= 0){
+    annoCommit(); annoState.shapes.splice(annoState.sel, 1); annoState.sel = -1; redrawAnno(); e.preventDefault();
+  }
   else if(e.key === 'ArrowRight'){ annoNav(1); e.preventDefault(); }
   else if(e.key === 'ArrowLeft'){ annoNav(-1); e.preventDefault(); }
-  else if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z'){ annoState.shapes.pop(); redrawAnno(); e.preventDefault(); }
 });
 document.getElementById('saveBtn').addEventListener('click', () => {
   annoSaveCurrent();
@@ -1240,25 +1692,30 @@ const DATA_URL_RE = /^data:image\/[a-z0-9.+-]+;base64,[A-Za-z0-9+/=]*$/i;
 function safeDataUrl(v){ return (typeof v === 'string' && DATA_URL_RE.test(v)) ? v : null; }
 function safeColor(v){ return (typeof v === 'string' && /^#[0-9a-f]{3,8}$/i.test(v)) ? v : '#ff3b30'; }
 function num(v, d){ const n = Number(v); return isFinite(n) ? n : d; }
-const SHAPE_TYPES = { rect:1, arrow:1, pen:1, text:1, mosaic:1 };
+const SHAPE_TYPES = { rect:1, ellipse:1, arrow:1, pen:1, text:1, num:1, mosaic:1 };
 function normalizeShapes(arr){
   if(!Array.isArray(arr)) return [];
   const out = [];
   arr.forEach(s => {
     if(!s || typeof s !== 'object' || !SHAPE_TYPES[s.type]) return;
     const color = safeColor(s.color);
-    if(s.type === 'rect' || s.type === 'mosaic'){
+    const lw = Math.min(4, Math.max(0.25, num(s.lw, 1)));
+    if(s.type === 'mosaic'){
       out.push({ type:s.type, x:num(s.x,0), y:num(s.y,0), w:num(s.w,0), h:num(s.h,0), color });
+    } else if(s.type === 'rect' || s.type === 'ellipse'){
+      out.push({ type:s.type, x:num(s.x,0), y:num(s.y,0), w:num(s.w,0), h:num(s.h,0), color, lw, fill:s.fill !== false });
     } else if(s.type === 'arrow'){
-      out.push({ type:'arrow', x1:num(s.x1,0), y1:num(s.y1,0), x2:num(s.x2,0), y2:num(s.y2,0), color });
+      out.push({ type:'arrow', x1:num(s.x1,0), y1:num(s.y1,0), x2:num(s.x2,0), y2:num(s.y2,0), color, lw });
+    } else if(s.type === 'num'){
+      out.push({ type:'num', x:num(s.x,0), y:num(s.y,0), n:Math.max(1, Math.floor(num(s.n,1))), color, size:Math.max(6, num(s.size,24)) });
     } else if(s.type === 'pen'){
       const pts = (Array.isArray(s.points) ? s.points : [])
         .filter(p => p && isFinite(Number(p.x)) && isFinite(Number(p.y)))
         .map(p => ({ x:Number(p.x), y:Number(p.y) }));
-      if(pts.length) out.push({ type:'pen', points:pts, color });
+      if(pts.length) out.push({ type:'pen', points:pts, color, lw });
     } else {
       const t = String(s.text == null ? '' : s.text).slice(0, 500);
-      if(t) out.push({ type:'text', x:num(s.x,0), y:num(s.y,0), text:t, color, size:Math.max(6, num(s.size,24)) });
+      if(t) out.push({ type:'text', x:num(s.x,0), y:num(s.y,0), text:t, color, size:Math.max(6, num(s.size,24)), box:s.box === true });
     }
   });
   return out;
@@ -1474,6 +1931,8 @@ document.addEventListener('contextmenu', e => {
     showCtx(e, [
       { label:'注釈を編集', fn:() => openAnnotate(cid, iid) },
       { label:'この画像を複製', fn:() => duplicateImage(cid, iid) },
+      { label:'画像を差し替え（ファイル）', fn:() => pickSwapImage(cid, iid) },
+      { label:'画像を差し替え（クリップボード）', fn:() => swapFromClipboard(cid, iid) },
       { label:'前へ移動', fn:() => moveImage(cid, iid, -1) },
       { label:'後へ移動', fn:() => moveImage(cid, iid, 1) },
       '-',
