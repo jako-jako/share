@@ -87,6 +87,7 @@
   table.grid td.miss{background:#FFF4F4;}
   table.grid td.t-number{text-align:right;}
   table.grid tr.closed td{color:var(--muted);}
+  table.grid.wrap td{white-space:pre-wrap;word-break:break-word;height:auto;vertical-align:top;padding-top:4px;padding-bottom:4px;line-height:20px;}
   table.grid tr.newrow td,table.grid tr.newrow th.rh{background:#FBFBFC;}
   table.grid td.ph{color:#A8B0B8;font-style:italic;}
   table.grid td.sel{background:var(--sel);}
@@ -125,7 +126,9 @@
   .sla-warn{color:var(--warn);font-weight:700;}
   .more{color:var(--muted);font-size:11px;margin-left:4px;}
 
-  .detail-pane{width:440px;flex-shrink:0;overflow-y:auto;border-left:1px solid var(--border);padding:16px 18px 40px;background:var(--paper);}
+  .detail-pane{width:520px;flex-shrink:0;overflow-y:auto;padding:16px 18px 40px;background:var(--paper);position:relative;}
+  .splitter{width:6px;flex-shrink:0;cursor:col-resize;background:var(--border);}
+  .splitter:hover,.splitter.drag{background:var(--accent);}
   .placeholder{color:var(--muted);text-align:center;margin-top:60px;line-height:1.9;}
   .detail-head{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
   .detail-head h2{margin:0;font-family:var(--font-display);font-size:19px;}
@@ -139,7 +142,10 @@
   .fld label{font-size:11px;font-weight:600;color:var(--ink-soft);}
   .fld label .req{color:var(--danger);margin-left:2px;}
   .fld input,.fld select,.fld textarea{font-family:var(--font-body);font-size:13px;padding:5px 7px;border:1px solid var(--border);border-radius:4px;background:#fff;color:var(--ink);width:100%;}
-  .fld textarea{resize:vertical;min-height:64px;line-height:1.5;}
+  .fld textarea{resize:vertical;min-height:110px;line-height:1.6;overflow:hidden;}
+  .fld{border-radius:5px;transition:background .15s, box-shadow .15s;}
+  .fld.linked{background:var(--accent-soft);box-shadow:0 0 0 5px var(--accent-soft);}
+  .fld.linked label{color:var(--ink);}
   .fld input:focus,.fld select:focus,.fld textarea:focus{outline:2px solid var(--accent-soft);border-color:var(--accent);}
   .fld input[readonly],.fld select:disabled{background:var(--paper);color:var(--ink-soft);}
   .fld.missing input,.fld.missing select,.fld.missing textarea{border-color:#E57373;background:#FFF8F8;}
@@ -199,7 +205,8 @@
 
   @media (max-width:900px){
     .layout{flex-direction:column;}
-    .detail-pane{width:auto;flex:0 0 50vh;border-left:none;border-top:1px solid var(--border);}
+    .detail-pane{width:auto !important;flex:0 0 50vh;border-top:1px solid var(--border);}
+    .splitter{display:none;}
     .namebox{width:120px;}
     .grid2{grid-template-columns:1fr;}
     .statusbar .sb-hint{display:none;}
@@ -256,6 +263,7 @@
     <button class="btn" id="btnRefilter" title="編集で条件から外れた行を隠し、並べ替えをやり直します">↻ 再適用</button>
     <span class="count" id="count"></span>
     <span class="spacer"></span>
+    <button class="btn" id="btnWrap" title="セルの文章を折り返して全文を表示します（行が高くなります）">折り返して全体を表示</button>
     <button class="btn" id="btnDetail">詳細・対応履歴</button>
   </div>
 
@@ -273,6 +281,7 @@
         <ul class="drop hidden" id="dropList"></ul>
       </div>
     </div>
+    <div class="splitter hidden" id="splitter" title="ドラッグで幅を変更"></div>
     <aside class="detail-pane hidden" id="detail"></aside>
   </div>
 
@@ -314,6 +323,8 @@
         <li>選択肢の項目は、選択中のセルをもう一度クリックするか<kbd>Alt+↓</kbd>で一覧が開きます。文字を打つと候補が絞り込まれます。</li>
         <li>日時は「2026-11-06 14:30」「11/6 14:30」「14:30」（今日）などで入力できます。<kbd>Ctrl+;</kbd>で現在日時。</li>
         <li>最下行（＋の行）に入力すると新しいインシデントとして起票されます。</li>
+        <li>右側の詳細パネルでは、同じ内容を大きな記入欄で書けます。表で選んだセルに対応する欄がオレンジで強調され、詳細の欄に入ると表の該当セルが選択されます。パネルの幅は境界をドラッグして変更できます。</li>
+        <li>「折り返して全体を表示」をオンにすると、長文も表の中で全文が見えます。</li>
       </ul>
       <h3>範囲操作</h3>
       <ul>
@@ -397,7 +408,7 @@
     ].map(f => Object.assign(f, {list:true}));
   }
   function defaultSettings(){
-    return {idPrefix:"INC", seq:0, userName:"", sla:{P1:4,P2:8,P3:24,P4:72,P5:120}, gridLayout:1, showDetail:false};
+    return {idPrefix:"INC", seq:0, userName:"", sla:{P1:4,P2:8,P3:24,P4:72,P5:120}, gridLayout:2, showDetail:true, wrap:false, detailWidth:520};
   }
 
   let state = {fields:defaultFields(), settings:defaultSettings(), incidents:[]};
@@ -478,10 +489,13 @@
     let s = null;
     try{ s = JSON.parse(localStorage.getItem(STORE_KEY) || "null"); }catch(e){}
     if(s && Array.isArray(s.fields) && Array.isArray(s.incidents)){
-      const migrate = !(s.settings && s.settings.gridLayout);
+      const layout = (s.settings && s.settings.gridLayout) || 0;
       state = {fields:s.fields, settings:Object.assign(defaultSettings(), s.settings || {}), incidents:s.incidents};
       // 表形式への移行時は全項目を列として表示する
-      if(migrate) state.fields.forEach(f => { f.list = true; });
+      if(layout < 1) state.fields.forEach(f => { f.list = true; });
+      // 表＋詳細パネルの2画面構成への移行時はパネルを開いておく
+      if(layout < 2) state.settings.showDetail = true;
+      state.settings.gridLayout = 2;
       ensureSystemFields();
     }
   }
@@ -727,6 +741,7 @@
     }
     if(f.type === "datetime") return esc(fmtDT(v));
     if(f.type === "textarea"){
+      if(state.settings.wrap) return esc(v);
       const lines = str(v).split("\n");
       return esc(lines[0]) + (lines.length > 1 ? `<span class="more">⏎${lines.length - 1}</span>` : "");
     }
@@ -755,6 +770,7 @@
     h += `<tr class="newrow"><th class="rh" title="ここに入力すると新規起票">＋</th>` + cols.map((f, c) =>
       `<td data-c="${c}" class="t-${f.type}${c === ph ? " ph" : ""}">${c === ph ? "ここに入力して新規追加" : ""}</td>`).join("") + "</tr></tbody>";
     grid.style.width = (ROW_HEAD_W + widths.reduce((a, b) => a + b, 0)) + "px";
+    grid.classList.toggle("wrap", !!state.settings.wrap);
     grid.innerHTML = h;
     selEls = [];
     clampSel();
@@ -781,6 +797,7 @@
     updateBars();
     const id = viewIds[act.r] || null;
     if(id !== selectedId){ selectedId = id; renderDetail(); }
+    linkDetail();
   }
   function scrollToCell(r, c){
     const td = cellEl(r, c); if(!td) return;
@@ -823,10 +840,12 @@
   function sizeEditor(){
     const td = cellEl(act.r, act.c); if(!td) return;
     const f = cols[act.c];
-    const minW = f.type === "textarea" ? 380 : (f.type === "select" || f.type === "datetime" || f.type === "date") ? 170 : 0;
+    const long = f.type === "textarea";
+    // 長文は枠に収めようとせず書けるよう、大きな編集枠を開く
+    const minW = long ? 520 : (f.type === "select" || f.type === "datetime" || f.type === "date") ? 170 : 0;
     ta.style.width = Math.max(td.offsetWidth, minW) + "px";
     ta.style.height = "auto";
-    ta.style.height = Math.max(td.offsetHeight, Math.min(ta.scrollHeight + 4, 260)) + "px";
+    ta.style.height = Math.max(td.offsetHeight, long ? 180 : 0, Math.min(ta.scrollHeight + 4, long ? 480 : 260)) + "px";
   }
 
   function startEdit(mode, keepTyped){
@@ -1332,17 +1351,43 @@
   let detailId = null;
   function setDetail(v){
     state.settings.showDetail = v; save();
-    $("detail").classList.toggle("hidden", !v);
-    $("btnDetail").classList.toggle("on", v);
+    applyDetailLayout();
     renderDetail();
+    linkDetail();
     positionInput();
+  }
+  function applyDetailLayout(){
+    const v = !!state.settings.showDetail;
+    $("detail").classList.toggle("hidden", !v);
+    $("splitter").classList.toggle("hidden", !v);
+    $("btnDetail").classList.toggle("on", v);
+    $("detail").style.width = (Number(state.settings.detailWidth) || 520) + "px";
+  }
+  function autoGrow(el){
+    el.style.height = "auto";
+    el.style.height = Math.max(110, el.scrollHeight + 2) + "px";
+  }
+  const growAll = () => document.querySelectorAll("#detail .fld textarea").forEach(autoGrow);
+  // 表で選んでいる列に対応する欄を詳細パネルで強調し、見える位置へスクロールする
+  function linkDetail(){
+    if(!state.settings.showDetail) return;
+    document.querySelectorAll("#detail .fld.linked").forEach(e => e.classList.remove("linked"));
+    const f = cols[act.c];
+    const fld = f && document.querySelector('#detail .fld[data-fld="' + f.key + '"]');
+    if(!fld) return;
+    fld.classList.add("linked");
+    const p = $("detail");
+    if(p.contains(document.activeElement)) return;
+    const top = fld.offsetTop, h = fld.offsetHeight;
+    if(top < p.scrollTop + 8) p.scrollTop = top - 40;
+    else if(top + h > p.scrollTop + p.clientHeight) p.scrollTop = top + h - p.clientHeight + 24;
   }
   function inputHTML(f, inc){
     const v = str(inc[f.key]);
     const ro = f.readonly ? ' readonly tabindex="-1"' : "";
     const k = esc(f.key);
     switch(f.type){
-      case "textarea": return `<textarea data-key="${k}" rows="3"${ro}>${esc(v)}</textarea>`;
+      case "textarea": return `<textarea data-key="${k}" rows="5"${ro}>${esc(v)}</textarea>`;
       case "select":{
         const opts = f.options || [];
         return `<select data-key="${k}"${f.readonly ? " disabled" : ""}>` +
@@ -1395,6 +1440,7 @@
       `<fieldset class="sec"><legend>${LOG_LABEL}</legend><div class="log-add"><textarea id="logText" placeholder="対応内容・連絡事項を記録（Ctrl+Enterで追加）"></textarea><button class="btn primary" data-dact="log">追加</button></div><ul class="log-list" id="logList">${logsHTML(inc)}</ul></fieldset>` +
       body;
     markMissing(inc);
+    growAll();
   }
   // 値だけ差し替える（フォーカス位置を壊さないため再描画しない）
   function refreshDetail(){
@@ -1412,6 +1458,7 @@
     $("detailHead").innerHTML = detailHeadHTML(inc);
     $("logList").innerHTML = logsHTML(inc);
     markMissing(inc);
+    growAll();
   }
   function markMissing(inc){
     const miss = new Set(missingRequired(inc).map(f => f.key));
@@ -1452,6 +1499,19 @@
           refreshDetail();
         }
       }
+    });
+    el.addEventListener("input", (e) => {
+      if(e.target.tagName === "TEXTAREA" && e.target.dataset.key) autoGrow(e.target);
+    });
+    // 詳細の欄に入ったら、表の同じ項目のセルを選択して位置を示す
+    el.addEventListener("focusin", (e) => {
+      const k = e.target.dataset && e.target.dataset.key;
+      if(!k || viewIds[act.r] !== detailId) return;
+      const c = cols.findIndex(f => f.key === k);
+      if(c < 0 || (act.c === c && ext.r === act.r && ext.c === c)) return;
+      act = {r:act.r, c}; ext = {r:act.r, c};
+      applySelection();
+      scrollToCell(act.r, c);
     });
     el.addEventListener("keydown", (e) => {
       if(e.target.id === "logText" && e.key === "Enter" && (e.ctrlKey || e.metaKey)){
@@ -1690,6 +1750,24 @@
     $("btnRedo").addEventListener("click", () => { undoRedo(false); focusGrid(); });
     $("btnRefilter").addEventListener("click", () => { rebuildView(); renderGrid(); focusGrid(); });
     $("btnDetail").addEventListener("click", () => setDetail(!state.settings.showDetail));
+    $("btnWrap").addEventListener("click", () => {
+      state.settings.wrap = !state.settings.wrap; save();
+      $("btnWrap").classList.toggle("on", state.settings.wrap);
+      renderGrid(); focusGrid();
+    });
+    $("splitter").addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      const sp = $("splitter"); sp.classList.add("drag");
+      const onMove = (ev) => {
+        const w = clamp(window.innerWidth - ev.clientX, 320, Math.max(320, window.innerWidth - 320));
+        state.settings.detailWidth = w;
+        $("detail").style.width = w + "px";
+        positionInput();
+      };
+      const onUp = () => { sp.classList.remove("drag"); document.removeEventListener("mousemove", onMove); document.removeEventListener("mouseup", onUp); save(); growAll(); };
+      document.addEventListener("mousemove", onMove);
+      document.addEventListener("mouseup", onUp);
+    });
     ["q","fStatus","fPriority"].forEach(id => $(id).addEventListener("input", () => { rebuildView(); renderGrid(); }));
     bindGrid();
     bindCtx();
@@ -1733,8 +1811,8 @@
       renderStats(); renderGrid();
     }, 60000);
 
-    $("detail").classList.toggle("hidden", !state.settings.showDetail);
-    $("btnDetail").classList.toggle("on", !!state.settings.showDetail);
+    applyDetailLayout();
+    $("btnWrap").classList.toggle("on", !!state.settings.wrap);
     rebuildView();
     renderAll();
     focusGrid();
