@@ -88,7 +88,11 @@
   .anno-label{ font-size:11px; color:#aeb6c2; }
   #annoTextInput{ position:fixed; z-index:120; display:none; margin:0; padding:2px 4px; border:1px dashed #fff; border-radius:3px; font-family:sans-serif; font-weight:bold; line-height:1.25; resize:none; overflow:hidden; outline:none; white-space:pre; }
   .anno-canvas-wrap{ flex:1; display:flex; align-items:center; justify-content:center; overflow:auto; padding:16px; }
-  #annoCanvas{ background:#000; max-width:100%; max-height:100%; cursor:crosshair; box-shadow:0 0 0 1px #333; }
+  #annoCanvas{ background:#000; max-width:100%; max-height:100%; cursor:crosshair; box-shadow:0 0 0 1px #333; touch-action:none; }
+  #cropBar{ position:fixed; left:50%; bottom:22px; transform:translateX(-50%); z-index:115; display:none; align-items:center; gap:10px; background:#12151a; border:1px solid #363c47; border-radius:8px; padding:8px 12px; color:#e8e6e2; font-size:12.5px; box-shadow:0 6px 20px rgba(0,0,0,.5); }
+  #cropBar.show{ display:flex; }
+  #cropBar button{ background:#232833; color:#e8e6e2; border:1px solid #363c47; padding:6px 12px; border-radius:5px; font-size:12.5px; cursor:pointer; }
+  #cropBar button.primary{ background:#3a6ea5; border-color:#3a6ea5; }
 
   /* --- 統計表示UI --- */
   #stats{ display:flex; gap:6px; align-items:center; font-size:11.5px; }
@@ -110,6 +114,8 @@
   #bulkBar{ position:fixed; bottom:70px; left:50%; transform:translateX(-50%); background:var(--navy); color:#fff; padding:9px 14px; border-radius:8px; display:none; gap:10px; align-items:center; z-index:150; box-shadow:0 4px 14px rgba(0,0,0,.3); font-size:12.5px; }
   #bulkBar.show{ display:flex; }
   #bulkBar button{ background:#fff; color:var(--navy); border:none; border-radius:4px; padding:5px 11px; font-size:12px; font-weight:600; cursor:pointer; }
+  #bulkBar select{ max-width:220px; font-size:12px; padding:4px 6px; border-radius:4px; border:none; }
+  .bulk-sep{ width:1px; height:18px; background:rgba(255,255,255,.35); }
   #ctxMenu{ position:fixed; z-index:300; background:#fff; border:1px solid var(--line); border-radius:6px; box-shadow:0 6px 20px rgba(0,0,0,.18); min-width:170px; padding:4px 0; display:none; font-size:12.5px; }
   .ctx-item{ padding:7px 14px; cursor:pointer; }
   .ctx-item:hover{ background:#eef2f6; }
@@ -169,6 +175,9 @@
   <button class="secondary" onclick="openSearch()" title="Ctrl+F">検索</button>
   <button class="secondary" onclick="document.getElementById('importInput').click()">作業用HTMLを読み込む</button>
   <input type="file" id="importInput" accept=".html,text/html" style="display:none" onchange="if(this.files[0]) importHtml(this.files[0]); this.value='';">
+  <button class="secondary" onclick="exportCaptions()" title="全画像のコメント（図のキャプション）をCSVで書き出します。Excelで編集して読み込めます">コメント書出</button>
+  <button class="secondary" onclick="document.getElementById('captionInput').click()" title="「コメント書出」したCSVを読み込み、ケースNo・画像Noが一致する画像のコメントを上書きします">コメント読込</button>
+  <input type="file" id="captionInput" accept=".csv,.tsv,.txt,text/csv,text/plain" style="display:none" onchange="if(this.files[0]) importCaptions(this.files[0]); this.value='';">
   <button class="secondary" onclick="window.print()">印刷 / PDF化</button>
   <button class="secondary" onclick="exportHtml(true)">作業用保存</button>
   <button onclick="exportHtml(false)">配布用保存</button>
@@ -195,7 +204,8 @@
         <li>画像をクリックすると注釈エディタ（選択・四角・丸・矢印・ペン・テキスト・番号・モザイク・切り抜き）が開きます</li>
         <li>「差替」（または右クリック）で、コメント・表示幅を残したまま画像だけ差し替え（注釈は引き継ぐか選択）</li>
         <li>◀▶で並び替え、⧉で複製、幅ボタン（100/50/33/25%）またはドラッグで表示幅を変更</li>
-        <li>チェックボックスで複数選択すると、画面下部のバーで幅の一括変更・一括削除ができます</li>
+        <li>チェックボックスで複数選択すると、画面下部のバーで幅の一括変更・別ケースへの一括移動・一括削除ができます</li>
+        <li>選択中の画像のどれかをドラッグすると、選択した画像をまとめて（表示順のまま）移動できます</li>
       </ul>
       <h3>注釈エディタ</h3>
       <ul>
@@ -203,6 +213,7 @@
         <li><kbd>Ctrl</kbd>+<kbd>Z</kbd> — 直前の書き込みを取り消し／<kbd>Ctrl</kbd>+<kbd>Y</kbd> — やり直し</li>
         <li>「選択」ツール — クリックで選択、ドラッグで移動、<kbd>Delete</kbd> で削除。選択中に色・線・文字サイズを押すとその図形に反映。テキストはダブルクリックで再編集</li>
         <li>テキスト入力中 — <kbd>Enter</kbd> で改行、<kbd>Ctrl</kbd>+<kbd>Enter</kbd> または外側クリックで確定、<kbd>Esc</kbd> で取り消し</li>
+        <li>「切り抜き」ツール — ドラッグで範囲を指定（やり直しは再ドラッグ）、画面下のバーか <kbd>Enter</kbd> で確定、<kbd>Esc</kbd> で解除。確定後も <kbd>Ctrl</kbd>+<kbd>Z</kbd> で戻せます</li>
         <li><kbd>Esc</kbd> — 未保存の変更を破棄して閉じる（図形を選択中は選択解除のみ）</li>
       </ul>
       <h3>検索・置換</h3>
@@ -221,6 +232,9 @@
         <li>「作業用保存」— 編集を続けられる状態のままHTMLとして保存し、後で「作業用HTMLを読み込む」で読み直せます</li>
         <li>「配布用保存」— 編集用のボタン類を含まない、閲覧・印刷用のHTMLとして保存します</li>
         <li>「印刷 / PDF化」— 編集用のUIを除いた状態で印刷プレビューを開きます</li>
+        <li>「コメント書出」— 全画像のコメントを CSV（ケースNo・ケース名・画像No・図番号・コメント）で保存。Excel で編集できます</li>
+        <li>「コメント読込」— 編集した CSV を読み込み、ケースNo・画像No が一致する画像のコメントを上書きします（<kbd>Ctrl</kbd>+<kbd>Z</kbd> で戻せます）</li>
+        <li>コメントの改行は報告書の図キャプションでも改行されます（<code>&lt;br&gt;</code> と書いても改行になります）</li>
       </ul>
       <h3>自動保存</h3>
       <ul>
@@ -257,6 +271,10 @@
   <button onclick="bulkSetWidth(50)">50%</button>
   <button onclick="bulkSetWidth(33)">33%</button>
   <button onclick="bulkSetWidth(25)">25%</button>
+  <span class="bulk-sep"></span>
+  <select id="bulkMoveDst" title="移動先のテストケース"></select>
+  <button onclick="bulkMoveSelected()" title="選択画像を、選んだケースの末尾へ表示順のまま移動します">へ移動</button>
+  <span class="bulk-sep"></span>
   <button onclick="bulkDeleteSelected()">一括削除</button>
   <button onclick="clearSelection()">選択解除</button>
 </div>
@@ -315,6 +333,12 @@
     <canvas id="annoCanvas"></canvas>
   </div>
   <textarea id="annoTextInput" rows="1" spellcheck="false"></textarea>
+  <div id="cropBar">
+    <span id="cropInfo"></span>
+    <span style="color:#7c8698;font-size:11px;">範囲はドラッグし直せます</span>
+    <button class="primary" onclick="applyCropSelection()">切り抜く (Enter)</button>
+    <button onclick="cancelCropSelection()">やめる (Esc)</button>
+  </div>
 </div>
 
 <div id="toast"></div>
@@ -358,7 +382,60 @@ function toggleSel(cid, iid, on){ const k = selKey(cid, iid); if(on) selectedImg
 function pruneSelection(){ const valid = new Set(); cases.forEach(c => c.images.forEach(i => valid.add(selKey(c.id, i.id)))); Array.from(selectedImgs).forEach(k => { if(!valid.has(k)) selectedImgs.delete(k); }); }
 function clearSelection(){ selectedImgs.clear(); updateBulkBar(); markSelectedCards(); }
 function markSelectedCards(){ document.querySelectorAll('.shot-card').forEach(card => { card.classList.toggle('selected-card', selectedImgs.has(selKey(Number(card.dataset.cid), Number(card.dataset.iid)))); }); }
-function updateBulkBar(){ const bar = document.getElementById('bulkBar'); document.getElementById('bulkCount').textContent = selectedImgs.size; bar.classList.toggle('show', selectedImgs.size > 0); }
+function updateBulkBar(){
+  const bar = document.getElementById('bulkBar');
+  document.getElementById('bulkCount').textContent = selectedImgs.size;
+  bar.classList.toggle('show', selectedImgs.size > 0);
+  const sel = document.getElementById('bulkMoveDst');
+  const prev = sel.value;
+  sel.innerHTML = cases.map((c, ci) => `<option value="${c.id}">#${String(ci+1).padStart(2,'0')} ${escapeHtml(c.title || '')}</option>`).join('');
+  if(prev && cases.some(c => String(c.id) === prev)) sel.value = prev;
+}
+// 選択中の画像（表示順）
+function selectedImageRefs(){
+  const out = [];
+  cases.forEach(c => c.images.forEach(i => { if(selectedImgs.has(selKey(c.id, i.id))) out.push({ cid:c.id, iid:i.id }); }));
+  return out;
+}
+// 複数画像をまとめて dstCid の dstIdx（移動前の並びでの位置）へ移す。表示順は保つ。
+// 移動した画像は選択したままにする（続けて別の場所へ動かせるように）。
+function moveImagesTo(refs, dstCid, dstIdx){
+  const dc = findCase(dstCid); if(!dc || !refs.length) return false;
+  const keys = new Set(refs.map(r => selKey(r.cid, r.iid)));
+  const moving = [];
+  cases.forEach(c => c.images.forEach(i => { if(keys.has(selKey(c.id, i.id))) moving.push(i); }));
+  if(!moving.length) return false;
+  const before = cases.map(c => c.images.map(i => i.id).join(',')).join('|');
+  const idx = Math.max(0, Math.min(dstIdx, dc.images.length));
+  const shift = dc.images.slice(0, idx).filter(i => keys.has(selKey(dc.id, i.id))).length;
+  const next = cases.map(c => c.images.filter(i => !keys.has(selKey(c.id, i.id))));
+  const di = cases.indexOf(dc);
+  next[di].splice(idx - shift, 0, ...moving);
+  if(next.map(a => a.map(i => i.id).join(',')).join('|') === before) return false;
+  pushUndo();
+  cases.forEach((c, ci) => { c.images = next[ci]; });
+  const wasSelected = moving.filter(i => cases.some(c => selectedImgs.has(selKey(c.id, i.id))));
+  keys.forEach(k => selectedImgs.delete(k));
+  wasSelected.forEach(i => selectedImgs.add(selKey(dc.id, i.id)));
+  render();
+  return true;
+}
+function bulkMoveSelected(){
+  const refs = selectedImageRefs();
+  const dst = Number(document.getElementById('bulkMoveDst').value);
+  const dc = findCase(dst);
+  if(!refs.length || !dc) return;
+  if(moveImagesTo(refs, dst, dc.images.length)){
+    showToast(`${refs.length} 枚を #${String(cases.indexOf(dc)+1).padStart(2,'0')} へ移動しました（Ctrl+Zで戻せます）`);
+  } else showToast('移動先が現在と同じです');
+}
+// ドラッグ中の画像を落とす。選択中の画像を掴んでいたら選択分をまとめて移動。
+function dropDraggedImages(d, dstCid, dstIdx){
+  if(d.multi){
+    const refs = selectedImageRefs();
+    if(moveImagesTo(refs, dstCid, dstIdx)) showToast(`${refs.length} 枚を移動しました（Ctrl+Zで戻せます）`);
+  } else moveImageTo(d.caseId, d.imgId, dstCid, dstIdx);
+}
 function bulkDeleteSelected(){
   if(!selectedImgs.size) return;
   if(!confirm('選択中の画像 ' + selectedImgs.size + ' 枚を削除しますか？（Ctrl+Zで戻せます）')) return;
@@ -870,8 +947,8 @@ function bindDropZones(){
       const caseId = Number(zone.dataset.caseid);
       if(dragData && dragData.type === 'img'){
         const c = findCase(caseId);
-        moveImageTo(dragData.caseId, dragData.imgId, caseId, c ? c.images.length : 0);
-        dragData = null; clearDropMarks();
+        const d = dragData; dragData = null; clearDropMarks();
+        dropDraggedImages(d, caseId, c ? c.images.length : 0);
         return;
       }
       activePasteCaseId = caseId;
@@ -887,8 +964,10 @@ function bindCardDnD(){
     if(thumb){
       thumb.setAttribute('draggable', 'true');
       thumb.addEventListener('dragstart', e => {
-        dragData = { type:'img', caseId:cid, imgId:iid };
-        card.classList.add('dragging');
+        const multi = selectedImgs.size > 1 && selectedImgs.has(selKey(cid, iid));
+        dragData = { type:'img', caseId:cid, imgId:iid, multi };
+        if(multi) document.querySelectorAll('.shot-card.selected-card').forEach(el => el.classList.add('dragging'));
+        else card.classList.add('dragging');
         e.dataTransfer.effectAllowed = 'move';
         try{ e.dataTransfer.setData('text/plain', ''); }catch(_){ }
       });
@@ -912,7 +991,7 @@ function bindCardDnD(){
       let idx = c ? c.images.findIndex(i => i.id === iid) : 0;
       if(!before) idx++;
       const d = dragData; dragData = null; clearDropMarks();
-      moveImageTo(d.caseId, d.imgId, cid, idx);
+      dropDraggedImages(d, cid, idx);
     });
   });
   // ケース：⠿ハンドルをドラッグして並び替え
@@ -966,7 +1045,7 @@ function updateHeader(){
 /* ---------- annotation ---------- */
 let annoState = { caseId:null, imgId:null, tool:'rect', color:'#ff3b30', textScale:1, lineScale:1, fill:true, textBox:false,
   shapes:[], baseImage:null, drawing:false, startX:0, startY:0, currentPenPath:null,
-  sel:-1, dragMoved:false, lastX:0, lastY:0, hist:[], redo:[], textEdit:null };
+  sel:-1, dragMoved:false, lastX:0, lastY:0, hist:[], redo:[], textEdit:null, cropRect:null };
 const canvas = document.getElementById('annoCanvas');
 const ctx = canvas.getContext('2d');
 const annoTextInput = document.getElementById('annoTextInput');
@@ -980,24 +1059,49 @@ function annoCommit(){
   if(annoState.hist.length > ANNO_HIST_MAX) annoState.hist.shift();
   annoState.redo.length = 0;
 }
+// 履歴の要素は図形配列の JSON 文字列。切り抜きだけは元画像ごと戻す必要があるため
+// { crop:true, original, shapes } のオブジェクトを積む。
 function annoUndo(){
   if(!annoState.hist.length) return;
+  finishTextEdit(true); setCropRect(null);
+  const e = annoState.hist.pop();
+  if(typeof e === 'object'){ annoState.redo.push(cropHistEntry()); restoreCropEntry(e); return; }
   annoState.redo.push(JSON.stringify(annoState.shapes));
-  annoState.shapes = JSON.parse(annoState.hist.pop());
+  annoState.shapes = JSON.parse(e);
   annoState.sel = -1; redrawAnno();
 }
 function annoRedo(){
   if(!annoState.redo.length) return;
+  finishTextEdit(true); setCropRect(null);
+  const e = annoState.redo.pop();
+  if(typeof e === 'object'){ annoState.hist.push(cropHistEntry()); restoreCropEntry(e); return; }
   annoState.hist.push(JSON.stringify(annoState.shapes));
-  annoState.shapes = JSON.parse(annoState.redo.pop());
+  annoState.shapes = JSON.parse(e);
   annoState.sel = -1; redrawAnno();
+}
+function cropHistEntry(){
+  const img = findImage(annoState.caseId, annoState.imgId);
+  return { crop:true, original: img ? img.original : null, shapes: JSON.stringify(annoState.shapes) };
+}
+function restoreCropEntry(e){
+  const caseId = annoState.caseId, imgId = annoState.imgId;
+  const img = findImage(caseId, imgId);
+  if(!img || !e.original) return;
+  pushUndo();
+  img.original = e.original;
+  img.shapes = JSON.parse(e.shapes);
+  flattenImage(img, d => {
+    img.flattened = d || img.original;
+    scheduleBackup();
+    openAnnotate(caseId, imgId, true);
+  });
 }
 function updateAnnoHistUI(){
   document.getElementById('undoBtn').disabled = !annoState.hist.length;
   document.getElementById('redoBtn').disabled = !annoState.redo.length;
 }
 
-function openAnnotate(caseId, imgId){
+function openAnnotate(caseId, imgId, keepHist){
   const img = findImage(caseId, imgId);
   if(!img) return;
   const image = new Image();
@@ -1009,7 +1113,9 @@ function openAnnotate(caseId, imgId){
     annoState.imgId = imgId;
     annoState.baseImage = image;
     annoState.shapes = JSON.parse(JSON.stringify(img.shapes || []));
-    annoState.hist = []; annoState.redo = []; annoState.sel = -1; annoState.drawing = false;
+    if(!keepHist){ annoState.hist = []; annoState.redo = []; }
+    annoState.sel = -1; annoState.drawing = false;
+    setCropRect(null);
     document.getElementById('annotateModal').classList.add('open');
     redrawAnno();
     updateAnnoNavUI();
@@ -1018,6 +1124,7 @@ function openAnnotate(caseId, imgId){
 }
 function closeAnnotate(){
   finishTextEdit(false);
+  setCropRect(null);
   document.getElementById('annotateModal').classList.remove('open');
   annoState.drawing = false;
   annoState.sel = -1;
@@ -1061,6 +1168,7 @@ function redrawAnno(ui = true){
     drawShape(ctx, s, annoState.baseImage, canvas.width);
   });
   if(ui && annoState.sel >= 0 && annoState.shapes[annoState.sel]) drawSelection(annoState.shapes[annoState.sel]);
+  if(ui && annoState.cropRect) drawCropPreview(annoState.cropRect);
   updateAnnoHistUI();
 }
 
@@ -1237,16 +1345,37 @@ function applyToSel(fn){
   redrawAnno();
 }
 
-/* ---------- 切り抜き ---------- */
+/* ---------- 切り抜き ----------
+   ドラッグで範囲を決め、画面下のバー（または Enter）で確定する。
+   confirm() はブラウザで「ダイアログを表示しない」にされていると黙って false を返し、
+   切り抜きが何も起きないように見えるため使わない。確定後もエディタ内の Ctrl+Z で戻せる。 */
+function clampRect(r){
+  const x0 = Math.max(0, Math.round(r.x)), y0 = Math.max(0, Math.round(r.y));
+  const x1 = Math.min(canvas.width, Math.round(r.x + r.w)), y1 = Math.min(canvas.height, Math.round(r.y + r.h));
+  return { x:x0, y:y0, w:Math.max(0, x1 - x0), h:Math.max(0, y1 - y0) };
+}
+function setCropRect(r){
+  annoState.cropRect = r;
+  const bar = document.getElementById('cropBar');
+  if(!bar) return;
+  bar.classList.toggle('show', !!r);
+  if(r) document.getElementById('cropInfo').textContent = `${r.w} × ${r.h} px`;
+}
+function applyCropSelection(){
+  const r = annoState.cropRect;
+  setCropRect(null);
+  if(r) applyCrop(r); else redrawAnno();
+}
+function cancelCropSelection(){ setCropRect(null); redrawAnno(); }
 function applyCrop(r){
-  const x = Math.max(0, Math.round(r.x)), y = Math.max(0, Math.round(r.y));
-  const w = Math.min(canvas.width - x, Math.round(r.w)), h = Math.min(canvas.height - y, Math.round(r.h));
-  if(w < 10 || h < 10){ redrawAnno(); return; }
-  if(!confirm('選択した範囲で画像を切り抜きます。\n範囲の外にある注釈は削除されます。\n\n※エディタ内の「元に戻す」では戻せません。エディタを閉じた後、本体の Ctrl+Z で戻せます。')){ redrawAnno(); return; }
+  const { x, y, w, h } = clampRect(r);
+  if(w < 10 || h < 10){ redrawAnno(); showToast('切り抜く範囲が小さすぎます'); return; }
+  if(x === 0 && y === 0 && w === canvas.width && h === canvas.height){ redrawAnno(); return; }
   annoSaveCurrent();
   const caseId = annoState.caseId, imgId = annoState.imgId;
   const img = findImage(caseId, imgId);
   if(!img) return;
+  const entry = cropHistEntry();
   pushUndo();
   const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
   cv.getContext('2d').drawImage(annoState.baseImage, x, y, w, h, 0, 0, w, h);
@@ -1261,11 +1390,14 @@ function applyCrop(r){
     const nx = Math.max(0, s.x), ny = Math.max(0, s.y);   // モザイクは画像内に収める（範囲外を参照しない）
     return Object.assign(s, { x:nx, y:ny, w:Math.min(w, s.x + s.w) - nx, h:Math.min(h, s.y + s.h) - ny });
   }).filter(s => s.type !== 'mosaic' || (s.w >= 2 && s.h >= 2));
+  annoState.hist.push(entry);
+  if(annoState.hist.length > ANNO_HIST_MAX) annoState.hist.shift();
+  annoState.redo.length = 0;
   flattenImage(img, d => {
     img.flattened = d || img.original;
     scheduleBackup();
-    openAnnotate(caseId, imgId);
-    showToast('切り抜きました');
+    openAnnotate(caseId, imgId, true);
+    showToast('切り抜きました（Ctrl+Z で戻せます）');
   });
 }
 
@@ -1349,6 +1481,7 @@ canvas.addEventListener('pointerdown', e => {
     return;
   }
   annoState.sel = -1;
+  if(tool === 'crop') setCropRect(null);
   if(tool === 'text'){
     e.preventDefault();   // 既定のフォーカス移動で入力欄がすぐ閉じないように
     const i = hitTest(x, y);
@@ -1420,8 +1553,8 @@ canvas.addEventListener('pointerup', e => {
       annoState.shapes.push({ type:'arrow', x1:annoState.startX, y1:annoState.startY, x2:x, y2:y, color:annoState.color, lw:annoState.lineScale });
     }
   } else if(tool === 'crop'){
-    applyCrop(dragRect(x, y));
-    return;
+    const r = clampRect(dragRect(x, y));
+    setCropRect(r.w >= 10 && r.h >= 10 ? r : null);
   }
   redrawAnno();
 });
@@ -1435,6 +1568,7 @@ canvas.addEventListener('dblclick', e => {
 
 function setAnnoTool(tool){
   finishTextEdit(true);
+  setCropRect(null);
   annoState.tool = tool;
   annoState.sel = -1;
   document.querySelectorAll('.anno-toolbar [data-tool]').forEach(b => b.classList.toggle('active', b.dataset.tool === tool));
@@ -1494,8 +1628,10 @@ document.addEventListener('keydown', e => {
   if(!document.getElementById('annotateModal').classList.contains('open')) return;
   if(e.target && (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT')) return;
   const k = e.key.toLowerCase();
+  if(annoState.cropRect && e.key === 'Enter'){ e.preventDefault(); applyCropSelection(); return; }
   if(e.key === 'Escape'){
-    if(annoState.sel >= 0){ annoState.sel = -1; redrawAnno(); }
+    if(annoState.cropRect) cancelCropSelection();
+    else if(annoState.sel >= 0){ annoState.sel = -1; redrawAnno(); }
     else closeAnnotate();
   }
   else if((e.ctrlKey || e.metaKey) && (k === 'y' || (e.shiftKey && k === 'z'))){ annoRedo(); e.preventDefault(); }
@@ -1566,6 +1702,11 @@ function exportHtml(withData){
   URL.revokeObjectURL(url);
 }
 
+// コメントは改行をそのまま <br> にする。手入力した <br> も改行として扱い、それ以外のタグはエスケープ。
+function captionHtml(text){
+  return escapeHtml(String(text).replace(/\r\n?/g, '\n').replace(/<br\s*\/?>/gi, '\n')).replace(/\n/g, '<br>');
+}
+
 function buildReport(meta, stateJson){
   const resLabel = { OK:'OK', NG:'NG', PENDING:'保留' };
   const summaryRows = cases.map((c,i) =>
@@ -1575,7 +1716,7 @@ function buildReport(meta, stateJson){
   const caseSections = cases.map((c,ci) => {
     const tb = (label,val) => val ? `<div class="tb"><div class="tl">${label}</div><div class="tv">${escapeHtml(val)}</div></div>` : '';
     const figs = c.images.map((img,ii) =>
-      `<figure style="flex-basis:calc(${imgWidth(img)}% - 14px)"><img src="${escapeHtml(img.flattened)}" alt="図${ci+1}-${ii+1}" onclick="Z(this)" title="クリックで拡大"><figcaption>図${ci+1}-${ii+1}${img.comment ? '：'+escapeHtml(img.comment) : ''}</figcaption></figure>`
+      `<figure style="flex-basis:calc(${imgWidth(img)}% - 14px)"><img src="${escapeHtml(img.flattened)}" alt="図${ci+1}-${ii+1}" onclick="Z(this)" title="クリックで拡大"><figcaption>図${ci+1}-${ii+1}${img.comment ? '：'+captionHtml(img.comment) : ''}</figcaption></figure>`
     ).join('');
     return `<section class="case" id="case-${ci+1}">
       <h2><span class="mono">#${String(ci+1).padStart(2,'0')}</span> ${escapeHtml(c.title)} <span class="badge ${safeResult(c.result)}">${resLabel[safeResult(c.result)]}</span></h2>
@@ -1609,7 +1750,7 @@ function buildReport(meta, stateJson){
   .figs{ display:flex; flex-wrap:wrap; gap:14px; margin-top:14px; align-items:flex-start; }
   figure{ margin:0; border:1px solid #d8dce1; border-radius:6px; overflow:hidden; background:#fff; flex-grow:0; }
   figure img{ width:100%; display:block; cursor:zoom-in; }
-  figcaption{ font-size:12px; padding:6px 9px; background:#f7f7f7; border-top:1px solid #eceef0; }
+  figcaption{ font-size:12px; padding:6px 9px; background:#f7f7f7; border-top:1px solid #eceef0; overflow-wrap:anywhere; }
   #lb{ display:none; position:fixed; inset:0; background:rgba(10,12,16,.92); z-index:50; align-items:center; justify-content:center; cursor:zoom-out; padding:24px; gap:14px; }
   #lbFig{ margin:0; display:flex; flex-direction:column; align-items:center; gap:8px; max-width:calc(100% - 130px); max-height:100%; cursor:default; }
   #lbImg{ max-width:100%; max-height:calc(100vh - 120px); box-shadow:0 0 0 1px #444; }
@@ -1657,7 +1798,7 @@ function lbShow(){
   var el = imgs[LBI];
   document.getElementById('lbImg').src = el.src;
   var cap = el.parentNode.querySelector('figcaption');
-  document.getElementById('lbCap').textContent = cap ? cap.textContent : '';
+  document.getElementById('lbCap').innerHTML = cap ? cap.innerHTML : '';
   document.getElementById('lbCount').textContent = (LBI + 1) + ' / ' + imgs.length;
   document.getElementById('lbPrev').style.visibility = LBI > 0 ? 'visible' : 'hidden';
   document.getElementById('lbNext').style.visibility = LBI < imgs.length - 1 ? 'visible' : 'hidden';
@@ -1788,6 +1929,95 @@ function importHtml(file){
     let st;
     try{ st = JSON.parse(el.textContent); }catch(e){ alert('データの読み取りに失敗しました。'); return; }
     loadState(st);
+  }).catch(() => alert('ファイルを読み込めませんでした。'));
+}
+
+/* ---------- コメント（図のキャプション）の一括書出・読込 ----------
+   Excel で開いて編集できるよう BOM 付き UTF-8 の CSV。
+   読込はケースNo・画像No（表示順）で照合し、コメント列だけを上書きする。 */
+const CAPTION_HEADER = ['ケースNo', 'ケース名', '画像No', '図番号', 'コメント'];
+function csvCell(v){
+  const t = String(v == null ? '' : v);
+  return /[",\r\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
+}
+function exportCaptions(){
+  commitTextEdit();
+  const rows = [CAPTION_HEADER];
+  cases.forEach((c, ci) => c.images.forEach((img, ii) =>
+    rows.push([ci + 1, c.title, ii + 1, `図${ci+1}-${ii+1}`, img.comment || ''])));
+  if(rows.length === 1){ showToast('画像がありません'); return; }
+  const csv = '﻿' + rows.map(r => r.map(csvCell).join(',')).join('\r\n') + '\r\n';
+  const blob = new Blob([csv], { type:'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = (document.getElementById('projName').value || 'test_evidence').replace(/[\\/:*?"<>|]/g,'_') + '_コメント.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast(`コメントを書き出しました（画像 ${rows.length - 1} 枚）`);
+}
+// RFC 4180 の CSV（区切りはカンマかタブを自動判定）。セル内の改行・"" に対応。
+function parseDelimited(text){
+  text = text.replace(/^﻿/, '');
+  const firstLine = text.split(/\r?\n/, 1)[0] || '';
+  const sep = (firstLine.split('\t').length > firstLine.split(',').length) ? '\t' : ',';
+  const rows = []; let row = [], cell = '', q = false;
+  for(let i = 0; i < text.length; i++){
+    const ch = text[i];
+    if(q){
+      if(ch === '"'){ if(text[i+1] === '"'){ cell += '"'; i++; } else q = false; }
+      else cell += ch;
+    } else if(ch === '"' && cell === '') q = true;
+    else if(ch === sep){ row.push(cell); cell = ''; }
+    else if(ch === '\n' || ch === '\r'){
+      if(ch === '\r' && text[i+1] === '\n') i++;
+      row.push(cell); rows.push(row); row = []; cell = '';
+    } else cell += ch;
+  }
+  if(cell !== '' || row.length){ row.push(cell); rows.push(row); }
+  return rows.filter(r => r.some(v => v !== ''));
+}
+function readTextFile(file){
+  // Excel で上書き保存すると Shift_JIS になることがあるため、UTF-8 として壊れていれば Shift_JIS で読み直す
+  return file.arrayBuffer().then(buf => {
+    try{ return new TextDecoder('utf-8', { fatal:true }).decode(buf); }
+    catch(e){ return new TextDecoder('shift_jis').decode(buf); }
+  });
+}
+function importCaptions(file){
+  readTextFile(file).then(text => {
+    const rows = parseDelimited(text);
+    if(!rows.length){ alert('CSVが空です。'); return; }
+    const head = rows[0].map(v => v.trim());
+    const iCase = head.indexOf('ケースNo'), iImg = head.indexOf('画像No'), iCom = head.indexOf('コメント');
+    const body = rows.slice(1);
+    if(iCase < 0 || iImg < 0 || iCom < 0){
+      alert('「ケースNo」「画像No」「コメント」の列が見つかりません。\n「コメント書出」で作ったCSVを編集して読み込んでください。');
+      return;
+    }
+    let updated = 0;
+    const missing = [];
+    const changes = [];
+    body.forEach(r => {
+      const cn = parseInt(r[iCase], 10), inn = parseInt(r[iImg], 10);
+      const c = cases[cn - 1], img = c && c.images[inn - 1];
+      if(!img){ missing.push(`${r[iCase]}-${r[iImg]}`); return; }
+      const v = (r[iCom] || '').replace(/\r\n?/g, '\n');
+      if((img.comment || '') === v) return;
+      changes.push([img, v]);
+    });
+    if(!changes.length){
+      showToast(missing.length ? `変更はありません（該当画像なし ${missing.length} 件）` : '変更はありません');
+      return;
+    }
+    commitTextEdit();
+    pushUndo();
+    changes.forEach(([img, v]) => { img.comment = v; updated++; });
+    scheduleBackup();
+    render();
+    let msg = `コメントを ${updated} 件更新しました（Ctrl+Zで戻せます）`;
+    if(missing.length) msg += ` ／ 該当画像なし ${missing.length} 件：図${missing.slice(0, 5).join('、図')}${missing.length > 5 ? ' …' : ''}`;
+    showToast(msg);
   }).catch(() => alert('ファイルを読み込めませんでした。'));
 }
 
