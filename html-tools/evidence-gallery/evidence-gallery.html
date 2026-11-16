@@ -26,6 +26,13 @@
   button.primary{background:var(--accent);border-color:var(--accent);color:var(--ink);}
   button.primary:hover{background:#ff8a1a;}
   .btnfile{display:inline-block;}
+  /* 使用頻度の低い CSV 入出力はメニューにまとめる（上部バーの折り返しを減らす） */
+  .tb-menu{position:relative;display:inline-block;}
+  .tb-menu > summary{list-style:none;font-family:var(--font-body);font-size:13px;font-weight:600;padding:8px 12px;border-radius:4px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.06);color:#fff;cursor:pointer;user-select:none;}
+  .tb-menu > summary::-webkit-details-marker{display:none;}
+  .tb-menu[open] > summary{background:rgba(255,255,255,.18);}
+  .tb-menu-list{position:absolute;right:0;top:calc(100% + 4px);z-index:300;display:flex;flex-direction:column;gap:4px;min-width:200px;padding:6px;border-radius:6px;background:var(--ink);border:1px solid rgba(255,255,255,.25);box-shadow:0 6px 20px rgba(0,0,0,.35);}
+  .tb-menu-list button, .tb-menu-list .btnfile{text-align:left;width:100%;box-sizing:border-box;}
   .help-btn{width:30px;height:30px;padding:0;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:14px;}
   .help-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:700;padding:20px;}
   .help-overlay.hidden{display:none;}
@@ -62,7 +69,7 @@
   .img-card{border:1px solid var(--border);border-radius:6px;background:var(--paper);overflow:hidden;display:flex;flex-direction:column;}
   .img-card .thumb-wrap{background:#e4e7e9;display:flex;align-items:center;justify-content:center;min-height:80px;}
   .img-card img{width:100%;height:auto;display:block;max-height:320px;object-fit:contain;background:#fff;}
-  .img-card .caption-input{display:block;border:none;border-top:1px solid var(--border);padding:6px 8px;font-size:12px;width:100%;font-family:var(--font-body);background:#fff;resize:vertical;min-height:32px;line-height:1.45;}
+  .img-card .caption-input{display:block;border:none;border-top:1px solid var(--border);padding:6px 8px;font-size:12px;width:100%;font-family:var(--font-body);background:#fff;resize:none;overflow:hidden;min-height:32px;line-height:1.45;field-sizing:content;}
   .img-card .caption-input:focus{outline:2px solid var(--accent-soft);}
   .img-card .card-controls{display:flex;align-items:center;gap:4px;padding:6px 8px;border-top:1px solid var(--border);background:#fff;flex-wrap:wrap;}
   .width-btns{display:flex;gap:3px;}
@@ -123,9 +130,20 @@
   .sel-label select option{color:#000;}
 
   /* ==== 注釈エディタ ==== */
-  .img-card .thumb-wrap{position:relative;cursor:zoom-in;}
+  .img-card .thumb-wrap{position:relative;cursor:pointer;}
+  .img-card .thumb-wrap:focus-visible{outline:3px solid var(--accent);outline-offset:-3px;}
   .thumb-wrap .anno-hint{position:absolute;right:5px;bottom:5px;background:rgba(0,0,0,.6);color:#fff;font-size:10px;padding:2px 6px;border-radius:3px;pointer-events:none;}
   .img-card.has-anno .thumb-wrap .anno-hint{background:var(--accent);color:var(--ink);font-weight:700;}
+
+  /* ==== 3択の確認ダイアログ ==== */
+  .choose-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:760;display:flex;align-items:center;justify-content:center;padding:16px;}
+  .choose-box{background:#fff;color:#1a1d22;border-radius:8px;max-width:480px;width:100%;padding:18px 20px;box-shadow:0 10px 30px rgba(0,0,0,.35);font-size:13.5px;}
+  .choose-msg{white-space:pre-wrap;line-height:1.6;margin-bottom:14px;}
+  .choose-btns{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;}
+  .choose-btns button{padding:7px 12px;border-radius:5px;border:1px solid #c9ccd2;background:#f3f4f6;color:#1a1d22;font-size:13px;cursor:pointer;font-family:inherit;}
+  .choose-btns button:focus-visible{outline:2px solid #3a6ea5;outline-offset:2px;}
+  .choose-btns button.choose-primary{background:#2f8f5b;border-color:#2f8f5b;color:#fff;}
+  .choose-btns button.choose-danger{background:#B23A2E;border-color:#B23A2E;color:#fff;}
 </style>
 </head>
 <body>
@@ -152,13 +170,18 @@
         <option value="jpeg85">JPEG 標準（軽い）</option>
       </select>
     </label>
-    <button id="btnSaveJson">JSON保存</button>
+    <button id="btnSaveJson" title="作業データをJSONで保存します（ファイル名に保存日時が付きます）">JSON保存</button>
     <label class="btnfile" title="JSONファイル、またはこのツールで書き出したHTMLを読み込みます">ファイル読込<input type="file" id="fileLoadJson" accept=".json,.html,.htm,application/json,text/html" hidden></label>
-    <button id="btnCapExport" title="全画像のキャプションをCSVで書き出します。Excelで編集して読み込めます">キャプション書出</button>
-    <label class="btnfile" title="「キャプション書出」したCSVを読み込み、セクションNo・画像Noが一致する画像のキャプションを上書きします">キャプション読込<input type="file" id="capImportInput" accept=".csv,.tsv,.txt,text/csv,text/plain" hidden></label>
+    <details class="tb-menu" id="csvMenu">
+      <summary title="キャプションをCSVで書き出し・読み込み（Excelで一括編集）">CSV ▾</summary>
+      <div class="tb-menu-list">
+        <button id="btnCapExport" title="全画像のキャプションをCSVで書き出します。Excelで編集して読み込めます">キャプション書出</button>
+        <label class="btnfile" title="「キャプション書出」したCSVを読み込み、セクションNo・画像Noが一致する画像のキャプションを上書きします">キャプション読込<input type="file" id="capImportInput" accept=".csv,.tsv,.txt,text/csv,text/plain" hidden></label>
+      </div>
+    </details>
     <button id="btnPreview">プレビュー（印刷確認）</button>
-    <button id="btnExportDist" title="注釈前の原本・再編集用の図形を含まないHTML。モザイクで隠した内容が残らないので、社外へ渡すときはこちら">配布用HTML</button>
-    <button id="btnExport" class="primary" title="再編集できるHTML（注釈前の原本も含む）。「ファイル読込」でそのまま読み戻せます">HTMLエクスポート</button>
+    <button id="btnExport" title="再編集できるHTML（注釈前の原本も含む）。「ファイル読込」でそのまま読み戻せます。ファイル名に保存日時が付きます">作業用HTML（原本入り）</button>
+    <button id="btnExportDist" class="primary" title="注釈前の原本・再編集用の図形を含まないHTML。モザイクで隠した内容が残らないので、社外へ渡すときはこちら">配布用HTML</button>
   </div>
 </div>
 
@@ -201,11 +224,11 @@
       </ul>
       <h3>ファイル操作</h3>
       <ul>
-        <li>「JSON保存」「ファイル読込」— 作業データをファイルとして保存/読込（このツールが書き出したHTMLも読込可）</li>
+        <li>「JSON保存」「ファイル読込」— 作業データをファイルとして保存/読込（このツールが書き出したHTMLも読込可）。保存ファイル名には日時（秒まで）が付きます</li>
         <li>「プレビュー（印刷確認）」— 書き出し結果を別画面で確認</li>
-        <li>「HTMLエクスポート」— 単体で開けるHTMLファイルとして書き出し（再編集用に注釈前の原本も入ります）</li>
+        <li>「作業用HTML（原本入り）」— 単体で開けるHTMLファイルとして書き出し（再編集用に注釈前の原本も入ります。ファイル名に日時が付きます）</li>
         <li>「配布用HTML」— 注釈前の原本・図形を含まないHTML。モザイクで隠した内容が残らないため、社外へ渡すときはこちら</li>
-        <li>「キャプション書出」— 全画像のキャプションを CSV（セクションNo・セクション名・画像No・キャプション）で保存。Excel で編集できます</li>
+        <li>右上の「CSV ▾」→「キャプション書出」— 全画像のキャプションを CSV（セクションNo・セクション名・画像No・キャプション）で保存。Excel で編集できます。= + - @ で始まるセルは Excel で数式にならないよう先頭に ' を付けて書き出し、読み込み時に外します</li>
         <li>「キャプション読込」— 編集した CSV を読み込み、セクションNo・画像No が一致する画像のキャプションを上書きします（<kbd>Ctrl</kbd>+<kbd>Z</kbd> で戻せます）</li>
       </ul>
       <h3>自動保存</h3>
@@ -218,7 +241,7 @@
 
 <div id="toast"></div>
 
-<div class="hint">画像ごとに幅（100% / 50% / 33% / 25%、またはカード右端をドラッグで自由調整）を選べます。横長のPC画面キャプチャは<b>100%</b>、縦長のプロパティ画面は<b>33%前後</b>、比較したい2枚は両方<b>50%</b>で自動的に横並びになります。<b>Alt+PrintScreen → Ctrl+V</b>で直接貼り付け可能（貼り付け先はオレンジ枠のセクション）。<b>サムネイルをクリックすると注釈エディタ</b>が開きます（選択・四角・丸・矢印・ペン・テキスト・番号・<b>モザイク</b>・<b>切り抜き</b>／←→で前後の画像へ移動）。「<b>差替</b>」でキャプションを残したまま画像だけ入れ替えられます。画像左上のチェックで<b>複数選択→一括で幅変更・別セクションへ移動・削除</b>（選択した画像の⠿をドラッグしてもまとめて移動）。キャプションは改行でき、<b>キャプション書出／読込</b>でExcel編集もできます。<b>Ctrl+S</b>でJSON保存、<b>Ctrl+Z / Ctrl+Y</b>で元に戻す・やり直し。取り込む画像の<b>縮小サイズ・保存形式</b>は右上で選べます（このブラウザに記憶されます）。<b>HTMLエクスポートは「ファイル読込」でそのまま読み戻せます</b>（注釈前の原本も入るため、モザイクで隠した情報を社外に出さないときは<b>配布用HTML</b>を使ってください）。</div>
+<div class="hint">画像ごとに幅（100% / 50% / 33% / 25%、またはカード右端をドラッグで自由調整）を選べます。横長のPC画面キャプチャは<b>100%</b>、縦長のプロパティ画面は<b>33%前後</b>、比較したい2枚は両方<b>50%</b>で自動的に横並びになります。<b>Alt+PrintScreen → Ctrl+V</b>で直接貼り付け可能（貼り付け先はオレンジ枠のセクション）。<b>サムネイルをクリックすると注釈エディタ</b>が開きます（選択・四角・丸・矢印・ペン・テキスト・番号・<b>モザイク</b>・<b>切り抜き</b>／←→で前後の画像へ移動）。「<b>差替</b>」でキャプションを残したまま画像だけ入れ替えられます。画像左上のチェックで<b>複数選択→一括で幅変更・別セクションへ移動・削除</b>（選択した画像の⠿をドラッグしてもまとめて移動）。キャプションは改行でき、右上の<b>CSV ▾</b>（キャプション書出／読込）でExcel編集もできます。<b>Ctrl+S</b>でJSON保存、<b>Ctrl+Z / Ctrl+Y</b>で元に戻す・やり直し。取り込む画像の<b>縮小サイズ・保存形式</b>は右上で選べます（このブラウザに記憶されます）。<b>作業用HTMLは「ファイル読込」でそのまま読み戻せます</b>（注釈前の原本も入るため、モザイクで隠した情報を社外に出さないときは<b>配布用HTML</b>を使ってください）。</div>
 
 <div class="main" id="main"></div>
 <button id="addSection">＋ セクションを追加（例：手順3-1 ログイン確認）</button>
@@ -258,10 +281,60 @@
   var toastEl = document.getElementById("toast"), toastTimer = null;
   function showToast(msg){
     if (!toastEl) return;
+    // 一括操作バーが出ているときは、その上に出す（重なると連続操作できない）
+    var bb = document.querySelector(".bulk-bar");
+    toastEl.style.bottom = (bb && !bb.classList.contains("hidden")) ? (bb.offsetHeight + 28) + "px" : "";
     toastEl.textContent = msg;
     toastEl.classList.add("show");
     clearTimeout(toastTimer);
     toastTimer = setTimeout(function(){ toastEl.classList.remove("show"); }, 4000);
+  }
+
+  // ---- 3択以上の確認（confirm は2択しか出せないため）。最後のボタンが Esc・枠外クリックと同じ「やめる」 ----
+  function chooseDialog(message, buttons, cb){
+    var prev = document.activeElement;
+    var ov = document.createElement("div"); ov.className = "choose-overlay";
+    var box = document.createElement("div"); box.className = "choose-box";
+    box.setAttribute("role", "alertdialog"); box.setAttribute("aria-modal", "true");
+    var msg = document.createElement("div"); msg.className = "choose-msg"; msg.textContent = message;
+    var row = document.createElement("div"); row.className = "choose-btns";
+    var btns = buttons.map(function(b){
+      var el = document.createElement("button"); el.type = "button"; el.textContent = b.label;
+      if (b.kind) el.className = "choose-" + b.kind;
+      el.addEventListener("click", function(){ done(b.value); });
+      row.appendChild(el);
+      return el;
+    });
+    box.appendChild(msg); box.appendChild(row); ov.appendChild(box);
+    document.body.appendChild(ov);
+    var cancelValue = buttons[buttons.length - 1].value;
+    var closed = false;
+    function done(v){
+      if (closed) return; closed = true;
+      document.removeEventListener("keydown", onKey, true);
+      ov.remove();
+      if (prev && prev.focus && document.contains(prev)) prev.focus();
+      cb(v);
+    }
+    function onKey(e){
+      e.stopImmediatePropagation();
+      if (e.key === "Escape"){ e.preventDefault(); done(cancelValue); }
+      else if (e.key === "Tab"){
+        e.preventDefault();
+        var i = btns.indexOf(document.activeElement);
+        btns[(i + (e.shiftKey ? btns.length - 1 : 1)) % btns.length].focus();
+      }
+      else if (e.key !== "Enter" && e.key !== " ") e.preventDefault();
+    }
+    document.addEventListener("keydown", onKey, true);
+    ov.addEventListener("mousedown", function(e){ if (e.target === ov) done(cancelValue); });
+    btns[0].focus();
+  }
+  // 作業用の保存ファイル名に付ける日時（例：_20261117_153045）
+  function fileStamp(d){
+    d = d || new Date();
+    function p(n){ return (n < 10 ? "0" : "") + n; }
+    return "_" + d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + "_" + p(d.getHours()) + p(d.getMinutes()) + p(d.getSeconds());
   }
 
   // ==== 取り込み設定（縮小サイズ・保存形式） ====
@@ -726,19 +799,29 @@
   });
 
   function imageCtxItems(section, img, iIdx){
-    return [
-      { label: "注釈を編集", fn: function(){ openAnnotate(section.id, img.id); } },
-      { label: (img.shapes || []).length ? "注釈をすべて消す" : "注釈なし", danger: false, fn: function(){
-          if (!(img.shapes || []).length) return;
-          snapshot(); img.shapes = []; img.flatRef = null; render();
-      } },
+    var items = [
+      { label: "注釈を編集", fn: function(){ openAnnotate(section.id, img.id); } }
+    ];
+    if ((img.shapes || []).length) items.push({ label: "注釈をすべて消す", fn: function(){
+      snapshot(); img.shapes = []; img.flatRef = null; render();
+      showToast("注釈を消しました（Ctrl+Z で戻せます）");
+    } });
+    return items.concat([
       { label: "画像を差し替え（ファイル）", fn: function(){ pickSwapImage(img.id); } },
       { label: "画像を差し替え（クリップボード）", fn: function(){ swapFromClipboard(img.id); } },
       { label: "画像を複製", fn: function(){ snapshot(); section.images.splice(iIdx+1, 0, deepCopyImage(img)); render(); } },
       { label: "画像を削除", danger: true, fn: function(){ snapshot(); section.images.splice(iIdx,1); pruneSelection(); render(); } }
-    ];
+    ]);
   }
 
+  // キャプション欄を内容の行数に合わせて伸ばす（改行入りでも全部見える）
+  // 対応ブラウザでは CSS の field-sizing:content で伸びる。非対応のときだけ JS で高さを合わせる。
+  var FIELD_SIZING = !!(window.CSS && CSS.supports && CSS.supports("field-sizing", "content"));
+  function autoGrow(ta){
+    if (FIELD_SIZING || !ta.isConnected) return;
+    ta.style.height = "auto";
+    ta.style.height = (ta.scrollHeight + 2) + "px";
+  }
   function renderImageCard(section, img, iIdx){
     var card = document.createElement("div"); card.className = "img-card";
     if (selectedIds[img.id]) card.classList.add("selected");
@@ -794,10 +877,15 @@
     var annoHint = document.createElement("span"); annoHint.className = "anno-hint";
     annoHint.textContent = nShapes ? ("注釈 " + nShapes) : "クリックで注釈";
     thumbWrap.appendChild(annoHint);
+    thumbWrap.tabIndex = 0; thumbWrap.dataset.imgId = img.id;
+    thumbWrap.title = "クリック（または Enter）で注釈エディタを開く";
     thumbWrap.addEventListener("click", function(e){
       e.stopPropagation();
       setActiveSection(section.id);
       openAnnotate(section.id, img.id);
+    });
+    thumbWrap.addEventListener("keydown", function(e){
+      if (e.key === "Enter" && !e.ctrlKey && !e.metaKey && !e.altKey){ e.preventDefault(); setActiveSection(section.id); openAnnotate(section.id, img.id); }
     });
     card.appendChild(thumbWrap);
 
@@ -837,8 +925,9 @@
     caption.className = "caption-input"; caption.rows = 1;
     caption.placeholder = "キャプション（例：変更前 / エラー画面）";
     caption.value = img.caption || "";
-    caption.addEventListener("input", function(){ img.caption = caption.value; });
+    caption.addEventListener("input", function(){ img.caption = caption.value; autoGrow(caption); });
     card.appendChild(caption);
+    requestAnimationFrame(function(){ autoGrow(caption); });
 
     var controls = document.createElement("div"); controls.className = "card-controls";
 
@@ -1074,6 +1163,8 @@
       "#anxModal .anx-sep{width:1px;height:20px;background:#363c47;margin:0 3px;}",
       "#anxModal .anx-spacer{flex:1;}",
       "#anxModal .anx-label{font-size:11px;color:#aeb6c2;}",
+      "#anxModal .anx-saved{font-size:11px;color:#7fd3a0;min-width:0;white-space:nowrap;opacity:0;transition:opacity .3s;}",
+      "#anxModal .anx-saved.show{opacity:1;}",
       "#anxModal .anx-pos{font-size:12px;color:#aeb6c2;min-width:52px;text-align:center;font-family:Consolas,Menlo,monospace;}",
       "#anxModal .anx-tip{font-size:11px;color:#7c8698;}",
       "#anxModal .anx-toolbar .anx-swatch{width:22px;height:22px;border-radius:50%;border:2px solid transparent;padding:0;cursor:pointer;}",
@@ -1084,7 +1175,12 @@
       "#anxCropBar{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:665;display:none;align-items:center;gap:10px;background:#12151a;border:1px solid #363c47;border-radius:8px;padding:8px 12px;color:#e8e6e2;font-size:12.5px;box-shadow:0 6px 20px rgba(0,0,0,.5);}",
       "#anxCropBar.show{display:flex;}",
       "#anxCropBar button{background:#232833;color:#e8e6e2;border:1px solid #363c47;padding:6px 12px;border-radius:5px;font-size:12.5px;cursor:pointer;font-family:inherit;}",
-      "#anxCropBar button.primary{background:var(--anx-accent,#3a6ea5);border-color:var(--anx-accent,#3a6ea5);color:var(--anx-accent-ink,#fff);}"
+      "#anxCropBar button.primary{background:var(--anx-accent,#3a6ea5);border-color:var(--anx-accent,#3a6ea5);color:var(--anx-accent-ink,#fff);}",
+      "#anxDiscardBar{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:666;display:none;align-items:center;gap:10px;background:#12151a;border:1px solid #c9483b;border-radius:8px;padding:8px 12px;color:#e8e6e2;font-size:12.5px;box-shadow:0 6px 20px rgba(0,0,0,.5);}",
+      "#anxDiscardBar.show{display:flex;}",
+      "#anxDiscardBar button{background:#232833;color:#e8e6e2;border:1px solid #363c47;padding:6px 12px;border-radius:5px;font-size:12.5px;cursor:pointer;font-family:inherit;}",
+      "#anxDiscardBar button.anx-save{background:#2f8f5b;border-color:#2f8f5b;color:#fff;}",
+      "#anxDiscardBar button.anx-danger{background:#B23A2E;border-color:#B23A2E;color:#fff;}"
     ].join("\n");
     var HTML = [
       '<div class="anx-toolbar">',
@@ -1121,16 +1217,18 @@
       '  <button data-act="clear" title="この画像の書き込みをすべて消す（元に戻せます）">全消去</button>',
       '  <span class="anx-sep"></span>',
       '  <button data-act="prev" title="この画像を保存して前の画像へ（←キー）">‹ 前へ</button>',
-      '  <span class="anx-pos"></span>',
+      '  <span class="anx-pos"></span><span class="anx-saved" aria-live="polite"></span>',
       '  <button data-act="next" title="この画像を保存して次の画像へ（→キー）">次へ ›</button>',
       '  <span class="anx-tip">←→キーでも移動（自動保存）</span>',
       '  <span class="anx-spacer"></span>',
-      '  <button data-act="cancel" title="この画像の未保存の変更を破棄して閉じます（移動時に保存済みの分は残ります）">キャンセル (Esc)</button>',
+      '  <button data-act="cancel" title="閉じます。未保存の変更があれば、保存するか破棄するかを確認します（←→で移動したときに保存済みの分は残ります）">キャンセル (Esc)</button>',
       '  <button data-act="save" class="anx-save">保存して閉じる</button>',
       '</div>',
       '<div class="anx-canvas-wrap"><canvas id="anxCanvas"></canvas></div>',
       '<div id="anxCropBar"><span class="anx-crop-info"></span><span style="color:#7c8698;font-size:11px;">範囲はドラッグし直せます</span>',
-      '  <button class="primary" data-act="crop-apply">切り抜く (Enter)</button><button data-act="crop-cancel">やめる (Esc)</button></div>'
+      '  <button class="primary" data-act="crop-apply">切り抜く (Enter)</button><button data-act="crop-cancel">やめる (Esc)</button></div>',
+      '<div id="anxDiscardBar" role="alertdialog" aria-label="未保存の変更"><span>この画像に未保存の変更があります</span>',
+      '  <button class="anx-save" data-act="save">保存して閉じる</button><button class="anx-danger" data-act="discard">破棄して閉じる</button><button data-act="keep">編集を続ける (Esc)</button></div>'
     ].join("\n");
 
     var style = document.createElement("style");
@@ -1138,6 +1236,8 @@
     document.head.appendChild(style);
     var modal = document.createElement("div");
     modal.id = "anxModal";
+    modal.setAttribute("role", "dialog"); modal.setAttribute("aria-modal", "true"); modal.setAttribute("aria-label", "注釈エディタ");
+    modal.tabIndex = -1;
     modal.innerHTML = HTML;
     document.body.appendChild(modal);
     // テキスト入力欄。no-undo を付けて、呼び出し側の「入力欄にフォーカスしたら Undo 履歴を取る」処理から外す
@@ -1149,6 +1249,8 @@
     var canvas = modal.querySelector("#anxCanvas");
     var ctx = canvas.getContext("2d");
     var cropBar = modal.querySelector("#anxCropBar");
+    var discardBar = modal.querySelector("#anxDiscardBar");
+    modal.querySelector(".anx-canvas-wrap").addEventListener("scroll", function(){ onViewportChange(); });
     function q(sel){ return modal.querySelector(sel); }
     function qa(sel){ return Array.prototype.slice.call(modal.querySelectorAll(sel)); }
 
@@ -1186,6 +1288,7 @@
       finishTextEdit(true); setCropRect(null);
       var e = st.redo.pop();
       st.hist.push(typeof e === "object" ? cropEntry() : JSON.stringify(st.shapes));
+      if (st.hist.length > HIST_MAX) st.hist.shift();
       restoreEntry(e);
     }
     function updateHistUI(){
@@ -1200,14 +1303,17 @@
       var image = new Image();
       image.onerror = function(){ toast("この画像を開けませんでした"); };
       image.onload = function(){
-        st.key = key;
+        st.key = key; st.busy = false;
         setBase(image, d.src, false);
         st.shapes = normalizeShapes(d.shapes);
         st.loadedJson = JSON.stringify(st.shapes);
         st.hist = []; st.redo = [];
         st.sel = -1; st.drawing = false;
         setCropRect(null);
+        showDiscard(false);
+        if (!isOpen()){ st.returnFocus = document.activeElement; setBackgroundInert(true); }
         modal.classList.add("open");
+        modal.focus();
         redraw();
         updateNav();
       };
@@ -1227,18 +1333,53 @@
       redraw();
       return true;
     }
+    // 背面の入力欄へ Tab で移ったり、文字が入ったりしないよう、開いている間は背面を操作不可にする
+    var inerted = [];
+    function setBackgroundInert(on){
+      if (on){
+        Array.prototype.forEach.call(document.body.children, function(el){
+          if (el === modal || el === textInput || el.id === "toast" || el.inert) return;
+          el.inert = true; inerted.push(el);
+        });
+      } else {
+        inerted.forEach(function(el){ el.inert = false; });
+        inerted = [];
+      }
+    }
+    function isDirty(){
+      if (!st.base) return false;
+      if (st.textEdit) finishTextEdit(true);
+      return JSON.stringify(st.shapes) !== st.loadedJson || st.originalChanged;
+    }
+    function showDiscard(on){ discardBar.classList.toggle("show", !!on); if (on) q('#anxDiscardBar [data-act="keep"]').focus(); }
+    // キャンセル・Esc。未保存の変更があれば、いきなり捨てずに確認する。
+    function requestClose(){
+      if (st.cropRect) setCropRect(null);
+      if (isDirty()) showDiscard(true);
+      else close();
+    }
     function close(){
+      var key = st.key;
       finishTextEdit(false);
       setCropRect(null);
+      showDiscard(false);
       modal.classList.remove("open");
+      setBackgroundInert(false);
       st.drawing = false; st.sel = -1; st.base = null;
-      if (opts.onClose) opts.onClose();
+      var back = st.returnFocus; st.returnFocus = null;
+      if (opts.onClose) opts.onClose(key, back);
+      else if (back && back.focus && document.contains(back)) back.focus();
     }
     function nav(dir){
       var next = opts.nav ? opts.nav(st.key, dir) : null;
       if (next == null) return;
-      commit();
+      var saved = commit();
       open(next);
+      var el = q(".anx-saved");
+      el.textContent = saved ? "前の画像を保存しました" : "";
+      el.classList.toggle("show", saved);
+      clearTimeout(st.savedTimer);
+      if (saved) st.savedTimer = setTimeout(function(){ el.classList.remove("show"); }, 2000);
     }
     function updateNav(){
       q(".anx-pos").textContent = opts.pos ? opts.pos(st.key) : "";
@@ -1389,15 +1530,18 @@
       }).filter(function(s){ return s.type !== "mosaic" || (s.w >= 2 && s.h >= 2); });
       var entry = cropEntry();
       var im = new Image();
+      var key = st.key;
+      st.busy = true;   // 画像の読み込みを待つ間に描いた図形が、切り抜き後に消えないよう入力を止める
       im.onload = function(){
-        if (!isOpen()) return;
+        st.busy = false;
+        if (!isOpen() || st.key !== key) return;
         pushHist(entry);
         setBase(im, url, true);
         st.shapes = shapes; st.sel = -1;
         redraw();
         toast("切り抜きました（Ctrl+Z で戻せます。「保存」で確定）");
       };
-      im.onerror = function(){ toast("切り抜きに失敗しました"); redraw(); };
+      im.onerror = function(){ st.busy = false; toast("切り抜きに失敗しました"); redraw(); };
       im.src = url;
     }
 
@@ -1408,13 +1552,9 @@
       else s = { type:"text", x:x, y:y, text:"", color:st.color, size:baseTextSize() * st.textScale, box:st.textBox };
       st.textEdit = { idx:idx, shape:s };
       st.sel = -1;
-      var rect = canvas.getBoundingClientRect();
-      var scale = rect.width / canvas.width;
       var ta = textInput;
       ta.value = s.text;
-      ta.style.left = (rect.left + s.x * scale - 4) + "px";
-      ta.style.top = (rect.top + (s.y - s.size * 1.0) * scale - 2) + "px";
-      ta.style.fontSize = (s.size * scale) + "px";
+      placeTextInput();
       ta.style.color = (s.box && s.color === "#ffd60a") ? "#222" : s.color;
       ta.style.background = s.box ? "rgba(255,255,255,.93)" : "rgba(0,0,0,.45)";
       ta.style.display = "block";
@@ -1424,6 +1564,19 @@
       focusEnd();
       setTimeout(focusEnd, 0);
     }
+    // 入力欄は画面に固定（position:fixed）なので、ウィンドウの大きさや画像のスクロールが変わったら置き直す
+    function placeTextInput(){
+      if (!st.textEdit) return;
+      var s = st.textEdit.shape;
+      var rect = canvas.getBoundingClientRect();
+      var scale = rect.width / canvas.width;
+      var ta = textInput;
+      ta.style.left = (rect.left + s.x * scale - 4) + "px";
+      ta.style.top = (rect.top + (s.y - s.size * 1.0) * scale - 2) + "px";
+      ta.style.fontSize = (s.size * scale) + "px";
+    }
+    function onViewportChange(){ if (st.textEdit){ placeTextInput(); fitTextInput(); } }
+    window.addEventListener("resize", onViewportChange);
     function fitTextInput(){
       var ta = textInput;
       ctx.save(); ctx.font = "bold " + ta.style.fontSize + " sans-serif";
@@ -1467,6 +1620,7 @@
       return { x:Math.min(st.startX, x), y:Math.min(st.startY, y), w:Math.abs(x - st.startX), h:Math.abs(y - st.startY) };
     }
     canvas.addEventListener("pointerdown", function(e){
+      if (st.busy) return;
       if (st.textEdit){ finishTextEdit(true); return; }   // 入力中の外側クリックは確定のみ
       var p = coords(e), x = p.x, y = p.y;
       var tool = st.tool;
@@ -1606,7 +1760,9 @@
       clear: function(){ if (!st.shapes.length) return; finishTextEdit(false); commitHist(); st.shapes = []; st.sel = -1; redraw(); },
       prev: function(){ nav(-1); },
       next: function(){ nav(1); },
-      cancel: close,
+      cancel: requestClose,
+      discard: close,
+      keep: function(){ showDiscard(false); modal.focus(); },
       save: function(){ var changed = commit(); close(); if (changed) toast("注釈を保存しました"); },
       "crop-apply": applyCropSelection,
       "crop-cancel": cancelCropSelection
@@ -1627,12 +1783,19 @@
       e.stopPropagation();
       var k = (e.key || "").toLowerCase();
       var mod = e.ctrlKey || e.metaKey;
+      if (discardBar.classList.contains("show")){
+        // 確認中はボタン操作（Tab / Enter）だけ通し、Esc で編集へ戻る
+        if (e.key === "Escape"){ e.preventDefault(); showDiscard(false); modal.focus(); }
+        else if (e.key !== "Tab" && e.key !== "Enter" && e.key !== " ") e.preventDefault();
+        return;
+      }
+      if (st.busy){ e.preventDefault(); return; }
       if (st.cropRect && e.key === "Enter"){ e.preventDefault(); applyCropSelection(); return; }
       if (e.key === "Escape"){
         e.preventDefault();
         if (st.cropRect) cancelCropSelection();
         else if (st.sel >= 0){ st.sel = -1; redraw(); }
-        else close();
+        else requestClose();
       }
       else if (mod && (k === "y" || (e.shiftKey && k === "z"))){ redo(); e.preventDefault(); }
       else if (mod && k === "z"){ undo(); e.preventDefault(); }
@@ -1694,7 +1857,11 @@
       var e = findImageEntry(id);
       return e ? (e.idx + 1) + " / " + e.sec.images.length : "";
     },
-    onClose: function(){ render(); }
+    onClose: function(id){
+      render();
+      var t = id && document.querySelector('.thumb-wrap[data-img-id="' + String(id).replace(/["\\]/g, "") + '"]');
+      if (t){ t.focus({ preventScroll:true }); t.scrollIntoView({ block:"nearest" }); }
+    }
   });
   function openAnnotate(secId, imgId){ Annotator.open(imgId); }
 
@@ -1710,9 +1877,20 @@
     targets.forEach(function(im){
       Annotator.flatten(getImage(im.ref), im.shapes, function(d){
         if (d) im.flatRef = putImage(d);
-        if (--pending === 0 && done) done();
+        if (--pending === 0){
+          markDirty();   // 焼き込み結果も自動保存に残す（残さないと復元後に注釈が外れて見える）
+          if (done) done();
+        }
       });
     });
+  }
+  // 図形があるのに焼き込み画像が無いもの（焼き込み失敗など）
+  function unflattenedImages(){
+    var out = [];
+    project.sections.forEach(function(s, si){
+      s.images.forEach(function(im, ii){ if ((im.shapes || []).length && !im.flatRef) out.push((si + 1) + "-" + (ii + 1)); });
+    });
+    return out;
   }
 
   // ---- 画像だけ差し替え（キャプション・表示幅・並び位置は保持。注釈は引き継ぐか選べる） ----
@@ -1756,22 +1934,31 @@
   function replaceImage(imgId, dataUrl){
     var e = findImageEntry(imgId);
     if (!e) return;
+    if (!(e.img.shapes && e.img.shapes.length)){ applyReplace(imgId, dataUrl, false); return; }
+    chooseDialog("この画像には注釈があります。新しい画像に注釈を引き継ぎますか？", [
+      { label: "引き継ぐ（同じ位置に重ねる）", value: "keep", kind: "primary" },
+      { label: "注釈を消して差し替える", value: "drop", kind: "danger" },
+      { label: "やめる", value: null }
+    ], function(v){ if (v) applyReplace(imgId, dataUrl, v === "keep"); });
+  }
+  function applyReplace(imgId, dataUrl, keep){
+    var e = findImageEntry(imgId);
+    if (!e) return;
     var img = e.img;
-    var keep = (img.shapes && img.shapes.length)
-      ? confirm("この画像には注釈があります。新しい画像に注釈を引き継ぎますか？\n\nOK：引き継ぐ（同じ位置に重ねる）\nキャンセル：注釈を消して差し替える")
-      : false;
     snapshot();
     img.ref = putImage(dataUrl);
+    img.flatRef = null;   // 旧画像の焼き込みを残さない（焼き直すまでは配布用書き出しが待つ）
     if (!keep){
       img.shapes = []; img.flatRef = null;
       render();
-      showToast("画像を差し替えました（キャプションは保持）");
+      showToast("画像を差し替えました（キャプションは保持 / Ctrl+Z で戻せます）");
       return;
     }
     Annotator.flatten(dataUrl, img.shapes, function(d){
       img.flatRef = d ? putImage(d) : null;
+      markDirty();
       render();
-      showToast("画像を差し替えました（キャプション・注釈は保持）");
+      showToast("画像を差し替えました（キャプション・注釈は保持 / Ctrl+Z で戻せます）");
     });
   }
 
@@ -1834,35 +2021,54 @@
       var rows = parseDelimited(text);
       if (!rows.length){ alert("CSVが空です。"); return; }
       var head = rows[0].map(function(v){ return v.trim(); });
-      var iSec = head.indexOf("セクションNo"), iImg = head.indexOf("画像No"), iCap = head.indexOf("キャプション");
+      var iSec = head.indexOf("セクションNo"), iName = head.indexOf("セクション名"), iImg = head.indexOf("画像No"), iCap = head.indexOf("キャプション");
       if (iSec < 0 || iImg < 0 || iCap < 0){
         alert("「セクションNo」「画像No」「キャプション」の列が見つかりません。\n「キャプション書出」で作ったCSVを編集して読み込んでください。");
         return;
       }
-      var missing = [], changes = [];
+      // 同じ番号の行が複数あれば最後の行を採用する
+      var byKey = {}, order = [], missing = [], short = 0, nameDiff = [];
       rows.slice(1).forEach(function(r){
+        if (r.length <= iCap){ short++; return; }   // 列が欠けた行で既存のキャプションを消さない
+        var key = String(parseInt(r[iSec], 10)) + "-" + String(parseInt(r[iImg], 10));
+        if (!(key in byKey)) order.push(key);
+        byKey[key] = r;
+      });
+      var changes = [];
+      order.forEach(function(key){
+        var r = byKey[key];
         var sec = project.sections[parseInt(r[iSec], 10) - 1];
         var im = sec && sec.images[parseInt(r[iImg], 10) - 1];
         if (!im){ missing.push(r[iSec] + "-" + r[iImg]); return; }
-        var v = (r[iCap] || "").replace(/\r\n?/g, "\n");
+        if (iName >= 0 && r.length > iName && r[iName].trim() !== (sec.name || "").trim()) nameDiff.push(key);
+        var v = r[iCap].replace(/\r\n?/g, "\n");
         if ((im.caption || "") !== v) changes.push([im, v]);
       });
+      var notes = [];
+      if (missing.length) notes.push("該当する画像が無い行：" + missing.length + " 件（" + missing.slice(0, 20).join("、") + (missing.length > 20 ? " …" : "") + "）");
+      if (short) notes.push("キャプション列が無い行：" + short + " 件（読み飛ばしました）");
       if (!changes.length){
-        showToast(missing.length ? "変更はありません（該当画像なし " + missing.length + " 件）" : "変更はありません");
+        if (notes.length) alert("変更はありません。\n\n" + notes.join("\n"));
+        else showToast("変更はありません");
         return;
       }
+      // 書き出した後に並べ替えると、番号が別の画像を指す。セクション名で気づけるようにする。
+      if (nameDiff.length && !confirm("セクション名が現在と違う行が " + nameDiff.length + " 件あります（" + nameDiff.slice(0, 10).join("、") + (nameDiff.length > 10 ? " …" : "") + "）。\n書き出した後にセクションや画像を並べ替えた場合、別の画像のキャプションを上書きします。\n\nこのまま " + changes.length + " 件を上書きしますか？")) return;
       snapshot();
       changes.forEach(function(c){ c[0].caption = c[1]; });
       render();
-      var msg = "キャプションを " + changes.length + " 件更新しました（Ctrl+Z で戻せます）";
-      if (missing.length) msg += " ／ 該当画像なし " + missing.length + " 件：" + missing.slice(0, 5).join("、") + (missing.length > 5 ? " …" : "");
-      showToast(msg);
+      showToast("キャプションを " + changes.length + " 件更新しました（Ctrl+Z で戻せます）");
+      if (notes.length) alert("キャプションを " + changes.length + " 件更新しました。\n\n" + notes.join("\n"));
     }).catch(function(){ alert("ファイルを読み込めませんでした。"); });
   }
   // ==== CSV（Excel で開いて編集→読み戻す用） ====
   // 書き出しは BOM 付き UTF-8。読み込みは RFC 4180（区切りはカンマかタブを自動判定、セル内の改行・"" に対応）。
+  // = + - @ で始まるセルは Excel が数式として扱い、値が変わったり #NAME? になる。
+  // 先頭に ' を付けて文字列として渡し、読み込み時に外す（Markdown の「- 箇条書き」もこれに当たる）。
+  var CSV_FORMULA_RE = /^[=+\-@\t\r]/;
   function csvCell(v){
     var t = String(v == null ? "" : v);
+    if (typeof v === "string" && CSV_FORMULA_RE.test(t)) t = "'" + t;
     return /[",\r\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
   }
   function buildCsv(rows){
@@ -1886,11 +2092,16 @@
       } else cell += ch;
     }
     if (cell !== "" || row.length){ row.push(cell); rows.push(row); }
-    return rows.filter(function(r){ return r.some(function(v){ return v !== ""; }); });
+    return rows.filter(function(r){ return r.some(function(v){ return v !== ""; }); })
+      .map(function(r){ return r.map(function(v){ return (v.charAt(0) === "'" && CSV_FORMULA_RE.test(v.slice(1))) ? v.slice(1) : v; }); });
   }
-  // Excel で上書き保存すると Shift_JIS になることがあるため、UTF-8 として壊れていれば Shift_JIS で読み直す
+  // Excel で上書き保存すると Shift_JIS になることがあるため、UTF-8 として壊れていれば Shift_JIS で読み直す。
+  // Excel の「Unicode テキスト」は UTF-16 なので、先頭の BOM で見分ける。
   function readTextFile(file){
     return file.arrayBuffer().then(function(buf){
+      var b = new Uint8Array(buf, 0, Math.min(2, buf.byteLength));
+      if (b[0] === 0xFF && b[1] === 0xFE) return new TextDecoder("utf-16le").decode(buf);
+      if (b[0] === 0xFE && b[1] === 0xFF) return new TextDecoder("utf-16be").decode(buf);
       try{ return new TextDecoder("utf-8", { fatal:true }).decode(buf); }
       catch(e){ return new TextDecoder("shift_jis").decode(buf); }
     });
@@ -1929,6 +2140,11 @@
     var sep = document.createElement("span"); sep.className = "bulk-sep";
     bulkBar.appendChild(sep);
     var dst = document.createElement("select"); dst.className = "no-undo"; dst.title = "移動先のセクション";
+    // 初期値は、選択した画像を含まない最初のセクション（移動元と同じだと「へ移動」しても何も起きない）
+    if (!getSection(bulkMoveDstId) || project.sections.some(function(s){ return s.id === bulkMoveDstId && s.images.some(function(im){ return selectedIds[im.id]; }); })){
+      var free = project.sections.filter(function(s){ return !s.images.some(function(im){ return selectedIds[im.id]; }); })[0];
+      bulkMoveDstId = free ? free.id : null;
+    }
     project.sections.forEach(function(s, i){
       var o = document.createElement("option"); o.value = s.id;
       o.textContent = (i + 1) + ". " + (s.name || "");
@@ -2002,6 +2218,7 @@
     p.sections.forEach(function(s){
       (s.images || []).forEach(function(im){
         // src = 見た目どおり（＝注釈を焼き込んだもの）。読み込み側が古くても正しく表示される。
+        if (forDistribution && (im.shapes || []).length && !im.flatRef) throw new Error("unflattened");
         im.src = getImage(im.flatRef || im.ref);
         // 注釈を付けた画像だけ、あとで書き直せるように原本も添える。
         if ((im.shapes || []).length && !forDistribution) im.srcOriginal = getImage(im.ref);
@@ -2015,7 +2232,7 @@
   function doSaveJson(){
     var blob = new Blob([JSON.stringify(materializeProject(), null, 2)], {type:"application/json"});
     var url = URL.createObjectURL(blob);
-    var a = document.createElement("a"); a.href = url; a.download = (project.title || "evidence") + ".json";
+    var a = document.createElement("a"); a.href = url; a.download = safeFileName(project.title, "evidence") + fileStamp() + ".json";
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(url);
     dirty = false;
@@ -2268,14 +2485,30 @@
   $("#btnExport").addEventListener("click", function(){
     var html = buildExportHtml(false);
     var blob = new Blob([html], {type:"text/html"});
-    downloadBlob(blob, (project.title || "evidence") + ".html");
-    showToast("HTMLを書き出しました（" + (blob.size/1048576).toFixed(1) + " MB / このHTMLはそのまま読み戻せます）");
+    downloadBlob(blob, safeFileName(project.title, "evidence") + fileStamp() + ".html");
+    showToast("作業用HTMLを書き出しました（" + (blob.size/1048576).toFixed(1) + " MB / 注釈前の原本入り。社外へは「配布用HTML」を）");
   });
+  // 焼き込みが済んでいない画像があると原本が出てしまうため、全部焼き終わってから書き出す
   $("#btnExportDist").addEventListener("click", function(){
-    var html = buildExportHtml(true);
-    var blob = new Blob([html], {type:"text/html"});
-    downloadBlob(blob, (project.title || "evidence") + "_配布用.html");
-    showToast("配布用HTMLを書き出しました（" + (blob.size/1048576).toFixed(1) + " MB / 注釈前の原本は含みません）");
+    reflattenAll(function(){
+      var ng = unflattenedImages();
+      if (ng.length){
+        alert("注釈を画像に焼き込めなかった画像があるため、配布用HTMLを書き出せません（" + ng.slice(0, 10).join("、") + (ng.length > 10 ? " …" : "") + "）。\n該当画像の注釈を開き直して保存するか、画像を差し替えてください。");
+        render();
+        return;
+      }
+      var html = buildExportHtml(true);
+      var blob = new Blob([html], {type:"text/html"});
+      downloadBlob(blob, safeFileName(project.title, "evidence") + "_配布用.html");
+      showToast("配布用HTMLを書き出しました（" + (blob.size/1048576).toFixed(1) + " MB / 注釈前の原本は含みません）");
+    });
+  });
+
+  // CSV メニュー：項目を選んだら閉じる。外側クリック・Esc でも閉じる。
+  Array.prototype.forEach.call(document.querySelectorAll(".tb-menu"), function(m){
+    m.addEventListener("click", function(e){ if (e.target.closest(".tb-menu-list") && !e.target.closest("input")) setTimeout(function(){ m.open = false; }, 0); });
+    document.addEventListener("click", function(e){ if (m.open && !m.contains(e.target)) m.open = false; });
+    m.addEventListener("keydown", function(e){ if (e.key === "Escape" && m.open){ m.open = false; m.querySelector("summary").focus(); e.stopPropagation(); } });
   });
   $("#btnCapExport").addEventListener("click", exportCaptions);
   $("#capImportInput").addEventListener("change", function(e){
@@ -2336,6 +2569,20 @@
     autosaveTimer = setTimeout(runAutosave, 1500);
   }
 
+  // imageStore は Undo で戻せるよう削除しないため、作業が長いと膨らむ。自動保存には、
+  // 今の内容と取り消し／やり直し履歴から参照されている画像だけを書く（削除済み・切り抜き前の画像を残さない）。
+  function referencedImages(){
+    var out = {}, re = /"(im[0-9a-z]{6,})"/g;
+    function scan(t){
+      if (typeof t !== "string") t = JSON.stringify(t);
+      var m; re.lastIndex = 0;
+      while ((m = re.exec(t))) if (imageStore[m[1]]) out[m[1]] = imageStore[m[1]];
+    }
+    scan(JSON.stringify(project));
+    undoStack.forEach(scan); redoStack.forEach(scan);
+    if (pendingFieldSnapshot) scan(pendingFieldSnapshot);
+    return out;
+  }
   function runAutosave(){
     autosaveTimer = null;
     withDb(function(db){
@@ -2343,7 +2590,7 @@
       try{
         var tx = db.transaction(DB_STORE, "readwrite");
         // Structured clone, so no JSON.stringify of the base64 payloads here.
-        tx.objectStore(DB_STORE).put({ savedAt: Date.now(), project: project, images: imageStore }, DB_KEY);
+        tx.objectStore(DB_STORE).put({ savedAt: Date.now(), project: project, images: referencedImages() }, DB_KEY);
         tx.oncomplete = function(){ setStatus("自動保存 " + hhmm(new Date())); };
         tx.onerror = function(){ setStatus("自動保存に失敗しました"); };
         tx.onabort  = function(){ setStatus("自動保存に失敗しました"); };
@@ -2370,6 +2617,7 @@
     undoStack.length = 0; redoStack.length = 0; pendingFieldSnapshot = null;
     dirty = true;
     render();
+    reflattenAll(render);
     setStatus("前回のデータを復元しました");
   }
 

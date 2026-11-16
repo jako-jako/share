@@ -229,7 +229,7 @@
       </ul>
       <h3>保存・印刷</h3>
       <ul>
-        <li>「作業用保存」— 編集を続けられる状態のままHTMLとして保存し、後で「作業用HTMLを読み込む」で読み直せます</li>
+        <li>「作業用保存」— 編集を続けられる状態のままHTMLとして保存し、後で「作業用HTMLを読み込む」で読み直せます（ファイル名に保存日時が秒まで付きます）</li>
         <li>「配布用保存」— 編集用のボタン類を含まない、閲覧・印刷用のHTMLとして保存します</li>
         <li>「印刷 / PDF化」— 編集用のUIを除いた状態で印刷プレビューを開きます</li>
         <li>「コメント書出」— 全画像のコメントを CSV（ケースNo・ケース名・画像No・図番号・コメント）で保存。Excel で編集できます</li>
@@ -1695,7 +1695,10 @@ function exportHtml(withData){
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = (meta.proj || 'test_evidence').replace(/[\\/:*?"<>|]/g,'_') + (withData ? '' : '_配布用') + '.html';
+  // 作業用は上書きで前の版を失わないよう、保存日時（秒まで）を付ける（例：_20261117_153045）
+  const d = new Date(), p2 = n => String(n).padStart(2,'0');
+  const stamp = `_${d.getFullYear()}${p2(d.getMonth()+1)}${p2(d.getDate())}_${p2(d.getHours())}${p2(d.getMinutes())}${p2(d.getSeconds())}`;
+  a.download = (meta.proj || 'test_evidence').replace(/[\\/:*?"<>|]/g,'_') + (withData ? stamp : '_配布用') + '.html';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
