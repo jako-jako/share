@@ -32,7 +32,16 @@
   .tb-menu > summary::-webkit-details-marker{display:none;}
   .tb-menu[open] > summary{background:rgba(255,255,255,.18);}
   .tb-menu-list{position:absolute;right:0;top:calc(100% + 4px);z-index:300;display:flex;flex-direction:column;gap:4px;min-width:200px;padding:6px;border-radius:6px;background:var(--ink);border:1px solid rgba(255,255,255,.25);box-shadow:0 6px 20px rgba(0,0,0,.35);}
-  .tb-menu-list button, .tb-menu-list .btnfile{text-align:left;width:100%;box-sizing:border-box;}
+  .tb-menu-list button, .tb-menu-list .btnfile{text-align:left;width:100%;box-sizing:border-box;border-color:transparent;background:transparent;font-weight:500;}
+  .tb-menu-list button:hover, .tb-menu-list .btnfile:hover{background:rgba(255,255,255,.12);}
+  .tb-menu-sep{height:1px;background:rgba(255,255,255,.2);margin:3px 2px;}
+  .tb-menu > summary.tb-icon{padding:6px 10px;font-size:15px;line-height:1.2;}
+  .tb-settings{min-width:260px;padding:10px 12px;gap:8px;}
+  .tb-settings .sel-label{justify-content:space-between;font-size:12.5px;}
+  .tb-settings .sel-label select{font-size:12px;padding:5px 6px;}
+  .tb-note{font-size:11px;color:rgba(255,255,255,.6);}
+  /* 画面が狭いときはツール名を記号だけにして、上部バーを1段に収める */
+  @media (max-width:1499px){ .topbar .brand-text{display:none;} }
   .help-btn{width:30px;height:30px;padding:0;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:14px;}
   .help-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:700;padding:20px;}
   .help-overlay.hidden{display:none;}
@@ -148,38 +157,46 @@
 </head>
 <body>
 <div class="topbar">
-  <div class="brand"><span class="brand-mark">◫</span>証跡ギャラリー</div>
+  <div class="brand" title="証跡ギャラリー"><span class="brand-mark">◫</span><span class="brand-text">証跡ギャラリー</span></div>
   <input id="projectTitle" class="title-input" value="作業証跡" placeholder="証跡タイトル">
   <span id="stats" class="stats"></span>
   <span id="autosaveStatus" class="autosave-status"></span>
   <div class="actions">
-    <button id="helpBtn" class="help-btn" type="button" title="使い方" aria-label="使い方">?</button>
-    <label class="sel-label" title="取り込む画像の縮小サイズ。ブラウザに記憶されます">縮小
-      <select id="shrinkSel">
-        <option value="2000">長辺2000px</option>
-        <option value="1600" selected>長辺1600px</option>
-        <option value="1200">長辺1200px</option>
-        <option value="800">長辺800px</option>
-        <option value="0">なし（原寸）</option>
-      </select>
-    </label>
-    <label class="sel-label" title="保存形式。画面キャプチャの文字を優先するならPNG、サイズを優先するならJPEG">形式
-      <select id="fmtSel">
-        <option value="png" selected>PNG（文字くっきり）</option>
-        <option value="jpeg92">JPEG 高画質</option>
-        <option value="jpeg85">JPEG 標準（軽い）</option>
-      </select>
-    </label>
-    <button id="btnSaveJson" title="作業データをJSONで保存します（ファイル名に保存日時が付きます）">JSON保存</button>
-    <label class="btnfile" title="JSONファイル、またはこのツールで書き出したHTMLを読み込みます">ファイル読込<input type="file" id="fileLoadJson" accept=".json,.html,.htm,application/json,text/html" hidden></label>
-    <details class="tb-menu" id="csvMenu">
-      <summary title="キャプションをCSVで書き出し・読み込み（Excelで一括編集）">CSV ▾</summary>
+    <details class="tb-menu" id="fileMenu">
+      <summary title="読み込み・JSON保存・CSV・プレビュー">ファイル ▾</summary>
       <div class="tb-menu-list">
-        <button id="btnCapExport" title="全画像のキャプションをCSVで書き出します。Excelで編集して読み込めます">キャプション書出</button>
-        <label class="btnfile" title="「キャプション書出」したCSVを読み込み、セクションNo・画像Noが一致する画像のキャプションを上書きします">キャプション読込<input type="file" id="capImportInput" accept=".csv,.tsv,.txt,text/csv,text/plain" hidden></label>
+        <label class="btnfile" title="JSONファイル、またはこのツールで書き出したHTMLを読み込みます">ファイル読込<input type="file" id="fileLoadJson" accept=".json,.html,.htm,application/json,text/html" hidden></label>
+        <button id="btnSaveJson" title="作業データをJSONで保存します（ファイル名に保存日時が付きます）">JSON保存</button>
+        <div class="tb-menu-sep"></div>
+        <button id="btnCapExport" title="全画像のキャプションをCSVで書き出します。Excelで編集して読み込めます">キャプション書出（CSV）</button>
+        <label class="btnfile" title="「キャプション書出」したCSVを読み込み、セクションNo・画像Noが一致する画像のキャプションを上書きします">キャプション読込（CSV）<input type="file" id="capImportInput" accept=".csv,.tsv,.txt,text/csv,text/plain" hidden></label>
+        <div class="tb-menu-sep"></div>
+        <button id="btnPreview">プレビュー（印刷確認）</button>
       </div>
     </details>
-    <button id="btnPreview">プレビュー（印刷確認）</button>
+    <details class="tb-menu" id="settingsMenu" data-keep-open>
+      <summary class="tb-icon" title="設定（取り込む画像の縮小サイズ・保存形式）" aria-label="設定">⚙</summary>
+      <div class="tb-menu-list tb-settings">
+        <label class="sel-label" title="取り込む画像の縮小サイズ。ブラウザに記憶されます">縮小
+          <select id="shrinkSel">
+            <option value="2000">長辺2000px</option>
+            <option value="1600" selected>長辺1600px</option>
+            <option value="1200">長辺1200px</option>
+            <option value="800">長辺800px</option>
+            <option value="0">なし（原寸）</option>
+          </select>
+        </label>
+        <label class="sel-label" title="保存形式。画面キャプチャの文字を優先するならPNG、サイズを優先するならJPEG">形式
+          <select id="fmtSel">
+            <option value="png" selected>PNG（文字くっきり）</option>
+            <option value="jpeg92">JPEG 高画質</option>
+            <option value="jpeg85">JPEG 標準（軽い）</option>
+          </select>
+        </label>
+        <div class="tb-note">設定はこのブラウザに記憶されます</div>
+      </div>
+    </details>
+    <button id="helpBtn" class="help-btn" type="button" title="使い方" aria-label="使い方">?</button>
     <button id="btnExport" title="再編集できるHTML（注釈前の原本も含む）。「ファイル読込」でそのまま読み戻せます。ファイル名に保存日時が付きます">作業用HTML（原本入り）</button>
     <button id="btnExportDist" class="primary" title="注釈前の原本・再編集用の図形を含まないHTML。モザイクで隠した内容が残らないので、社外へ渡すときはこちら">配布用HTML</button>
   </div>
@@ -224,11 +241,11 @@
       </ul>
       <h3>ファイル操作</h3>
       <ul>
-        <li>「JSON保存」「ファイル読込」— 作業データをファイルとして保存/読込（このツールが書き出したHTMLも読込可）。保存ファイル名には日時（秒まで）が付きます</li>
-        <li>「プレビュー（印刷確認）」— 書き出し結果を別画面で確認</li>
+        <li>「ファイル ▾」→「JSON保存」「ファイル読込」— 作業データをファイルとして保存/読込（このツールが書き出したHTMLも読込可）。保存ファイル名には日時（秒まで）が付きます</li>
+        <li>「ファイル ▾」→「プレビュー（印刷確認）」— 書き出し結果を別画面で確認</li>
         <li>「作業用HTML（原本入り）」— 単体で開けるHTMLファイルとして書き出し（再編集用に注釈前の原本も入ります。ファイル名に日時が付きます）</li>
         <li>「配布用HTML」— 注釈前の原本・図形を含まないHTML。モザイクで隠した内容が残らないため、社外へ渡すときはこちら</li>
-        <li>右上の「CSV ▾」→「キャプション書出」— 全画像のキャプションを CSV（セクションNo・セクション名・画像No・キャプション）で保存。Excel で編集できます。= + - @ で始まるセルは Excel で数式にならないよう先頭に ' を付けて書き出し、読み込み時に外します</li>
+        <li>「ファイル ▾」→「キャプション書出」— 全画像のキャプションを CSV（セクションNo・セクション名・画像No・キャプション）で保存。Excel で編集できます。= + - @ で始まるセルは Excel で数式にならないよう先頭に ' を付けて書き出し、読み込み時に外します</li>
         <li>「キャプション読込」— 編集した CSV を読み込み、セクションNo・画像No が一致する画像のキャプションを上書きします（<kbd>Ctrl</kbd>+<kbd>Z</kbd> で戻せます）</li>
       </ul>
       <h3>自動保存</h3>
@@ -241,7 +258,7 @@
 
 <div id="toast"></div>
 
-<div class="hint">画像ごとに幅（100% / 50% / 33% / 25%、またはカード右端をドラッグで自由調整）を選べます。横長のPC画面キャプチャは<b>100%</b>、縦長のプロパティ画面は<b>33%前後</b>、比較したい2枚は両方<b>50%</b>で自動的に横並びになります。<b>Alt+PrintScreen → Ctrl+V</b>で直接貼り付け可能（貼り付け先はオレンジ枠のセクション）。<b>サムネイルをクリックすると注釈エディタ</b>が開きます（選択・四角・丸・矢印・ペン・テキスト・番号・<b>モザイク</b>・<b>切り抜き</b>／←→で前後の画像へ移動）。「<b>差替</b>」でキャプションを残したまま画像だけ入れ替えられます。画像左上のチェックで<b>複数選択→一括で幅変更・別セクションへ移動・削除</b>（選択した画像の⠿をドラッグしてもまとめて移動）。キャプションは改行でき、右上の<b>CSV ▾</b>（キャプション書出／読込）でExcel編集もできます。<b>Ctrl+S</b>でJSON保存、<b>Ctrl+Z / Ctrl+Y</b>で元に戻す・やり直し。取り込む画像の<b>縮小サイズ・保存形式</b>は右上で選べます（このブラウザに記憶されます）。<b>作業用HTMLは「ファイル読込」でそのまま読み戻せます</b>（注釈前の原本も入るため、モザイクで隠した情報を社外に出さないときは<b>配布用HTML</b>を使ってください）。</div>
+<div class="hint">画像ごとに幅（100% / 50% / 33% / 25%、またはカード右端をドラッグで自由調整）を選べます。横長のPC画面キャプチャは<b>100%</b>、縦長のプロパティ画面は<b>33%前後</b>、比較したい2枚は両方<b>50%</b>で自動的に横並びになります。<b>Alt+PrintScreen → Ctrl+V</b>で直接貼り付け可能（貼り付け先はオレンジ枠のセクション）。<b>サムネイルをクリックすると注釈エディタ</b>が開きます（選択・四角・丸・矢印・ペン・テキスト・番号・<b>モザイク</b>・<b>切り抜き</b>／←→で前後の画像へ移動）。「<b>差替</b>」でキャプションを残したまま画像だけ入れ替えられます。画像左上のチェックで<b>複数選択→一括で幅変更・別セクションへ移動・削除</b>（選択した画像の⠿をドラッグしてもまとめて移動）。キャプションは改行でき、<b>ファイル ▾</b>（キャプション書出／読込）でExcel編集もできます。<b>Ctrl+S</b>でJSON保存、<b>Ctrl+Z / Ctrl+Y</b>で元に戻す・やり直し。取り込む画像の<b>縮小サイズ・保存形式</b>は右上の<b>⚙（設定）</b>で選べます（このブラウザに記憶されます）。<b>作業用HTMLは「ファイル ▾」→「ファイル読込」でそのまま読み戻せます</b>（注釈前の原本も入るため、モザイクで隠した情報を社外に出さないときは<b>配布用HTML</b>を使ってください）。</div>
 
 <div class="main" id="main"></div>
 <button id="addSection">＋ セクションを追加（例：手順3-1 ログイン確認）</button>
@@ -2504,9 +2521,11 @@
     });
   });
 
-  // CSV メニュー：項目を選んだら閉じる。外側クリック・Esc でも閉じる。
+  // 上部バーのメニュー（ファイル ▾ / ⚙ 設定）：項目を選んだら閉じる。外側クリック・Esc でも閉じる。
   Array.prototype.forEach.call(document.querySelectorAll(".tb-menu"), function(m){
-    m.addEventListener("click", function(e){ if (e.target.closest(".tb-menu-list") && !e.target.closest("input")) setTimeout(function(){ m.open = false; }, 0); });
+    var keep = m.hasAttribute("data-keep-open");   // 設定パネルは選び直すことが多いので開いたまま
+    m.addEventListener("click", function(e){ if (!keep && e.target.closest(".tb-menu-list") && e.target.closest("button, .btnfile") && !e.target.closest("input")) setTimeout(function(){ m.open = false; }, 0); });
+    m.addEventListener("toggle", function(){ if (m.open) Array.prototype.forEach.call(document.querySelectorAll(".tb-menu"), function(o){ if (o !== m) o.open = false; }); });
     document.addEventListener("click", function(e){ if (m.open && !m.contains(e.target)) m.open = false; });
     m.addEventListener("keydown", function(e){ if (e.key === "Escape" && m.open){ m.open = false; m.querySelector("summary").focus(); e.stopPropagation(); } });
   });

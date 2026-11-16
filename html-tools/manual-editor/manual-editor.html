@@ -32,7 +32,7 @@
   .meta-fields input{font-family:var(--font-body);font-size:13px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.25);border-radius:4px;color:#fff;padding:6px 8px;}
   .meta-fields input::placeholder{color:rgba(255,255,255,.5);}
   .title-input{font-family:var(--font-display);font-size:16px;font-weight:600;min-width:220px;max-width:340px;}
-  .sys-input, .ver-input{width:130px;}
+  .sys-input, .ver-input{width:110px;}
   .vars-wrap{position:relative;}
   #varsBtn{padding:6px 10px;font-family:var(--font-mono);font-size:12px;}
   #varsBtn.has-vars{border-color:var(--accent);color:var(--accent);}
@@ -53,7 +53,16 @@
   .tb-menu > summary::-webkit-details-marker{display:none;}
   .tb-menu[open] > summary{background:rgba(255,255,255,.18);}
   .tb-menu-list{position:absolute;right:0;top:calc(100% + 4px);z-index:300;display:flex;flex-direction:column;gap:4px;min-width:200px;padding:6px;border-radius:6px;background:var(--ink);border:1px solid rgba(255,255,255,.25);box-shadow:0 6px 20px rgba(0,0,0,.35);}
-  .tb-menu-list button, .tb-menu-list .btnfile{text-align:left;width:100%;box-sizing:border-box;}
+  .tb-menu-list button, .tb-menu-list .btnfile{text-align:left;width:100%;box-sizing:border-box;border-color:transparent;background:transparent;font-weight:500;}
+  .tb-menu-list button:hover, .tb-menu-list .btnfile:hover{background:rgba(255,255,255,.12);}
+  .tb-menu-sep{height:1px;background:rgba(255,255,255,.2);margin:3px 2px;}
+  .tb-menu > summary.tb-icon{padding:6px 10px;font-size:15px;line-height:1.2;}
+  .tb-settings{min-width:260px;padding:10px 12px;gap:8px;}
+  .tb-settings .sel-label{justify-content:space-between;font-size:12.5px;}
+  .tb-settings .sel-label select{font-size:12px;padding:5px 6px;}
+  .tb-note{font-size:11px;color:rgba(255,255,255,.6);}
+  /* 画面が狭いときはツール名を記号だけにして、上部バーを1段に収める */
+  @media (max-width:1499px){ .topbar .brand-text{display:none;} }
   .help-btn{width:30px;height:30px;padding:0;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:14px;}
   .help-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:700;padding:20px;}
   .help-overlay.hidden{display:none;}
@@ -252,7 +261,7 @@
 <body>
 <div id="app">
   <header class="topbar">
-    <div class="brand"><span class="brand-mark">§</span>手順書エディタ</div>
+    <div class="brand" title="手順書エディタ"><span class="brand-mark">§</span><span class="brand-text">手順書エディタ</span></div>
     <div class="meta-fields">
       <input id="projectTitle" class="title-input" value="本番作業手順書" placeholder="手順書タイトル">
       <input id="metaSystem" class="sys-input" placeholder="対象システム名">
@@ -268,33 +277,41 @@
     <span id="stats" class="stats"></span>
     <span id="autosaveStatus" class="autosave-status"></span>
     <div class="actions">
-      <button id="helpBtn" class="help-btn" type="button" title="使い方" aria-label="使い方">?</button>
-      <label class="sel-label" title="取り込む画像の縮小サイズ。ブラウザに記憶されます">縮小
-        <select id="shrinkSel">
-          <option value="2000">長辺2000px</option>
-          <option value="1600" selected>長辺1600px</option>
-          <option value="1200">長辺1200px</option>
-          <option value="800">長辺800px</option>
-          <option value="0">なし（原寸）</option>
-        </select>
-      </label>
-      <label class="sel-label" title="保存形式。画面キャプチャの文字を優先するならPNG、サイズを優先するならJPEG">形式
-        <select id="fmtSel">
-          <option value="png" selected>PNG（文字くっきり）</option>
-          <option value="jpeg92">JPEG 高画質</option>
-          <option value="jpeg85">JPEG 標準（軽い）</option>
-        </select>
-      </label>
-      <button id="btnSaveJson" title="作業中のデータをファイルとして保存（ファイル名に保存日時が付きます）">JSON保存</button>
-      <label class="btnfile" title="JSONファイル、またはこのツールで書き出したHTMLを読み込みます">ファイル読込<input type="file" id="fileLoadJson" accept=".json,.html,.htm,application/json,text/html" hidden></label>
-      <details class="tb-menu" id="csvMenu">
-        <summary title="手順をCSVで書き出し・読み込み（Excelで一括編集）">CSV ▾</summary>
+      <details class="tb-menu" id="fileMenu">
+        <summary title="読み込み・JSON保存・CSV・プレビュー">ファイル ▾</summary>
         <div class="tb-menu-list">
-          <button id="btnCsvExport" title="全手順の作業内容・備考・画像キャプションをCSVで書き出します。Excelで編集して読み込めます">手順書出</button>
-          <label class="btnfile" title="「手順書出」したCSVを読み込み、シートNo・手順Noが一致する手順の作業内容・備考・画像キャプションを上書きします">手順読込<input type="file" id="csvImportInput" accept=".csv,.tsv,.txt,text/csv,text/plain" hidden></label>
+          <label class="btnfile" title="JSONファイル、またはこのツールで書き出したHTMLを読み込みます">ファイル読込<input type="file" id="fileLoadJson" accept=".json,.html,.htm,application/json,text/html" hidden></label>
+          <button id="btnSaveJson" title="作業中のデータをファイルとして保存（ファイル名に保存日時が付きます）">JSON保存</button>
+          <div class="tb-menu-sep"></div>
+          <button id="btnCsvExport" title="全手順の作業内容・備考・画像キャプションをCSVで書き出します。Excelで編集して読み込めます">手順書出（CSV）</button>
+          <label class="btnfile" title="「手順書出」したCSVを読み込み、シートNo・手順Noが一致する手順の作業内容・備考・画像キャプションを上書きします">手順読込（CSV）<input type="file" id="csvImportInput" accept=".csv,.tsv,.txt,text/csv,text/plain" hidden></label>
+          <div class="tb-menu-sep"></div>
+          <button id="btnPreview">プレビュー（印刷確認）</button>
         </div>
       </details>
-      <button id="btnPreview">プレビュー（印刷確認）</button>
+      <details class="tb-menu" id="settingsMenu" data-keep-open>
+        <summary class="tb-icon" title="設定（取り込む画像の縮小サイズ・保存形式）" aria-label="設定">⚙</summary>
+        <div class="tb-menu-list tb-settings">
+          <label class="sel-label" title="取り込む画像の縮小サイズ。ブラウザに記憶されます">縮小
+            <select id="shrinkSel">
+              <option value="2000">長辺2000px</option>
+              <option value="1600" selected>長辺1600px</option>
+              <option value="1200">長辺1200px</option>
+              <option value="800">長辺800px</option>
+              <option value="0">なし（原寸）</option>
+            </select>
+          </label>
+          <label class="sel-label" title="保存形式。画面キャプチャの文字を優先するならPNG、サイズを優先するならJPEG">形式
+            <select id="fmtSel">
+              <option value="png" selected>PNG（文字くっきり）</option>
+              <option value="jpeg92">JPEG 高画質</option>
+              <option value="jpeg85">JPEG 標準（軽い）</option>
+            </select>
+          </label>
+          <div class="tb-note">設定はこのブラウザに記憶されます</div>
+        </div>
+      </details>
+      <button id="helpBtn" class="help-btn" type="button" title="使い方" aria-label="使い方">?</button>
       <button id="btnExport" title="再編集できるHTML（注釈前の原本も含む）。「ファイル読込」でそのまま読み戻せます。ファイル名に保存日時が付きます">作業用HTML（原本入り）</button>
       <button id="btnExportDist" class="primary" title="注釈前の原本・再編集用の図形を含まないHTML。モザイクで隠した内容が残らないので、社外へ渡すときはこちら">配布用HTML</button>
     </div>
@@ -380,11 +397,11 @@
       </ul>
       <h3>ファイル操作</h3>
       <ul>
-        <li>「JSON保存」「ファイル読込」— 作業データをファイルとして保存/読込（このツールが書き出したHTMLも読込可）。保存ファイル名には日時（秒まで）が付きます</li>
-        <li>「プレビュー（印刷確認）」— 書き出し結果を別画面で確認</li>
+        <li>「ファイル ▾」→「JSON保存」「ファイル読込」— 作業データをファイルとして保存/読込（このツールが書き出したHTMLも読込可）。保存ファイル名には日時（秒まで）が付きます</li>
+        <li>「ファイル ▾」→「プレビュー（印刷確認）」— 書き出し結果を別画面で確認</li>
         <li>「作業用HTML（原本入り）」— 単体で開けるHTMLファイルとして書き出し（再編集用に注釈前の原本も入ります。ファイル名に日時が付きます）</li>
         <li>「配布用HTML」— 注釈前の原本・図形を含まないHTML。モザイクで隠した内容が残らないため、社外へ渡すときはこちら</li>
-        <li>右上の「CSV ▾」→「手順書出」— 全手順を CSV（シートNo・シート名・手順No・作業内容・備考・画像キャプション）で保存。Excel でレビュー・編集できます。= + - @ で始まるセルは Excel で数式にならないよう先頭に ' を付けて書き出し、読み込み時に外します</li>
+        <li>「ファイル ▾」→「手順書出」— 全手順を CSV（シートNo・シート名・手順No・作業内容・備考・画像キャプション）で保存。Excel でレビュー・編集できます。= + - @ で始まるセルは Excel で数式にならないよう先頭に ' を付けて書き出し、読み込み時に外します</li>
         <li>「手順読込」— 編集した CSV を読み込み、シートNo・手順No が一致する手順の作業内容・備考・画像キャプションを上書きします（不要な列は削っておけばその項目は変わりません。<kbd>Ctrl</kbd>+<kbd>Z</kbd> で戻せます）</li>
       </ul>
       <h3>自動保存</h3>
@@ -2086,7 +2103,7 @@
     editorMain.appendChild(header);
 
     var hint = document.createElement("div"); hint.className = "hint";
-    hint.innerHTML = "本番環境にはファイルを持ち込めない前提のため、実際のチェックは印刷した紙にペンで行います（画面のチェックは事前レビュー用・将来タブレット等を使う場合の時刻自動記録用）。作業内容欄は <b>Markdown</b> が使えます（警告枠・記入欄・期待結果・変数など。記法一覧は右上の <b>?</b>）。<b>ショートカット</b>：<code>Ctrl+S</code> JSON保存 / <code>Ctrl+Z</code> 元に戻す / <code>Ctrl+Y</code> やり直し / <code>Ctrl+F</code> 手順検索（<b>全置換</b>も同じパネルから）。手順は<b>番号部分をドラッグ</b>で並び替え。<b>左のシート一覧のタブへドロップすると、そのシートの末尾へ移動</b>します（別シートへの移動・空シートへの移動はこの方法）。<b>右クリック</b>で追加・複製・削除メニューが出ます。画像は手順カードをクリックして貼り付け先にしてから<b>Ctrl+V</b>、または画像欄へ<b>ドラッグ＆ドロップ</b>でも入ります。<b>画像をクリックすると注釈エディタ</b>（囲む・矢印・番号・<b>モザイク</b>・<b>切り抜き</b>など）。番号の下のチェックで<b>複数選択→別シートへ一括移動</b>。右上の<b>CSV ▾</b>（手順書出／読込）でExcel編集もできます。取り込む画像の<b>縮小サイズ・保存形式</b>は右上で選べます（選択はこのブラウザに記憶されます）。<b>作業用HTMLは「ファイル読込」でそのまま読み戻せます</b>（注釈前の原本も入るため、モザイクで隠した情報を社外に出さないときは<b>配布用HTML</b>を使ってください）。エクスポート後のHTMLは画像を<b>クリックで拡大</b>できます。";
+    hint.innerHTML = "本番環境にはファイルを持ち込めない前提のため、実際のチェックは印刷した紙にペンで行います（画面のチェックは事前レビュー用・将来タブレット等を使う場合の時刻自動記録用）。作業内容欄は <b>Markdown</b> が使えます（警告枠・記入欄・期待結果・変数など。記法一覧は右上の <b>?</b>）。<b>ショートカット</b>：<code>Ctrl+S</code> JSON保存 / <code>Ctrl+Z</code> 元に戻す / <code>Ctrl+Y</code> やり直し / <code>Ctrl+F</code> 手順検索（<b>全置換</b>も同じパネルから）。手順は<b>番号部分をドラッグ</b>で並び替え。<b>左のシート一覧のタブへドロップすると、そのシートの末尾へ移動</b>します（別シートへの移動・空シートへの移動はこの方法）。<b>右クリック</b>で追加・複製・削除メニューが出ます。画像は手順カードをクリックして貼り付け先にしてから<b>Ctrl+V</b>、または画像欄へ<b>ドラッグ＆ドロップ</b>でも入ります。<b>画像をクリックすると注釈エディタ</b>（囲む・矢印・番号・<b>モザイク</b>・<b>切り抜き</b>など）。番号の下のチェックで<b>複数選択→別シートへ一括移動</b>。<b>ファイル ▾</b>（手順書出／読込）でExcel編集もできます。取り込む画像の<b>縮小サイズ・保存形式</b>は右上の<b>⚙（設定）</b>で選べます（選択はこのブラウザに記憶されます）。<b>作業用HTMLは「ファイル ▾」→「ファイル読込」でそのまま読み戻せます</b>（注釈前の原本も入るため、モザイクで隠した情報を社外に出さないときは<b>配布用HTML</b>を使ってください）。エクスポート後のHTMLは画像を<b>クリックで拡大</b>できます。";
     editorMain.appendChild(hint);
 
     editorMain.appendChild(renderModeBar(sheet));
@@ -2977,18 +2994,17 @@
     var mb = bytes / 1048576;
     var warn = mb >= 8;
     el.innerHTML = "";
-    [["シート " + project.sheets.length, false],
-     ["手順 " + steps, false],
-     ["チェック " + checks, false],
-     ["画像 " + imgs, false],
-     ["推定 " + (mb > 0 && mb < 0.1 ? "0.1未満" : mb.toFixed(1)) + " MB", warn]
+    // 上部バーを1段に収めるため、件数は1つにまとめ、内訳はマウスを乗せたときに出す
+    var mbText = (mb > 0 && mb < 0.1 ? "0.1未満" : mb.toFixed(1)) + " MB";
+    [["手順 " + steps + "・画像 " + imgs + "・" + mbText, warn]
     ].forEach(function(p){
       var sp = document.createElement("span");
       sp.className = "st" + (p[1] ? " warn" : "");
       sp.textContent = p[0];
       el.appendChild(sp);
     });
-    el.title = warn ? "メール添付には大きすぎる可能性があります。上の「縮小」を下げるかJPEGを選んでください。" : "";
+    el.title = "シート " + project.sheets.length + " / 手順 " + steps + " / チェック " + checks + " / 画像 " + imgs + " / 推定 " + mbText +
+      (warn ? "\nメール添付には大きすぎる可能性があります。⚙（設定）の「縮小」を下げるかJPEGを選んでください。" : "");
   }
 
   projectTitleInput.addEventListener("input", function(){ project.title = projectTitleInput.value; });
@@ -3796,9 +3812,11 @@
     });
   });
 
-  // CSV メニュー：項目を選んだら閉じる。外側クリック・Esc でも閉じる。
+  // 上部バーのメニュー（ファイル ▾ / ⚙ 設定）：項目を選んだら閉じる。外側クリック・Esc でも閉じる。
   Array.prototype.forEach.call(document.querySelectorAll(".tb-menu"), function(m){
-    m.addEventListener("click", function(e){ if (e.target.closest(".tb-menu-list") && !e.target.closest("input")) setTimeout(function(){ m.open = false; }, 0); });
+    var keep = m.hasAttribute("data-keep-open");   // 設定パネルは選び直すことが多いので開いたまま
+    m.addEventListener("click", function(e){ if (!keep && e.target.closest(".tb-menu-list") && e.target.closest("button, .btnfile") && !e.target.closest("input")) setTimeout(function(){ m.open = false; }, 0); });
+    m.addEventListener("toggle", function(){ if (m.open) Array.prototype.forEach.call(document.querySelectorAll(".tb-menu"), function(o){ if (o !== m) o.open = false; }); });
     document.addEventListener("click", function(e){ if (m.open && !m.contains(e.target)) m.open = false; });
     m.addEventListener("keydown", function(e){ if (e.key === "Escape" && m.open){ m.open = false; m.querySelector("summary").focus(); e.stopPropagation(); } });
   });

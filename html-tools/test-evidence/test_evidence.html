@@ -39,6 +39,29 @@
   #sheet{ max-width:1040px; margin:24px auto 80px; background:var(--paper); padding:32px 36px; box-shadow:0 1px 3px rgba(0,0,0,.15); }
   .doc-title{ font-size:20px; font-weight:700; border-bottom:2px solid var(--navy); padding-bottom:10px; margin-bottom:6px; }
   .doc-sub{ font-size:12.5px; color:var(--muted); margin-bottom:24px; }
+  .doc-meta{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; font-size:12.5px; color:var(--muted); margin-bottom:22px; }
+  .doc-meta label{ display:flex; align-items:center; gap:6px; }
+  .doc-meta input{ font-size:13px; color:var(--ink); border:1px solid transparent; border-bottom-color:var(--line); background:transparent; padding:4px 6px; border-radius:3px; width:150px; font-family:inherit; }
+  .doc-meta input:hover, .doc-meta input:focus{ border-color:var(--line); background:#fff; outline:none; }
+  .doc-tool{ background:none; border:1px solid var(--line); color:var(--navy); border-radius:4px; padding:4px 10px; font-size:12px; cursor:pointer; }
+  .doc-tool:hover{ background:var(--soft); }
+  /* ==== 上部バーのメニュー（ファイル ▾ / ⚙ 設定） ==== */
+  .tb-menu{ position:relative; display:inline-block; }
+  .tb-menu > summary{ list-style:none; cursor:pointer; user-select:none; }
+  .tb-menu > summary::-webkit-details-marker{ display:none; }
+  .tb-btn{ background:transparent; color:#fff; border:1px solid rgba(255,255,255,.5); padding:7px 13px; border-radius:4px; font-size:12.5px; font-weight:600; display:inline-block; }
+  .tb-btn.tb-icon{ padding:6px 10px; font-size:14px; line-height:1.2; }
+  .tb-menu[open] > summary{ background:rgba(255,255,255,.18); }
+  .tb-menu-list{ position:absolute; right:0; top:calc(100% + 6px); z-index:60; min-width:220px; background:#fff; color:var(--ink); border:1px solid var(--line); border-radius:6px; box-shadow:0 8px 24px rgba(0,0,0,.25); padding:6px; display:flex; flex-direction:column; gap:2px; }
+  .toolbar .tb-menu-list button{ background:none; color:var(--ink); border:none; text-align:left; font-weight:500; padding:7px 10px; border-radius:4px; }
+  .toolbar .tb-menu-list button:hover{ background:var(--soft); filter:none; }
+  .tb-menu-sep{ height:1px; background:var(--line); margin:4px 2px; }
+  .tb-settings{ min-width:280px; padding:10px 12px; gap:8px; }
+  .tb-settings label{ display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:12.5px; color:var(--ink); }
+  .tb-settings select{ border:1px solid var(--line) !important; font-size:12px; padding:4px 6px; }
+  .tb-inline{ display:inline-flex; align-items:center; gap:6px; }
+  .tb-settings .skin-color{ border-color:var(--line); }
+  .tb-note{ font-size:11px; color:var(--muted); margin-top:2px; }
 
   .case{ border:1px solid var(--line); border-radius:6px; margin-bottom:22px; background:#fff; overflow:hidden; }
   .case-head{ display:flex; align-items:center; gap:8px; padding:10px 14px; background:#f1f2f4; border-bottom:1px solid var(--line); }
@@ -156,7 +179,7 @@
   .help-body kbd{ background:#f1f2f4; border:1px solid var(--line); border-radius:4px; padding:1px 6px; font-family:Menlo,Consolas,monospace; font-size:12px; }
 
   @media print{
-    .toolbar, .add-case, .icon-btn, .shot-actions, .add-shot, .edit-hint, .sel-box, .drag-handle, #searchBar, #ctxMenu, #bulkBar, #restoreBanner, #helpOverlay{ display:none !important; }
+    .toolbar, .add-case, .doc-tool, .icon-btn, .shot-actions, .add-shot, .edit-hint, .sel-box, .drag-handle, #searchBar, #ctxMenu, #bulkBar, #restoreBanner, #helpOverlay{ display:none !important; }
     body{ background:#fff; }
     #sheet{ box-shadow:none; margin:0; max-width:100%; background:#fff; }
     .case{ break-inside:avoid; }
@@ -171,27 +194,37 @@
 
 <div class="toolbar">
   <h1>テストエビデンス作成</h1>
-  <button class="help-fab" onclick="openHelp()" type="button" title="使い方" aria-label="使い方">?</button>
   <div class="meta-row">プロジェクト<input type="text" id="projName" value="〇〇機能 結合テスト"></div>
-  <div class="meta-row">実施者<input type="text" id="tester" value=""></div>
-  <div class="meta-row">日付<input type="text" id="testDate" value=""></div>
-  <div class="meta-row">縮小<select id="shrinkSel"><option value="1600">長辺1600px</option><option value="1200">長辺1200px</option><option value="800" selected>長辺800px</option><option value="500">長辺500px</option><option value="0">なし</option></select></div>
-  <div class="meta-row">形式<select id="fmtSel"><option value="jpeg85" selected>JPEG 標準</option><option value="jpeg92">JPEG 高画質</option><option value="png">PNG</option></select></div>
-  <div class="meta-row">既定幅<select id="defWidth" title="新しく取り込む画像の表示幅。個々の画像はカード下のボタン、または右端をドラッグで変更できます"><option value="100">100%</option><option value="50" selected>50%</option><option value="33">33%</option><option value="25">25%</option></select></div>
-  <div class="meta-row" title="編集画面の配色（このブラウザに記憶。保存・配布用HTMLと印刷には影響しません）">着せ替え<select id="skinSel">
-    <option value="">標準（グレー）</option><option value="beige">ベージュ</option><option value="mint">ミント</option><option value="sky">スカイ</option><option value="lavender">ラベンダー</option><option value="sakura">さくら</option><option value="night">夜（背景を暗く）</option>
-  </select><input type="color" id="bgColor" class="skin-color" title="背景色を自由に選ぶ（右クリックで着せ替えの色に戻す）"></div>
   <span id="stats"></span>
   <span id="saveStatus" class="meta-row" style="white-space:nowrap"></span>
   <div style="flex:1"></div>
-  <button class="secondary" id="collapseAllBtn" onclick="toggleCollapseAll()">全折りたたみ</button>
   <button class="secondary" onclick="openSearch()" title="Ctrl+F">検索</button>
-  <button class="secondary" onclick="document.getElementById('importInput').click()">作業用HTMLを読み込む</button>
+  <details class="tb-menu" id="fileMenu">
+    <summary class="tb-btn" title="読み込み・CSV・印刷">ファイル ▾</summary>
+    <div class="tb-menu-list">
+      <button type="button" onclick="document.getElementById('importInput').click()">作業用HTMLを読み込む</button>
+      <div class="tb-menu-sep"></div>
+      <button type="button" onclick="exportCaptions()" title="全画像のコメント（図のキャプション）をCSVで書き出します。Excelで編集して読み込めます">コメント書出（CSV）</button>
+      <button type="button" onclick="document.getElementById('captionInput').click()" title="「コメント書出」したCSVを読み込み、ケースNo・画像Noが一致する画像のコメントを上書きします">コメント読込（CSV）</button>
+      <div class="tb-menu-sep"></div>
+      <button type="button" onclick="window.print()">印刷 / PDF化</button>
+    </div>
+  </details>
   <input type="file" id="importInput" accept=".html,text/html" style="display:none" onchange="if(this.files[0]) importHtml(this.files[0]); this.value='';">
-  <button class="secondary" onclick="exportCaptions()" title="全画像のコメント（図のキャプション）をCSVで書き出します。Excelで編集して読み込めます">コメント書出</button>
-  <button class="secondary" onclick="document.getElementById('captionInput').click()" title="「コメント書出」したCSVを読み込み、ケースNo・画像Noが一致する画像のコメントを上書きします">コメント読込</button>
   <input type="file" id="captionInput" accept=".csv,.tsv,.txt,text/csv,text/plain" style="display:none" onchange="if(this.files[0]) importCaptions(this.files[0]); this.value='';">
-  <button class="secondary" onclick="window.print()">印刷 / PDF化</button>
+  <details class="tb-menu" id="settingsMenu" data-keep-open>
+    <summary class="tb-btn tb-icon" title="設定（取り込む画像の縮小・形式・既定幅、着せ替え）" aria-label="設定">⚙</summary>
+    <div class="tb-menu-list tb-settings">
+      <label>縮小<select id="shrinkSel"><option value="1600">長辺1600px</option><option value="1200">長辺1200px</option><option value="800" selected>長辺800px</option><option value="500">長辺500px</option><option value="0">なし</option></select></label>
+      <label>形式<select id="fmtSel"><option value="jpeg85" selected>JPEG 標準</option><option value="jpeg92">JPEG 高画質</option><option value="png">PNG</option></select></label>
+      <label title="新しく取り込む画像の表示幅。個々の画像はカード下のボタン、または右端をドラッグで変更できます">既定幅<select id="defWidth"><option value="100">100%</option><option value="50" selected>50%</option><option value="33">33%</option><option value="25">25%</option></select></label>
+      <label title="編集画面の配色（このブラウザに記憶。保存・配布用HTMLと印刷には影響しません）">着せ替え<span class="tb-inline"><select id="skinSel">
+        <option value="">標準（グレー）</option><option value="beige">ベージュ</option><option value="mint">ミント</option><option value="sky">スカイ</option><option value="lavender">ラベンダー</option><option value="sakura">さくら</option><option value="night">夜（背景を暗く）</option>
+      </select><input type="color" id="bgColor" class="skin-color" title="背景色を自由に選ぶ（右クリックで着せ替えの色に戻す）"></span></label>
+      <div class="tb-note">設定はこのブラウザに記憶されます</div>
+    </div>
+  </details>
+  <button class="help-fab" onclick="openHelp()" type="button" title="使い方" aria-label="使い方">?</button>
   <button class="secondary" onclick="exportHtml(true)">作業用保存</button>
   <button onclick="exportHtml(false)">配布用保存</button>
 </div>
@@ -207,7 +240,8 @@
       <ul>
         <li>「＋ テストケースを追加」で新規カードを作成</li>
         <li>結果は各カードのプルダウンで 保留/OK/NG を選択（色分け表示）</li>
-        <li>▲▼で折りたたみ、「全折りたたみ」で一括切り替え</li>
+        <li>▲▼で折りたたみ、用紙右上の「全折りたたみ」で一括切り替え</li>
+        <li>実施者・実施日は用紙のタイトル下の欄で入力します</li>
         <li><strong>⧉複製</strong>で画像・注釈を含めて複製、<strong>↑↓</strong>で並び替え</li>
       </ul>
       <h3>画像</h3>
@@ -242,16 +276,21 @@
       </ul>
       <h3>保存・印刷</h3>
       <ul>
-        <li>「作業用保存」— 編集を続けられる状態のままHTMLとして保存し、後で「作業用HTMLを読み込む」で読み直せます（ファイル名に保存日時が秒まで付きます）</li>
+        <li>上部バーには「作業用保存」「配布用保存」だけを常に表示し、それ以外は「ファイル ▾」にまとめています</li>
+        <li>「作業用保存」— 編集を続けられる状態のままHTMLとして保存し、後で「ファイル ▾」→「作業用HTMLを読み込む」で読み直せます（ファイル名に保存日時が秒まで付きます）</li>
         <li>「配布用保存」— 編集用のボタン類を含まない、閲覧・印刷用のHTMLとして保存します</li>
-        <li>「印刷 / PDF化」— 編集用のUIを除いた状態で印刷プレビューを開きます</li>
-        <li>「コメント書出」— 全画像のコメントを CSV（ケースNo・ケース名・画像No・図番号・コメント）で保存。Excel で編集できます</li>
-        <li>「コメント読込」— 編集した CSV を読み込み、ケースNo・画像No が一致する画像のコメントを上書きします（<kbd>Ctrl</kbd>+<kbd>Z</kbd> で戻せます）</li>
+        <li>「ファイル ▾」→「印刷 / PDF化」— 編集用のUIを除いた状態で印刷プレビューを開きます</li>
+        <li>「ファイル ▾」→「コメント書出」— 全画像のコメントを CSV（ケースNo・ケース名・画像No・図番号・コメント）で保存。Excel で編集できます</li>
+        <li>「ファイル ▾」→「コメント読込」— 編集した CSV を読み込み、ケースNo・画像No が一致する画像のコメントを上書きします（<kbd>Ctrl</kbd>+<kbd>Z</kbd> で戻せます）</li>
         <li>コメントの改行は報告書の図キャプションでも改行されます（<code>&lt;br&gt;</code> と書いても改行になります）</li>
+      </ul>
+      <h3>設定（⚙）</h3>
+      <ul>
+        <li>取り込む画像の「縮小」「形式」、新しい画像の「既定幅」、「着せ替え」を設定します（このブラウザに記憶）</li>
       </ul>
       <h3>着せ替え</h3>
       <ul>
-        <li>上部バーの「着せ替え」で編集画面の配色（背景・上部バー・強調色）を切り替えます</li>
+        <li>上部バーの <strong>⚙（設定）</strong>→「着せ替え」で編集画面の配色（背景・上部バー・強調色）を切り替えます</li>
         <li>横の色ボタンで背景色だけを自由に選べます（右クリックで着せ替えの色に戻す）</li>
         <li>設定はこのブラウザに記憶されます。作業用・配布用HTMLと印刷の見た目には影響しません</li>
       </ul>
@@ -300,7 +339,12 @@
 
 <div id="sheet">
   <div class="doc-title" id="docTitleView"></div>
-  <div class="doc-sub" id="docSubView"></div>
+  <div class="doc-meta">
+    <label>実施者<input type="text" id="tester" value="" placeholder="氏名"></label>
+    <label>実施日<input type="text" id="testDate" value="" placeholder="YYYY-MM-DD"></label>
+    <span style="flex:1"></span>
+    <button type="button" class="doc-tool" id="collapseAllBtn" onclick="toggleCollapseAll()">全折りたたみ</button>
+  </div>
   <div id="cases"></div>
   <button class="add-case" onclick="addCase()">＋ テストケースを追加</button>
 </div>
@@ -1052,8 +1096,7 @@ function updateHeader(){
   const tester = document.getElementById('tester').value;
   const date = document.getElementById('testDate').value;
   document.getElementById('docTitleView').textContent = proj || 'テストエビデンス';
-  document.getElementById('docSubView').textContent =
-    [tester ? `実施者: ${tester}` : null, date ? `実施日: ${date}` : null].filter(Boolean).join('　/　');
+  // 実施者・実施日は用紙の見出し（.doc-meta）で直接編集する
 }
 ['projName','tester','testDate'].forEach(id => {
   const el = document.getElementById(id);
@@ -2282,6 +2325,16 @@ function loadSettings(){
   setSel('skinSel', s.skin);
   customBg = (typeof s.bg === 'string' && /^#[0-9a-f]{6}$/i.test(s.bg)) ? s.bg : '';
 }
+
+/* ---------- 上部バーのメニュー ---------- */
+// 項目を選んだら閉じる（設定パネルは選び直すことが多いので開いたまま）。外側クリック・Esc でも閉じる。
+document.querySelectorAll('.tb-menu').forEach(m => {
+  const keep = m.hasAttribute('data-keep-open');
+  m.addEventListener('click', e => { if(!keep && e.target.closest('.tb-menu-list button')) setTimeout(() => { m.open = false; }, 0); });
+  m.addEventListener('toggle', () => { if(m.open) document.querySelectorAll('.tb-menu').forEach(o => { if(o !== m) o.open = false; }); });
+  m.addEventListener('keydown', e => { if(e.key === 'Escape' && m.open){ m.open = false; m.querySelector('summary').focus(); e.stopPropagation(); e.preventDefault(); } });
+});
+document.addEventListener('click', e => { document.querySelectorAll('.tb-menu[open]').forEach(m => { if(!m.contains(e.target)) m.open = false; }); });
 
 /* ---------- 着せ替え ---------- */
 // プリセットは data-skin で色の組をまとめて切り替える。背景色だけを自由に選んだ場合は --bg を上書きする。
