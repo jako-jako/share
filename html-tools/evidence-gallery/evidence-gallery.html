@@ -11,6 +11,7 @@
     --font-display:"Bahnschrift","Arial Narrow","Segoe UI Condensed",sans-serif;
     --font-body:"Segoe UI","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
     --font-mono:"Consolas","Cascadia Mono","Courier New",monospace;
+    --anx-accent:#FF7A00; --anx-accent-ink:#1C2530;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
@@ -61,7 +62,7 @@
   .img-card{border:1px solid var(--border);border-radius:6px;background:var(--paper);overflow:hidden;display:flex;flex-direction:column;}
   .img-card .thumb-wrap{background:#e4e7e9;display:flex;align-items:center;justify-content:center;min-height:80px;}
   .img-card img{width:100%;height:auto;display:block;max-height:320px;object-fit:contain;background:#fff;}
-  .img-card .caption-input{border:none;border-top:1px solid var(--border);padding:6px 8px;font-size:12px;width:100%;font-family:var(--font-body);background:#fff;}
+  .img-card .caption-input{display:block;border:none;border-top:1px solid var(--border);padding:6px 8px;font-size:12px;width:100%;font-family:var(--font-body);background:#fff;resize:vertical;min-height:32px;line-height:1.45;}
   .img-card .caption-input:focus{outline:2px solid var(--accent-soft);}
   .img-card .card-controls{display:flex;align-items:center;gap:4px;padding:6px 8px;border-top:1px solid var(--border);background:#fff;flex-wrap:wrap;}
   .width-btns{display:flex;gap:3px;}
@@ -78,6 +79,12 @@
   .drag-grip:active{cursor:grabbing;}
   .drop-target{outline:2px dashed var(--accent);outline-offset:-2px;}
   .img-card.selected{outline:3px solid var(--accent);outline-offset:-3px;}
+  .img-card.drop-before{box-shadow:-4px 0 0 0 var(--accent);}
+  .img-card.drop-after{box-shadow:4px 0 0 0 var(--accent);}
+  .img-card.dragging{opacity:.4;}
+  .img-num{position:absolute;top:6px;left:30px;z-index:2;background:var(--ink);color:#fff;font-family:var(--font-mono);font-size:11px;font-weight:700;padding:1px 7px;border-radius:10px;pointer-events:none;}
+  .bulk-sep{width:1px;height:18px;background:rgba(255,255,255,.35);}
+  .bulk-bar select{font-size:12px;padding:5px 6px;border-radius:4px;border:1px solid rgba(255,255,255,.3);max-width:220px;}
   .sel-box{position:absolute;top:6px;left:6px;z-index:2;width:18px;height:18px;accent-color:var(--accent);cursor:pointer;}
   .width-resizer{position:absolute;top:0;right:0;width:8px;height:100%;cursor:ew-resize;z-index:2;}
   .width-resizer:hover{background:var(--accent-soft);}
@@ -106,7 +113,7 @@
   #previewFrame{width:100%;height:100%;border:none;}
 
   /* ==== 追加UI（トースト / 統計 / 圧縮設定） ==== */
-  #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(10px);background:#12151a;color:#fff;font-size:13px;padding:10px 16px;border-radius:6px;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:500;box-shadow:0 4px 14px rgba(0,0,0,.3);max-width:80vw;text-align:center;}
+  #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(10px);background:#12151a;color:#fff;font-size:13px;padding:10px 16px;border-radius:6px;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:800;box-shadow:0 4px 14px rgba(0,0,0,.3);max-width:80vw;text-align:center;}
   #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
   .stats{display:flex;gap:6px;align-items:center;font-family:var(--font-mono);font-size:11px;}
   .stats .st{background:rgba(255,255,255,.14);padding:2px 8px;border-radius:10px;white-space:nowrap;}
@@ -119,23 +126,6 @@
   .img-card .thumb-wrap{position:relative;cursor:zoom-in;}
   .thumb-wrap .anno-hint{position:absolute;right:5px;bottom:5px;background:rgba(0,0,0,.6);color:#fff;font-size:10px;padding:2px 6px;border-radius:3px;pointer-events:none;}
   .img-card.has-anno .thumb-wrap .anno-hint{background:var(--accent);color:var(--ink);font-weight:700;}
-  .anno-modal{position:fixed;inset:0;background:rgba(15,18,24,.94);z-index:600;display:flex;flex-direction:column;}
-  .anno-modal.hidden{display:none;}
-  .anno-toolbar{display:flex;align-items:center;gap:8px;padding:10px 16px;background:#12151a;flex-wrap:wrap;}
-  .anno-toolbar button{background:#232833;color:#e8e6e2;border:1px solid #363c47;padding:7px 11px;border-radius:5px;font-size:12.5px;cursor:pointer;font-weight:600;}
-  .anno-toolbar button:hover{background:#2e3542;}
-  .anno-toolbar button.active{background:var(--accent);border-color:var(--accent);color:var(--ink);}
-  .anno-toolbar button:disabled{opacity:.35;cursor:default;}
-  .anno-toolbar button:disabled:hover{background:#232833;}
-  .anno-toolbar .sep{width:1px;height:20px;background:#363c47;margin:0 4px;}
-  .anno-toolbar .spacer{flex:1;}
-  .anno-toolbar .pos{font-family:var(--font-mono);font-size:12px;color:#aeb6c2;min-width:52px;text-align:center;}
-  .anno-toolbar .tip{font-size:11px;color:#7c8698;}
-  .anno-toolbar .swatch{width:22px;height:22px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0;}
-  .anno-toolbar .swatch.active{border-color:#fff;}
-  .anno-canvas-wrap{flex:1;display:flex;align-items:center;justify-content:center;overflow:auto;padding:16px;}
-  #annoCanvas{background:#000;max-width:100%;max-height:100%;cursor:crosshair;box-shadow:0 0 0 1px #333;}
-  .anno-save{background:#2f8f5b !important;border-color:#2f8f5b !important;color:#fff !important;}
 </style>
 </head>
 <body>
@@ -164,8 +154,11 @@
     </label>
     <button id="btnSaveJson">JSON保存</button>
     <label class="btnfile" title="JSONファイル、またはこのツールで書き出したHTMLを読み込みます">ファイル読込<input type="file" id="fileLoadJson" accept=".json,.html,.htm,application/json,text/html" hidden></label>
+    <button id="btnCapExport" title="全画像のキャプションをCSVで書き出します。Excelで編集して読み込めます">キャプション書出</button>
+    <label class="btnfile" title="「キャプション書出」したCSVを読み込み、セクションNo・画像Noが一致する画像のキャプションを上書きします">キャプション読込<input type="file" id="capImportInput" accept=".csv,.tsv,.txt,text/csv,text/plain" hidden></label>
     <button id="btnPreview">プレビュー（印刷確認）</button>
-    <button id="btnExport" class="primary">HTMLエクスポート</button>
+    <button id="btnExportDist" title="注釈前の原本・再編集用の図形を含まないHTML。モザイクで隠した内容が残らないので、社外へ渡すときはこちら">配布用HTML</button>
+    <button id="btnExport" class="primary" title="再編集できるHTML（注釈前の原本も含む）。「ファイル読込」でそのまま読み戻せます">HTMLエクスポート</button>
   </div>
 </div>
 
@@ -180,20 +173,25 @@
       <ul>
         <li>セクションをクリックすると「貼り付け先」になり、その状態で <kbd>Ctrl</kbd>+<kbd>V</kbd> で画像を貼り付けられます</li>
         <li>ドロップゾーンへのドラッグ&ドロップ、クリックしてのファイル選択でも画像を追加できます</li>
-        <li>画像をクリックすると注釈エディタ（四角・矢印・ペン・テキスト・モザイク）が開きます</li>
-        <li>画像を右クリックすると、注釈の編集・複製・削除ができます</li>
-        <li>⠿ をドラッグすると画像やセクションを並び替え・他セクションへ移動できます</li>
+        <li>画像をクリックすると注釈エディタ（選択・四角・丸・矢印・ペン・テキスト・番号・モザイク・切り抜き）が開きます</li>
+        <li>「差替」（または右クリック）で、キャプション・表示幅を残したまま画像だけ差し替え（注釈は引き継ぐか選択。右クリックからはクリップボードの画像でも差し替え可）</li>
+        <li>⠿ をドラッグすると画像やセクションを並び替え・他セクションへ移動できます（画像はカードの左半分に落とすと前、右半分なら後ろへ）</li>
         <li>画像右端をドラッグ、または幅ボタンで表示幅を変更できます</li>
+        <li>キャプションの改行はエクスポート後も改行されます（<code>&lt;br&gt;</code> と書いても改行になります）</li>
       </ul>
       <h3>複数選択</h3>
       <ul>
-        <li>画像のチェックボックスで複数選択すると、画面下部のバーで幅の一括変更・一括削除ができます</li>
+        <li>画像のチェックボックスで複数選択すると、画面下部のバーで幅の一括変更・別セクションへの一括移動・一括削除ができます</li>
+        <li>選択中の画像のどれかの ⠿ をドラッグすると、選択した画像をまとめて（表示順のまま）移動できます</li>
       </ul>
       <h3>注釈エディタ</h3>
       <ul>
         <li><kbd>←</kbd> / <kbd>→</kbd> — 変更を自動保存して前後の画像へ移動</li>
-        <li><kbd>Ctrl</kbd>+<kbd>Z</kbd> — 直前の書き込みを取り消し</li>
-        <li><kbd>Esc</kbd> — 未保存の変更を破棄して閉じる</li>
+        <li><kbd>Ctrl</kbd>+<kbd>Z</kbd> — 直前の書き込みを取り消し／<kbd>Ctrl</kbd>+<kbd>Y</kbd> — やり直し（全消去・切り抜きも戻せます）</li>
+        <li>「選択」ツール — クリックで選択、ドラッグで移動、<kbd>Delete</kbd> で削除。選択中に色・線・文字サイズを押すとその図形に反映。テキストはダブルクリックで再編集</li>
+        <li>テキスト入力中 — <kbd>Enter</kbd> で改行、<kbd>Ctrl</kbd>+<kbd>Enter</kbd> または外側クリックで確定、<kbd>Esc</kbd> で取り消し</li>
+        <li>「切り抜き」ツール — ドラッグで範囲を指定（やり直しは再ドラッグ）、画面下のバーか <kbd>Enter</kbd> で確定、<kbd>Esc</kbd> で解除。「保存」するまで元画像は変わりません</li>
+        <li><kbd>Esc</kbd> — 未保存の変更を破棄して閉じる（図形を選択中は選択解除のみ）</li>
       </ul>
       <h3>キーボードショートカット</h3>
       <ul>
@@ -205,7 +203,10 @@
       <ul>
         <li>「JSON保存」「ファイル読込」— 作業データをファイルとして保存/読込（このツールが書き出したHTMLも読込可）</li>
         <li>「プレビュー（印刷確認）」— 書き出し結果を別画面で確認</li>
-        <li>「HTMLエクスポート」— 単体で開けるHTMLファイルとして書き出し</li>
+        <li>「HTMLエクスポート」— 単体で開けるHTMLファイルとして書き出し（再編集用に注釈前の原本も入ります）</li>
+        <li>「配布用HTML」— 注釈前の原本・図形を含まないHTML。モザイクで隠した内容が残らないため、社外へ渡すときはこちら</li>
+        <li>「キャプション書出」— 全画像のキャプションを CSV（セクションNo・セクション名・画像No・キャプション）で保存。Excel で編集できます</li>
+        <li>「キャプション読込」— 編集した CSV を読み込み、セクションNo・画像No が一致する画像のキャプションを上書きします（<kbd>Ctrl</kbd>+<kbd>Z</kbd> で戻せます）</li>
       </ul>
       <h3>自動保存</h3>
       <ul>
@@ -215,36 +216,9 @@
   </div>
 </div>
 
-<div id="annoModal" class="anno-modal hidden">
-  <div class="anno-toolbar">
-    <button data-tool="rect" title="範囲を四角で囲む">四角</button>
-    <button data-tool="arrow" title="矢印で指し示す">矢印</button>
-    <button data-tool="pen" title="フリーハンド">ペン</button>
-    <button data-tool="text" title="文字を書き込む">テキスト</button>
-    <button data-tool="mosaic" title="個人情報・社名などを塗りつぶす">モザイク</button>
-    <span class="sep"></span>
-    <button class="swatch" style="background:#ff3b30" data-color="#ff3b30" title="赤"></button>
-    <button class="swatch" style="background:#ffd60a" data-color="#ffd60a" title="黄"></button>
-    <button class="swatch" style="background:#3a6ea5" data-color="#3a6ea5" title="青"></button>
-    <button class="swatch" style="background:#34c759" data-color="#34c759" title="緑"></button>
-    <span class="sep"></span>
-    <button id="annoUndo" title="直前の書き込みを取り消す（Ctrl+Z）">元に戻す</button>
-    <button id="annoClear" title="この画像の書き込みをすべて消す">全消去</button>
-    <span class="sep"></span>
-    <button id="annoPrev" title="この画像を保存して前の画像へ（←キー）">‹ 前へ</button>
-    <span id="annoPos" class="pos"></span>
-    <button id="annoNext" title="この画像を保存して次の画像へ（→キー）">次へ ›</button>
-    <span class="tip">←→キーでも移動（移動時に自動保存）</span>
-    <span class="spacer"></span>
-    <button id="annoCancel" title="この画像の未保存の書き込みを破棄して閉じます">キャンセル (Esc)</button>
-    <button id="annoSave" class="anno-save">保存して閉じる</button>
-  </div>
-  <div class="anno-canvas-wrap"><canvas id="annoCanvas"></canvas></div>
-</div>
-
 <div id="toast"></div>
 
-<div class="hint">画像ごとに幅（100% / 50% / 33% / 25%、またはカード右端をドラッグで自由調整）を選べます。横長のPC画面キャプチャは<b>100%</b>、縦長のプロパティ画面は<b>33%前後</b>、比較したい2枚は両方<b>50%</b>で自動的に横並びになります。<b>Alt+PrintScreen → Ctrl+V</b>で直接貼り付け可能（貼り付け先はオレンジ枠のセクション）。画像左上のチェックで<b>複数選択→一括で幅変更・削除</b>、⠿をドラッグで並び替え（<b>他のセクションへ移動</b>も可能。空のセクションへは点線の枠へドロップ）、<b>サムネイルをクリックすると注釈エディタ</b>が開きます（四角で囲む・矢印・ペン・テキスト・<b>モザイク</b>／←→で前後の画像へ移動）。モザイクは元のピクセルを残さず塗り潰すので、社名・氏名・IPの伏せ字に使えます。右クリックで注釈編集・複製・削除メニュー。<b>Ctrl+S</b>でJSON保存、<b>Ctrl+Z / Ctrl+Y</b>で元に戻す・やり直しができます。取り込む画像の<b>縮小サイズ・保存形式</b>は右上で選べます（選択はこのブラウザに記憶されます。画面の文字を読ませたいならPNG、枚数が多くサイズを抑えたいならJPEG）。ツールバー右上に<b>推定ファイルサイズ</b>を常時表示します。<b>エクスポートしたHTMLは「ファイル読込」でそのまま読み戻せます</b>ので、配布したHTMLさえあれば再編集できます。エクスポート後のHTMLは画像を<b>クリックで拡大</b>（←→で送り、Escで閉じる）できます。</div>
+<div class="hint">画像ごとに幅（100% / 50% / 33% / 25%、またはカード右端をドラッグで自由調整）を選べます。横長のPC画面キャプチャは<b>100%</b>、縦長のプロパティ画面は<b>33%前後</b>、比較したい2枚は両方<b>50%</b>で自動的に横並びになります。<b>Alt+PrintScreen → Ctrl+V</b>で直接貼り付け可能（貼り付け先はオレンジ枠のセクション）。<b>サムネイルをクリックすると注釈エディタ</b>が開きます（選択・四角・丸・矢印・ペン・テキスト・番号・<b>モザイク</b>・<b>切り抜き</b>／←→で前後の画像へ移動）。「<b>差替</b>」でキャプションを残したまま画像だけ入れ替えられます。画像左上のチェックで<b>複数選択→一括で幅変更・別セクションへ移動・削除</b>（選択した画像の⠿をドラッグしてもまとめて移動）。キャプションは改行でき、<b>キャプション書出／読込</b>でExcel編集もできます。<b>Ctrl+S</b>でJSON保存、<b>Ctrl+Z / Ctrl+Y</b>で元に戻す・やり直し。取り込む画像の<b>縮小サイズ・保存形式</b>は右上で選べます（このブラウザに記憶されます）。<b>HTMLエクスポートは「ファイル読込」でそのまま読み戻せます</b>（注釈前の原本も入るため、モザイクで隠した情報を社外に出さないときは<b>配布用HTML</b>を使ってください）。</div>
 
 <div class="main" id="main"></div>
 <button id="addSection">＋ セクションを追加（例：手順3-1 ログイン確認）</button>
@@ -483,7 +457,7 @@
   // ==== keyboard ====
   document.addEventListener("keydown", function(e){
     // 注釈モーダルを開いている間は、そちらのキー操作（Ctrl+Z＝直前の書き込みを取消）が優先。
-    if (annoIsOpen()) return;
+    if (Annotator.isOpen()) return;
     if (e.key === "Escape"){ closeCtxMenu(); if (selectedCount()) clearSelection(); return; }
     var mod = e.ctrlKey || e.metaKey;
     if (!mod) return;
@@ -637,9 +611,8 @@
       // The dropzone doubles as the target for an image dragged in from another section,
       // which is the only way to reach a section that has no cards to drop onto yet.
       if (dragCtx && dragCtx.type === "image"){
-        snapshot();
-        moveImageAcross(dragCtx.sectionId, dragCtx.from, section.id, section.images.length);
-        dragCtx = null; setActiveSection(section.id); render();
+        var d = dragCtx; dragCtx = null;
+        dropDraggedImages(d, section.id, section.images.length);
         return;
       }
       setActiveSection(section.id);
@@ -659,9 +632,8 @@
     gallery.addEventListener("drop", function(e){
       if (!dragCtx || dragCtx.type !== "image") return;
       e.preventDefault(); e.stopPropagation();
-      snapshot();
-      moveImageAcross(dragCtx.sectionId, dragCtx.from, section.id, section.images.length);
-      dragCtx = null; setActiveSection(section.id); render();
+      var d = dragCtx; dragCtx = null;
+      dropDraggedImages(d, section.id, section.images.length);
     });
     section.images.forEach(function(img, iIdx){
       gallery.appendChild(renderImageCard(section, img, iIdx));
@@ -675,6 +647,7 @@
   // 貼り付けも handleFiles に流す。以前は1枚ごとに snapshot() していたので、
   // 複数枚を含むクリップボードでは Undo 履歴が枚数分積まれていた。
   document.addEventListener("paste", function(e){
+    if (Annotator.isOpen()) return;
     var cd = e.clipboardData || window.clipboardData;
     var items = cd ? cd.items : null;
     if (!items) return;
@@ -759,6 +732,8 @@
           if (!(img.shapes || []).length) return;
           snapshot(); img.shapes = []; img.flatRef = null; render();
       } },
+      { label: "画像を差し替え（ファイル）", fn: function(){ pickSwapImage(img.id); } },
+      { label: "画像を差し替え（クリップボード）", fn: function(){ swapFromClipboard(img.id); } },
       { label: "画像を複製", fn: function(){ snapshot(); section.images.splice(iIdx+1, 0, deepCopyImage(img)); render(); } },
       { label: "画像を削除", danger: true, fn: function(){ snapshot(); section.images.splice(iIdx,1); pruneSelection(); render(); } }
     ];
@@ -775,18 +750,22 @@
       e.preventDefault(); e.stopPropagation();
       openCtxMenu(e.clientX, e.clientY, imageCtxItems(section, img, iIdx));
     });
+    // カードの左半分に落とすとその前、右半分なら後ろへ入る
+    function dropBefore(e){ var r = card.getBoundingClientRect(); return (e.clientX - r.left) < r.width / 2; }
     card.addEventListener("dragover", function(e){
       if (dragCtx && dragCtx.type === "image"){
-        e.preventDefault(); card.classList.add("drop-target");
+        e.preventDefault();
+        var b = dropBefore(e);
+        card.classList.toggle("drop-before", b);
+        card.classList.toggle("drop-after", !b);
       }
     });
-    card.addEventListener("dragleave", function(){ card.classList.remove("drop-target"); });
+    card.addEventListener("dragleave", function(){ card.classList.remove("drop-before", "drop-after"); });
     card.addEventListener("drop", function(e){
       if (!dragCtx || dragCtx.type !== "image") return;
-      e.preventDefault(); e.stopPropagation(); card.classList.remove("drop-target");
-      snapshot();
-      moveImageAcross(dragCtx.sectionId, dragCtx.from, section.id, iIdx);
-      dragCtx = null; setActiveSection(section.id); render();
+      e.preventDefault(); e.stopPropagation(); card.classList.remove("drop-before", "drop-after");
+      var d = dragCtx; dragCtx = null;
+      dropDraggedImages(d, section.id, iIdx + (dropBefore(e) ? 0 : 1));
     });
 
     var selBox = document.createElement("input");
@@ -800,10 +779,13 @@
     });
     card.appendChild(selBox);
 
+    var num = document.createElement("span"); num.className = "img-num"; num.textContent = iIdx + 1;
+    card.appendChild(num);
+
     var nShapes = (img.shapes || []).length;
     if (nShapes) card.classList.add("has-anno");
     var thumbWrap = document.createElement("div"); thumbWrap.className = "thumb-wrap";
-    thumbWrap.title = "クリックで注釈（囲む・矢印・モザイクなど）";
+    thumbWrap.title = "クリックで注釈（囲む・矢印・番号・モザイク・切り抜きなど）";
     var el = document.createElement("img");
     el.src = getImage(img.flatRef || img.ref);   // 書き込み済みなら焼き込み後を表示
     el.alt = img.caption || "";
@@ -850,8 +832,10 @@
     });
     card.appendChild(resizer);
 
-    var caption = document.createElement("input");
-    caption.className = "caption-input"; caption.placeholder = "キャプション（例：変更前 / エラー画面）";
+    // 改行はエクスポート後のキャプションでも改行になる（<br> と書いても改行）
+    var caption = document.createElement("textarea");
+    caption.className = "caption-input"; caption.rows = 1;
+    caption.placeholder = "キャプション（例：変更前 / エラー画面）";
     caption.value = img.caption || "";
     caption.addEventListener("input", function(){ img.caption = caption.value; });
     card.appendChild(caption);
@@ -862,9 +846,16 @@
     grip.className = "drag-grip"; grip.textContent = "⠿"; grip.title = "ドラッグで並び替え（他のセクションへも移動できます）";
     grip.draggable = true;
     grip.addEventListener("dragstart", function(e){
-      dragCtx = { type: "image", sectionId: section.id, from: iIdx };
+      // 選択中の画像を掴んだら、選択した画像をまとめて（表示順のまま）運ぶ
+      var multi = selectedCount() > 1 && !!selectedIds[img.id];
+      dragCtx = { type: "image", sectionId: section.id, from: iIdx, multi: multi };
       e.dataTransfer.setData("text/plain", "image");
       e.dataTransfer.effectAllowed = "move";
+      if (multi) Array.prototype.forEach.call(main.querySelectorAll(".img-card.selected"), function(c){ c.classList.add("dragging"); });
+      else card.classList.add("dragging");
+    });
+    grip.addEventListener("dragend", function(){
+      Array.prototype.forEach.call(main.querySelectorAll(".dragging,.drop-before,.drop-after"), function(c){ c.classList.remove("dragging", "drop-before", "drop-after"); });
     });
     controls.appendChild(grip);
 
@@ -892,6 +883,9 @@
     var down = document.createElement("button"); down.textContent = "→";
     down.title = "順番を後ろへ";
     down.addEventListener("click", function(){ moveImage(section, iIdx, 1); });
+    var swap = document.createElement("button"); swap.textContent = "差替";
+    swap.title = "キャプション・表示幅を残したまま画像だけ差し替え（右クリックでクリップボードからも）";
+    swap.addEventListener("click", function(){ pickSwapImage(img.id); });
     var dup = document.createElement("button"); dup.textContent = "⧉";
     dup.title = "この画像を複製";
     dup.addEventListener("click", function(){
@@ -904,92 +898,805 @@
       snapshot();
       section.images.splice(iIdx,1); pruneSelection(); render();
     });
-    controls.appendChild(up); controls.appendChild(down); controls.appendChild(dup); controls.appendChild(del);
+    controls.appendChild(up); controls.appendChild(down); controls.appendChild(swap); controls.appendChild(dup); controls.appendChild(del);
     card.appendChild(controls);
 
     return card;
   }
 
 
-  // ==== 注釈（画像への書き込み） ====
-  // 画面キャプチャは「どこを見てほしいか」「どこを隠すべきか」が本体。別ツールで加工して
-  // から貼り直す運用だと元画像との対応が失われ、あとからの直しも効かない。書き込みは
-  // 図形の配列として project 側に持ち（＝Undo でき、あとから編集し直せる）、表示・出力用に
-  // 焼き込んだ画像を imageStore へ別に置く。モザイクは社名・氏名・IPを隠す用途で必須。
-  var SHAPE_TYPES = { rect:1, arrow:1, pen:1, text:1, mosaic:1 };
-  function shapeNum(v, d){ var n = Number(v); return isFinite(n) ? n : d; }
-  function safeColor(v){ return (typeof v === "string" && /^#[0-9a-f]{3,8}$/i.test(v)) ? v : "#ff3b30"; }
-  function normalizeShapes(arr){
-    if (!Array.isArray(arr)) return [];
-    var out = [];
-    arr.forEach(function(sh){
-      if (!sh || typeof sh !== "object" || !SHAPE_TYPES[sh.type]) return;
-      var color = safeColor(sh.color);
-      if (sh.type === "rect" || sh.type === "mosaic"){
-        out.push({ type:sh.type, x:shapeNum(sh.x,0), y:shapeNum(sh.y,0), w:shapeNum(sh.w,0), h:shapeNum(sh.h,0), color:color });
-      } else if (sh.type === "arrow"){
-        out.push({ type:"arrow", x1:shapeNum(sh.x1,0), y1:shapeNum(sh.y1,0), x2:shapeNum(sh.x2,0), y2:shapeNum(sh.y2,0), color:color });
-      } else if (sh.type === "pen"){
-        var pts = (Array.isArray(sh.points) ? sh.points : [])
-          .filter(function(pt){ return pt && isFinite(Number(pt.x)) && isFinite(Number(pt.y)); })
-          .map(function(pt){ return { x:Number(pt.x), y:Number(pt.y) }; });
-        if (pts.length) out.push({ type:"pen", points:pts, color:color });
-      } else {
-        var t = String(sh.text == null ? "" : sh.text).slice(0, 500);
-        if (t) out.push({ type:"text", x:shapeNum(sh.x,0), y:shapeNum(sh.y,0), text:t, color:color, size:Math.max(6, shapeNum(sh.size,24)) });
+  // ==== 注釈エディタ（テストエビデンス作成ツールと同じ機能） ====
+  // 選択・四角・丸・矢印・ペン・テキスト（画像上で直接入力）・番号・モザイク・切り抜き、
+  // 線の太さ・塗り・文字サイズ・文字背景、エディタ内の取り消し／やり直しに対応する。
+  // 呼び出し側とは opts のフックだけでつながる（データ構造に依存しない）:
+  //   load(key)        → { src: 元画像dataURL, shapes: [...] } | null
+  //   save(key, r)     … r = { original: 切り抜き後の元画像 | null, shapes, flattened: 焼き込み画像 | null }
+  //   nav(key, dir)    → 前後の画像の key | null
+  //   pos(key)         → "2 / 5" のような位置表示
+  //   encode(cv, like) → 画像の書き出し（like と同じ形式で）
+  //   toast(msg) / onClose()
+  // 切り抜きもエディタ内で完結させ、「保存」するまで呼び出し側のデータは変えない
+  // （キャンセルすれば切り抜きごと元に戻る）。
+  var Annotator = (function(){
+    var SHAPE_TYPES = { rect:1, ellipse:1, arrow:1, pen:1, text:1, num:1, mosaic:1 };
+    var HIST_MAX = 100;
+    var opts = {};
+    function num(v, d){ var n = Number(v); return isFinite(n) ? n : d; }
+    function safeColor(v){ return (typeof v === "string" && /^#[0-9a-f]{3,8}$/i.test(v)) ? v : "#ff3b30"; }
+
+    // 読み込むデータは他人が作ったファイルかもしれない。1フィールドずつ検証して詰め替える。
+    function normalizeShapes(arr){
+      if (!Array.isArray(arr)) return [];
+      var out = [];
+      arr.forEach(function(s){
+        if (!s || typeof s !== "object" || !SHAPE_TYPES[s.type]) return;
+        var color = safeColor(s.color);
+        var lw = Math.min(4, Math.max(0.25, num(s.lw, 1)));
+        if (s.type === "mosaic"){
+          out.push({ type:"mosaic", x:num(s.x,0), y:num(s.y,0), w:num(s.w,0), h:num(s.h,0), color:color });
+        } else if (s.type === "rect" || s.type === "ellipse"){
+          out.push({ type:s.type, x:num(s.x,0), y:num(s.y,0), w:num(s.w,0), h:num(s.h,0), color:color, lw:lw, fill:s.fill !== false });
+        } else if (s.type === "arrow"){
+          out.push({ type:"arrow", x1:num(s.x1,0), y1:num(s.y1,0), x2:num(s.x2,0), y2:num(s.y2,0), color:color, lw:lw });
+        } else if (s.type === "num"){
+          out.push({ type:"num", x:num(s.x,0), y:num(s.y,0), n:Math.max(1, Math.floor(num(s.n,1))), color:color, size:Math.max(6, num(s.size,24)) });
+        } else if (s.type === "pen"){
+          var pts = (Array.isArray(s.points) ? s.points : [])
+            .filter(function(p){ return p && isFinite(Number(p.x)) && isFinite(Number(p.y)); })
+            .map(function(p){ return { x:Number(p.x), y:Number(p.y) }; });
+          if (pts.length) out.push({ type:"pen", points:pts, color:color, lw:lw });
+        } else {
+          var t = String(s.text == null ? "" : s.text).slice(0, 500);
+          if (t) out.push({ type:"text", x:num(s.x,0), y:num(s.y,0), text:t, color:color, size:Math.max(6, num(s.size,24)), box:s.box === true });
+        }
+      });
+      return out;
+    }
+
+    function lineWidth(s, cw){ return Math.max(3, cw * 0.004) * (s.lw || 1); }
+    function textLayout(c, s){
+      var font = "bold " + s.size + "px sans-serif";
+      var lines = String(s.text).split("\n");
+      var lh = s.size * 1.25;
+      c.save(); c.font = font;
+      var w = Math.max.apply(null, lines.map(function(l){ return c.measureText(l).width; }).concat([s.size * 0.5]));
+      c.restore();
+      var pad = s.box ? s.size * 0.3 : s.size * 0.1;
+      return { font:font, lines:lines, lh:lh, x:s.x - pad, y:s.y - s.size * 0.9 - pad, w:w + pad * 2, h:s.size * 1.15 + (lines.length - 1) * lh + pad * 2 };
+    }
+    function roundRectPath(c, x, y, w, h, r){
+      r = Math.min(r, w / 2, h / 2);
+      c.beginPath();
+      c.moveTo(x + r, y); c.lineTo(x + w - r, y); c.quadraticCurveTo(x + w, y, x + w, y + r);
+      c.lineTo(x + w, y + h - r); c.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      c.lineTo(x + r, y + h); c.quadraticCurveTo(x, y + h, x, y + h - r);
+      c.lineTo(x, y + r); c.quadraticCurveTo(x, y, x + r, y);
+      c.closePath();
+    }
+    function drawShape(c, s, baseImg, cw){
+      c.strokeStyle = s.color; c.fillStyle = s.color; c.lineWidth = lineWidth(s, cw);
+      if (s.type === "rect"){
+        if (s.fill !== false){ c.save(); c.globalAlpha = 0.15; c.fillRect(s.x, s.y, s.w, s.h); c.restore(); }
+        c.strokeRect(s.x, s.y, s.w, s.h);
+      } else if (s.type === "ellipse"){
+        if (s.w < 1 || s.h < 1) return;
+        c.beginPath(); c.ellipse(s.x + s.w / 2, s.y + s.h / 2, s.w / 2, s.h / 2, 0, 0, Math.PI * 2);
+        if (s.fill !== false){ c.save(); c.globalAlpha = 0.15; c.fill(); c.restore(); }
+        c.stroke();
+      } else if (s.type === "arrow"){
+        var head = Math.max(12, cw * 0.015) * Math.max(1, (s.lw || 1) * 0.8);
+        var ang = Math.atan2(s.y2 - s.y1, s.x2 - s.x1);
+        c.beginPath(); c.moveTo(s.x1, s.y1); c.lineTo(s.x2, s.y2); c.stroke();
+        c.beginPath();
+        c.moveTo(s.x2, s.y2);
+        c.lineTo(s.x2 - head * Math.cos(ang - Math.PI / 6), s.y2 - head * Math.sin(ang - Math.PI / 6));
+        c.lineTo(s.x2 - head * Math.cos(ang + Math.PI / 6), s.y2 - head * Math.sin(ang + Math.PI / 6));
+        c.closePath(); c.fill();
+      } else if (s.type === "pen"){
+        c.save(); c.lineJoin = "round"; c.lineCap = "round";
+        c.beginPath();
+        s.points.forEach(function(p, i){ if (i === 0) c.moveTo(p.x, p.y); else c.lineTo(p.x, p.y); });
+        c.stroke();
+        c.restore();
+      } else if (s.type === "text"){
+        var L = textLayout(c, s);
+        c.save();
+        c.font = L.font; c.textBaseline = "alphabetic";
+        if (s.box){
+          roundRectPath(c, L.x, L.y, L.w, L.h, s.size * 0.25);
+          c.fillStyle = "rgba(255,255,255,.93)"; c.fill();
+          c.strokeStyle = s.color; c.lineWidth = Math.max(2, s.size * 0.08); c.stroke();
+          c.fillStyle = (s.color === "#ffd60a") ? "#222" : s.color;   // 白地に黄色文字は読めない
+          L.lines.forEach(function(ln, i){ c.fillText(ln, s.x, s.y + i * L.lh); });
+        } else {
+          c.strokeStyle = "rgba(0,0,0,.65)"; c.lineWidth = Math.max(2, s.size * 0.15); c.lineJoin = "round";
+          L.lines.forEach(function(ln, i){ c.strokeText(ln, s.x, s.y + i * L.lh); c.fillText(ln, s.x, s.y + i * L.lh); });
+        }
+        c.restore();
+      } else if (s.type === "num"){
+        var r = s.size * 0.75;
+        c.save();
+        c.beginPath(); c.arc(s.x, s.y, r, 0, Math.PI * 2);
+        c.fillStyle = s.color; c.fill();
+        c.lineWidth = Math.max(2, r * 0.12); c.strokeStyle = "#fff"; c.stroke();
+        c.fillStyle = (s.color === "#ffd60a") ? "#000" : "#fff";
+        c.font = "bold " + (s.n >= 10 ? s.size * 0.8 : s.size) + "px sans-serif";
+        c.textAlign = "center"; c.textBaseline = "middle";
+        c.fillText(String(s.n), s.x, s.y + s.size * 0.05);
+        c.restore();
+      } else if (s.type === "mosaic"){
+        if (!baseImg || s.w < 2 || s.h < 2) return;
+        var block = Math.max(8, cw * 0.012);
+        var tw = Math.max(1, Math.round(s.w / block));
+        var th = Math.max(1, Math.round(s.h / block));
+        var tmp = document.createElement("canvas"); tmp.width = tw; tmp.height = th;
+        // 一度小さく描いてから引き伸ばす＝焼き込み画像に元のピクセルは残らない
+        tmp.getContext("2d").drawImage(baseImg, s.x, s.y, s.w, s.h, 0, 0, tw, th);
+        c.save(); c.imageSmoothingEnabled = false;
+        c.drawImage(tmp, 0, 0, tw, th, s.x, s.y, s.w, s.h);
+        c.restore();
+      }
+    }
+    function encode(cv, like){
+      if (opts.encode) return opts.encode(cv, like);
+      return (like && like.indexOf("data:image/jpeg") === 0) ? cv.toDataURL("image/jpeg", 0.92) : cv.toDataURL("image/png");
+    }
+    // 図形を焼き込んだ画像を作る。cb は成功時 dataURL / 失敗時 null で必ず一度だけ呼ばれる。
+    function flatten(original, shapes, cb){
+      var im = new Image(), done = false;
+      function fin(v){ if (done) return; done = true; cb(v); }
+      im.onload = function(){
+        try{
+          var cv = document.createElement("canvas");
+          cv.width = im.naturalWidth; cv.height = im.naturalHeight;
+          var cx = cv.getContext("2d");
+          cx.drawImage(im, 0, 0);
+          (shapes || []).forEach(function(s){ drawShape(cx, s, im, cv.width); });
+          fin(encode(cv, original));
+        }catch(e){ fin(null); }
+      };
+      im.onerror = function(){ fin(null); };
+      im.src = original;
+    }
+
+    // ---- DOM ----
+    var CSS = [
+      "#anxModal{position:fixed;inset:0;background:rgba(15,18,24,.94);z-index:650;display:none;flex-direction:column;}",
+      "#anxModal.open{display:flex;}",
+      "#anxModal .anx-toolbar{display:flex;align-items:center;gap:6px;padding:9px 14px;background:#12151a;flex-wrap:wrap;}",
+      "#anxModal .anx-toolbar button{background:#232833;color:#e8e6e2;border:1px solid #363c47;padding:6px 10px;border-radius:5px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;line-height:1.3;}",
+      "#anxModal .anx-toolbar button:hover{background:#2e3542;}",
+      "#anxModal .anx-toolbar button.active{background:var(--anx-accent,#3a6ea5);border-color:var(--anx-accent,#3a6ea5);color:var(--anx-accent-ink,#fff);}",
+      "#anxModal .anx-toolbar button:disabled{opacity:.35;cursor:default;}",
+      "#anxModal .anx-toolbar button:disabled:hover{background:#232833;}",
+      "#anxModal .anx-toolbar .anx-save{background:#2f8f5b;border-color:#2f8f5b;color:#fff;}",
+      "#anxModal .anx-toolbar .anx-save:hover{background:#38a56a;}",
+      "#anxModal .anx-sep{width:1px;height:20px;background:#363c47;margin:0 3px;}",
+      "#anxModal .anx-spacer{flex:1;}",
+      "#anxModal .anx-label{font-size:11px;color:#aeb6c2;}",
+      "#anxModal .anx-pos{font-size:12px;color:#aeb6c2;min-width:52px;text-align:center;font-family:Consolas,Menlo,monospace;}",
+      "#anxModal .anx-tip{font-size:11px;color:#7c8698;}",
+      "#anxModal .anx-toolbar .anx-swatch{width:22px;height:22px;border-radius:50%;border:2px solid transparent;padding:0;cursor:pointer;}",
+      "#anxModal .anx-toolbar .anx-swatch.active{border-color:#fff;}",
+      "#anxModal .anx-canvas-wrap{flex:1;display:flex;align-items:center;justify-content:center;overflow:auto;padding:16px;}",
+      "#anxCanvas{background:#000;max-width:100%;max-height:100%;cursor:crosshair;box-shadow:0 0 0 1px #333;touch-action:none;}",
+      "#anxText{position:fixed;z-index:670;display:none;margin:0;padding:2px 4px;border:1px dashed #fff;border-radius:3px;font-family:sans-serif;font-weight:bold;line-height:1.25;resize:none;overflow:hidden;outline:none;white-space:pre;}",
+      "#anxCropBar{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:665;display:none;align-items:center;gap:10px;background:#12151a;border:1px solid #363c47;border-radius:8px;padding:8px 12px;color:#e8e6e2;font-size:12.5px;box-shadow:0 6px 20px rgba(0,0,0,.5);}",
+      "#anxCropBar.show{display:flex;}",
+      "#anxCropBar button{background:#232833;color:#e8e6e2;border:1px solid #363c47;padding:6px 12px;border-radius:5px;font-size:12.5px;cursor:pointer;font-family:inherit;}",
+      "#anxCropBar button.primary{background:var(--anx-accent,#3a6ea5);border-color:var(--anx-accent,#3a6ea5);color:var(--anx-accent-ink,#fff);}"
+    ].join("\n");
+    var HTML = [
+      '<div class="anx-toolbar">',
+      '  <button data-tool="select" title="図形をクリックで選択 → ドラッグで移動／Deleteで削除／テキストはダブルクリックで再編集">選択</button>',
+      '  <button data-tool="rect" title="範囲を四角で囲む">四角</button>',
+      '  <button data-tool="ellipse" title="丸で囲む">丸</button>',
+      '  <button data-tool="arrow" title="矢印で指し示す">矢印</button>',
+      '  <button data-tool="pen" title="フリーハンド">ペン</button>',
+      '  <button data-tool="text" title="クリックした位置に直接入力（Enterで改行、Ctrl+Enterまたは外側クリックで確定）。既存のテキストをクリックすると再編集">テキスト</button>',
+      '  <button data-tool="num" title="クリックで 1,2,3… の連番を置く">番号</button>',
+      '  <button data-tool="mosaic" title="社名・氏名・IPなどを塗りつぶす">モザイク</button>',
+      '  <button data-tool="crop" title="ドラッグした範囲で画像を切り抜く">切り抜き</button>',
+      '  <span class="anx-sep"></span>',
+      '  <span class="anx-label">線</span>',
+      '  <button data-lw="0.5" title="線の太さ：細">細</button>',
+      '  <button data-lw="1" title="線の太さ：中">中</button>',
+      '  <button data-lw="2" title="線の太さ：太">太</button>',
+      '  <button data-act="fill" title="四角・丸の半透明の塗り ON/OFF">塗り</button>',
+      '  <span class="anx-sep"></span>',
+      '  <span class="anx-label">文字</span>',
+      '  <button data-size="0.6" title="テキスト・番号のサイズ：小">小</button>',
+      '  <button data-size="1" title="テキスト・番号のサイズ：中">中</button>',
+      '  <button data-size="1.6" title="テキスト・番号のサイズ：大">大</button>',
+      '  <button data-size="2.4" title="テキスト・番号のサイズ：特大">特大</button>',
+      '  <button data-act="box" title="テキストを白背景の枠付きにする ON/OFF">背景</button>',
+      '  <span class="anx-sep"></span>',
+      '  <button class="anx-swatch" style="background:#ff3b30" data-color="#ff3b30" title="赤"></button>',
+      '  <button class="anx-swatch" style="background:#ffd60a" data-color="#ffd60a" title="黄"></button>',
+      '  <button class="anx-swatch" style="background:#3a6ea5" data-color="#3a6ea5" title="青"></button>',
+      '  <button class="anx-swatch" style="background:#34c759" data-color="#34c759" title="緑"></button>',
+      '  <span class="anx-sep"></span>',
+      '  <button data-act="undo" title="Ctrl+Z">元に戻す</button>',
+      '  <button data-act="redo" title="Ctrl+Y / Ctrl+Shift+Z">やり直す</button>',
+      '  <button data-act="clear" title="この画像の書き込みをすべて消す（元に戻せます）">全消去</button>',
+      '  <span class="anx-sep"></span>',
+      '  <button data-act="prev" title="この画像を保存して前の画像へ（←キー）">‹ 前へ</button>',
+      '  <span class="anx-pos"></span>',
+      '  <button data-act="next" title="この画像を保存して次の画像へ（→キー）">次へ ›</button>',
+      '  <span class="anx-tip">←→キーでも移動（自動保存）</span>',
+      '  <span class="anx-spacer"></span>',
+      '  <button data-act="cancel" title="この画像の未保存の変更を破棄して閉じます（移動時に保存済みの分は残ります）">キャンセル (Esc)</button>',
+      '  <button data-act="save" class="anx-save">保存して閉じる</button>',
+      '</div>',
+      '<div class="anx-canvas-wrap"><canvas id="anxCanvas"></canvas></div>',
+      '<div id="anxCropBar"><span class="anx-crop-info"></span><span style="color:#7c8698;font-size:11px;">範囲はドラッグし直せます</span>',
+      '  <button class="primary" data-act="crop-apply">切り抜く (Enter)</button><button data-act="crop-cancel">やめる (Esc)</button></div>'
+    ].join("\n");
+
+    var style = document.createElement("style");
+    style.textContent = CSS;
+    document.head.appendChild(style);
+    var modal = document.createElement("div");
+    modal.id = "anxModal";
+    modal.innerHTML = HTML;
+    document.body.appendChild(modal);
+    // テキスト入力欄。no-undo を付けて、呼び出し側の「入力欄にフォーカスしたら Undo 履歴を取る」処理から外す
+    var textInput = document.createElement("textarea");
+    textInput.id = "anxText"; textInput.className = "no-undo";
+    textInput.rows = 1; textInput.spellcheck = false;
+    document.body.appendChild(textInput);
+
+    var canvas = modal.querySelector("#anxCanvas");
+    var ctx = canvas.getContext("2d");
+    var cropBar = modal.querySelector("#anxCropBar");
+    function q(sel){ return modal.querySelector(sel); }
+    function qa(sel){ return Array.prototype.slice.call(modal.querySelectorAll(sel)); }
+
+    var st = { key:null, tool:"rect", color:"#ff3b30", textScale:1, lineScale:1, fill:true, textBox:false,
+      shapes:[], base:null, original:null, originalChanged:false, loadedJson:"[]",
+      drawing:false, startX:0, startY:0, pen:null, sel:-1, dragMoved:false, lastX:0, lastY:0,
+      hist:[], redo:[], textEdit:null, cropRect:null };
+
+    function toast(msg){ if (opts.toast) opts.toast(msg); }
+    function isOpen(){ return modal.classList.contains("open"); }
+    function baseTextSize(){ return Math.max(20, canvas.width * 0.025); }
+
+    // ---- 取り消し／やり直し（要素は図形配列の JSON。切り抜きだけは元画像ごと戻すためオブジェクト） ----
+    function cropEntry(){ return { crop:true, base:st.base, original:st.original, originalChanged:st.originalChanged, shapes:JSON.stringify(st.shapes) }; }
+    function pushHist(e){ st.hist.push(e); if (st.hist.length > HIST_MAX) st.hist.shift(); st.redo.length = 0; }
+    function commitHist(){ pushHist(JSON.stringify(st.shapes)); }
+    function setBase(im, original, changed){
+      st.base = im; st.original = original; st.originalChanged = changed;
+      canvas.width = im.naturalWidth; canvas.height = im.naturalHeight;
+    }
+    function restoreEntry(e){
+      if (typeof e === "object"){ setBase(e.base, e.original, e.originalChanged); st.shapes = JSON.parse(e.shapes); }
+      else st.shapes = JSON.parse(e);
+      st.sel = -1; redraw();
+    }
+    function undo(){
+      if (!st.hist.length) return;
+      finishTextEdit(true); setCropRect(null);
+      var e = st.hist.pop();
+      st.redo.push(typeof e === "object" ? cropEntry() : JSON.stringify(st.shapes));
+      restoreEntry(e);
+    }
+    function redo(){
+      if (!st.redo.length) return;
+      finishTextEdit(true); setCropRect(null);
+      var e = st.redo.pop();
+      st.hist.push(typeof e === "object" ? cropEntry() : JSON.stringify(st.shapes));
+      restoreEntry(e);
+    }
+    function updateHistUI(){
+      q('[data-act="undo"]').disabled = !st.hist.length;
+      q('[data-act="redo"]').disabled = !st.redo.length;
+    }
+
+    // ---- 開く・保存・閉じる ----
+    function open(key){
+      var d = opts.load ? opts.load(key) : null;
+      if (!d || !d.src) return;
+      var image = new Image();
+      image.onerror = function(){ toast("この画像を開けませんでした"); };
+      image.onload = function(){
+        st.key = key;
+        setBase(image, d.src, false);
+        st.shapes = normalizeShapes(d.shapes);
+        st.loadedJson = JSON.stringify(st.shapes);
+        st.hist = []; st.redo = [];
+        st.sel = -1; st.drawing = false;
+        setCropRect(null);
+        modal.classList.add("open");
+        redraw();
+        updateNav();
+      };
+      image.src = d.src;
+    }
+    // 変更があれば呼び出し側へ渡す。戻り値は「保存したか」。
+    function commit(){
+      finishTextEdit(true);
+      setCropRect(null);
+      if (!st.base || !isOpen()) return false;
+      var json = JSON.stringify(st.shapes);
+      if (json === st.loadedJson && !st.originalChanged) return false;
+      redraw(false);   // 選択枠などの編集用表示は焼き込まない
+      var flat = st.shapes.length ? encode(canvas, st.original) : null;
+      if (opts.save) opts.save(st.key, { original: st.originalChanged ? st.original : null, shapes: JSON.parse(json), flattened: flat });
+      st.loadedJson = json; st.originalChanged = false;
+      redraw();
+      return true;
+    }
+    function close(){
+      finishTextEdit(false);
+      setCropRect(null);
+      modal.classList.remove("open");
+      st.drawing = false; st.sel = -1; st.base = null;
+      if (opts.onClose) opts.onClose();
+    }
+    function nav(dir){
+      var next = opts.nav ? opts.nav(st.key, dir) : null;
+      if (next == null) return;
+      commit();
+      open(next);
+    }
+    function updateNav(){
+      q(".anx-pos").textContent = opts.pos ? opts.pos(st.key) : "";
+      q('[data-act="prev"]').disabled = !opts.nav || opts.nav(st.key, -1) == null;
+      q('[data-act="next"]').disabled = !opts.nav || opts.nav(st.key, 1) == null;
+    }
+
+    // ---- 描画 ----
+    function redraw(ui){
+      if (ui === undefined) ui = true;
+      if (!st.base) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(st.base, 0, 0);
+      st.shapes.forEach(function(s, i){
+        if (ui && st.textEdit && st.textEdit.idx === i) return;   // 編集中のテキストは入力欄で表示
+        drawShape(ctx, s, st.base, canvas.width);
+      });
+      if (ui && st.sel >= 0 && st.shapes[st.sel]) drawSelection(st.shapes[st.sel]);
+      if (ui && st.cropRect) drawCropPreview(st.cropRect);
+      updateHistUI();
+    }
+
+    // ---- 当たり判定・選択・移動 ----
+    function shapeBounds(s){
+      if (s.type === "rect" || s.type === "ellipse" || s.type === "mosaic") return { x:s.x, y:s.y, w:s.w, h:s.h };
+      if (s.type === "arrow") return { x:Math.min(s.x1, s.x2), y:Math.min(s.y1, s.y2), w:Math.abs(s.x2 - s.x1), h:Math.abs(s.y2 - s.y1) };
+      if (s.type === "pen"){
+        var xs = s.points.map(function(p){ return p.x; }), ys = s.points.map(function(p){ return p.y; });
+        var x = Math.min.apply(null, xs), y = Math.min.apply(null, ys);
+        return { x:x, y:y, w:Math.max.apply(null, xs) - x, h:Math.max.apply(null, ys) - y };
+      }
+      if (s.type === "text"){ var L = textLayout(ctx, s); return { x:L.x, y:L.y, w:L.w, h:L.h }; }
+      if (s.type === "num"){ var r = s.size * 0.75; return { x:s.x - r, y:s.y - r, w:r * 2, h:r * 2 }; }
+      return { x:0, y:0, w:0, h:0 };
+    }
+    function distSeg(px, py, x1, y1, x2, y2){
+      var dx = x2 - x1, dy = y2 - y1, len2 = dx * dx + dy * dy;
+      var t = len2 ? Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / len2)) : 0;
+      return Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy));
+    }
+    function hitShape(s, x, y){
+      var tol = Math.max(8, canvas.width * 0.008) + lineWidth(s, canvas.width) / 2;
+      if (s.type === "arrow") return distSeg(x, y, s.x1, s.y1, s.x2, s.y2) <= tol;
+      if (s.type === "pen"){
+        var p = s.points;
+        if (p.length === 1) return Math.hypot(x - p[0].x, y - p[0].y) <= tol;
+        for (var i = 1; i < p.length; i++) if (distSeg(x, y, p[i-1].x, p[i-1].y, p[i].x, p[i].y) <= tol) return true;
+        return false;
+      }
+      // 塗り無しの四角・丸は枠線付近だけ反応（内側の図形を選べるように）
+      if (s.type === "rect" && s.fill === false){
+        var inOuter = x >= s.x - tol && x <= s.x + s.w + tol && y >= s.y - tol && y <= s.y + s.h + tol;
+        var inInner = x > s.x + tol && x < s.x + s.w - tol && y > s.y + tol && y < s.y + s.h - tol;
+        return inOuter && !inInner;
+      }
+      if (s.type === "ellipse"){
+        var rx = s.w / 2, ry = s.h / 2, cx = s.x + rx, cy = s.y + ry;
+        if (rx < 1 || ry < 1) return false;
+        var d = Math.hypot((x - cx) / rx, (y - cy) / ry);
+        return s.fill === false ? Math.abs(d - 1) * Math.min(rx, ry) <= tol : d <= 1 + tol / Math.min(rx, ry);
+      }
+      var b = shapeBounds(s);
+      return x >= b.x - tol && x <= b.x + b.w + tol && y >= b.y - tol && y <= b.y + b.h + tol;
+    }
+    function hitTest(x, y){
+      for (var i = st.shapes.length - 1; i >= 0; i--) if (hitShape(st.shapes[i], x, y)) return i;
+      return -1;
+    }
+    function moveShape(s, dx, dy){
+      if (s.type === "arrow"){ s.x1 += dx; s.y1 += dy; s.x2 += dx; s.y2 += dy; }
+      else if (s.type === "pen"){ s.points.forEach(function(p){ p.x += dx; p.y += dy; }); }
+      else { s.x += dx; s.y += dy; }
+    }
+    function drawSelection(s){
+      var b = shapeBounds(s), m = Math.max(4, canvas.width * 0.004);
+      ctx.save();
+      ctx.lineWidth = Math.max(2, canvas.width * 0.0015);
+      ctx.setLineDash([ctx.lineWidth * 4, ctx.lineWidth * 3]);
+      ctx.strokeStyle = "#fff"; ctx.strokeRect(b.x - m, b.y - m, b.w + m * 2, b.h + m * 2);
+      ctx.lineDashOffset = ctx.lineWidth * 4;
+      ctx.strokeStyle = "#00a2ff"; ctx.strokeRect(b.x - m, b.y - m, b.w + m * 2, b.h + m * 2);
+      ctx.restore();
+    }
+    function drawCropPreview(r){
+      ctx.save();
+      ctx.fillStyle = "rgba(0,0,0,.55)";
+      ctx.beginPath();
+      ctx.rect(0, 0, canvas.width, canvas.height);
+      ctx.rect(r.x, r.y, r.w, r.h);
+      ctx.fill("evenodd");
+      ctx.lineWidth = Math.max(2, canvas.width * 0.0015);
+      ctx.setLineDash([ctx.lineWidth * 4, ctx.lineWidth * 3]);
+      ctx.strokeStyle = "#fff"; ctx.strokeRect(r.x, r.y, r.w, r.h);
+      ctx.restore();
+    }
+    // 選択中の図形に、ツールバーで選んだ色・太さなどを反映
+    function applyToSel(fn){
+      if (st.tool !== "select" || st.sel < 0) return;
+      var s = st.shapes[st.sel];
+      if (!s) return;
+      var before = JSON.stringify(s);
+      var copy = JSON.parse(before);
+      fn(copy);
+      if (JSON.stringify(copy) === before) return;
+      commitHist();
+      st.shapes[st.sel] = copy;
+      redraw();
+    }
+
+    // ---- 切り抜き ----
+    // ドラッグで範囲を決め、画面下のバー（または Enter）で確定する。confirm() はブラウザで
+    // 「ダイアログを表示しない」にされていると黙って false を返すため使わない。
+    function clampRect(r){
+      var x0 = Math.max(0, Math.round(r.x)), y0 = Math.max(0, Math.round(r.y));
+      var x1 = Math.min(canvas.width, Math.round(r.x + r.w)), y1 = Math.min(canvas.height, Math.round(r.y + r.h));
+      return { x:x0, y:y0, w:Math.max(0, x1 - x0), h:Math.max(0, y1 - y0) };
+    }
+    function setCropRect(r){
+      st.cropRect = r;
+      cropBar.classList.toggle("show", !!r);
+      if (r) cropBar.querySelector(".anx-crop-info").textContent = r.w + " × " + r.h + " px";
+    }
+    function applyCropSelection(){
+      var r = st.cropRect;
+      setCropRect(null);
+      if (r) applyCrop(r); else redraw();
+    }
+    function cancelCropSelection(){ setCropRect(null); redraw(); }
+    function applyCrop(r){
+      var c = clampRect(r), x = c.x, y = c.y, w = c.w, h = c.h;
+      if (w < 10 || h < 10){ redraw(); toast("切り抜く範囲が小さすぎます"); return; }
+      if (x === 0 && y === 0 && w === canvas.width && h === canvas.height){ redraw(); return; }
+      finishTextEdit(true);
+      var cv = document.createElement("canvas"); cv.width = w; cv.height = h;
+      cv.getContext("2d").drawImage(st.base, x, y, w, h, 0, 0, w, h);
+      var url;
+      try{ url = encode(cv, st.original); }catch(e){ toast("切り抜きに失敗しました"); redraw(); return; }
+      var shapes = JSON.parse(JSON.stringify(st.shapes));
+      shapes.forEach(function(s){ moveShape(s, -x, -y); });
+      shapes = shapes.filter(function(s){
+        var b = shapeBounds(s);
+        return b.x + b.w >= 0 && b.y + b.h >= 0 && b.x <= w && b.y <= h;
+      }).map(function(s){
+        if (s.type !== "mosaic") return s;
+        var nx = Math.max(0, s.x), ny = Math.max(0, s.y);   // モザイクは画像内に収める（範囲外を参照しない）
+        s.w = Math.min(w, s.x + s.w) - nx; s.h = Math.min(h, s.y + s.h) - ny; s.x = nx; s.y = ny;
+        return s;
+      }).filter(function(s){ return s.type !== "mosaic" || (s.w >= 2 && s.h >= 2); });
+      var entry = cropEntry();
+      var im = new Image();
+      im.onload = function(){
+        if (!isOpen()) return;
+        pushHist(entry);
+        setBase(im, url, true);
+        st.shapes = shapes; st.sel = -1;
+        redraw();
+        toast("切り抜きました（Ctrl+Z で戻せます。「保存」で確定）");
+      };
+      im.onerror = function(){ toast("切り抜きに失敗しました"); redraw(); };
+      im.src = url;
+    }
+
+    // ---- テキストの入力・再編集（画像上に直接入力） ----
+    function startTextEdit(idx, x, y){
+      var s;
+      if (idx >= 0) s = st.shapes[idx];
+      else s = { type:"text", x:x, y:y, text:"", color:st.color, size:baseTextSize() * st.textScale, box:st.textBox };
+      st.textEdit = { idx:idx, shape:s };
+      st.sel = -1;
+      var rect = canvas.getBoundingClientRect();
+      var scale = rect.width / canvas.width;
+      var ta = textInput;
+      ta.value = s.text;
+      ta.style.left = (rect.left + s.x * scale - 4) + "px";
+      ta.style.top = (rect.top + (s.y - s.size * 1.0) * scale - 2) + "px";
+      ta.style.fontSize = (s.size * scale) + "px";
+      ta.style.color = (s.box && s.color === "#ffd60a") ? "#222" : s.color;
+      ta.style.background = s.box ? "rgba(255,255,255,.93)" : "rgba(0,0,0,.45)";
+      ta.style.display = "block";
+      fitTextInput();
+      redraw();
+      function focusEnd(){ if (st.textEdit && document.activeElement !== ta){ ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); } }
+      focusEnd();
+      setTimeout(focusEnd, 0);
+    }
+    function fitTextInput(){
+      var ta = textInput;
+      ctx.save(); ctx.font = "bold " + ta.style.fontSize + " sans-serif";
+      var w = Math.max.apply(null, ta.value.split("\n").map(function(l){ return ctx.measureText(l).width; }).concat([0]));
+      ctx.restore();
+      ta.style.width = Math.max(140, w + parseFloat(ta.style.fontSize) * 1.5) + "px";
+      ta.style.height = "auto";
+      ta.style.height = ta.scrollHeight + "px";
+    }
+    function finishTextEdit(doCommit){
+      var te = st.textEdit;
+      if (!te) return;
+      st.textEdit = null;
+      textInput.style.display = "none";
+      var text = textInput.value.replace(/\s+$/, "").slice(0, 500);
+      if (doCommit){
+        if (te.idx >= 0){
+          var s = st.shapes[te.idx];
+          if (s && !text){ commitHist(); st.shapes.splice(te.idx, 1); }
+          else if (s && text !== s.text){ commitHist(); s.text = text; }
+        } else if (text){
+          commitHist(); te.shape.text = text; st.shapes.push(te.shape);
+        }
+      }
+      redraw();
+    }
+    textInput.addEventListener("input", fitTextInput);
+    textInput.addEventListener("blur", function(){ finishTextEdit(true); });
+    textInput.addEventListener("keydown", function(e){
+      e.stopPropagation();   // ←→での画像移動や Esc での終了、呼び出し側のショートカットを入力中は発火させない
+      if (e.key === "Escape"){ e.preventDefault(); finishTextEdit(false); }
+      else if (e.key === "Enter" && (e.ctrlKey || e.metaKey)){ e.preventDefault(); finishTextEdit(true); }
+    });
+
+    // ---- ポインタ操作 ----
+    function coords(e){
+      var rect = canvas.getBoundingClientRect();
+      return { x:(e.clientX - rect.left) * (canvas.width / rect.width), y:(e.clientY - rect.top) * (canvas.height / rect.height) };
+    }
+    function dragRect(x, y){
+      return { x:Math.min(st.startX, x), y:Math.min(st.startY, y), w:Math.abs(x - st.startX), h:Math.abs(y - st.startY) };
+    }
+    canvas.addEventListener("pointerdown", function(e){
+      if (st.textEdit){ finishTextEdit(true); return; }   // 入力中の外側クリックは確定のみ
+      var p = coords(e), x = p.x, y = p.y;
+      var tool = st.tool;
+      if (tool === "select"){
+        st.sel = hitTest(x, y);
+        if (st.sel >= 0){
+          try{ canvas.setPointerCapture(e.pointerId); }catch(err){}
+          st.drawing = true; st.dragMoved = false;
+          st.lastX = x; st.lastY = y;
+        }
+        redraw();
+        return;
+      }
+      st.sel = -1;
+      if (tool === "crop") setCropRect(null);
+      if (tool === "text"){
+        e.preventDefault();   // 既定のフォーカス移動で入力欄がすぐ閉じないように
+        var i = hitTest(x, y);
+        if (i >= 0 && st.shapes[i].type === "text") startTextEdit(i);
+        else startTextEdit(-1, x, y);
+        return;
+      }
+      if (tool === "num"){
+        var n = st.shapes.reduce(function(m, s){ return s.type === "num" ? Math.max(m, s.n) : m; }, 0) + 1;
+        commitHist();
+        st.shapes.push({ type:"num", x:x, y:y, n:n, color:st.color, size:baseTextSize() * st.textScale });
+        redraw();
+        return;
+      }
+      try{ canvas.setPointerCapture(e.pointerId); }catch(err){}
+      st.drawing = true;
+      st.startX = x; st.startY = y;
+      if (tool === "pen"){
+        commitHist();
+        st.pen = { type:"pen", color:st.color, lw:st.lineScale, points:[{ x:x, y:y }] };
+        st.shapes.push(st.pen);
+        redraw();
       }
     });
-    return out;
-  }
+    canvas.addEventListener("pointermove", function(e){
+      var p = coords(e), x = p.x, y = p.y;
+      var tool = st.tool;
+      if (!st.drawing){
+        if (tool === "select") canvas.style.cursor = hitTest(x, y) >= 0 ? "move" : "default";
+        return;
+      }
+      if (tool === "select"){
+        var s = st.shapes[st.sel];
+        if (!s) return;
+        if (!st.dragMoved){ commitHist(); st.dragMoved = true; }
+        moveShape(s, x - st.lastX, y - st.lastY);
+        st.lastX = x; st.lastY = y;
+        redraw();
+      } else if (tool === "pen"){
+        st.pen.points.push({ x:x, y:y });
+        redraw();
+      } else if (tool === "crop"){
+        redraw();
+        drawCropPreview(dragRect(x, y));
+      } else {
+        redraw();
+        var preview = (tool === "arrow")
+          ? { type:"arrow", x1:st.startX, y1:st.startY, x2:x, y2:y, color:st.color, lw:st.lineScale }
+          : Object.assign({ type:tool, color:st.color, lw:st.lineScale, fill:st.fill }, dragRect(x, y));
+        drawShape(ctx, preview, st.base, canvas.width);
+      }
+    });
+    canvas.addEventListener("pointerup", function(e){
+      if (!st.drawing) return;
+      st.drawing = false;
+      var p = coords(e), x = p.x, y = p.y;
+      var tool = st.tool;
+      if (tool === "rect" || tool === "ellipse" || tool === "mosaic"){
+        var r = dragRect(x, y);
+        if (r.w >= 3 || r.h >= 3){
+          commitHist();
+          var s = Object.assign({ type:tool, color:st.color }, r);
+          if (tool !== "mosaic"){ s.lw = st.lineScale; s.fill = st.fill; }
+          st.shapes.push(s);
+        }
+      } else if (tool === "arrow"){
+        if (Math.hypot(x - st.startX, y - st.startY) >= 3){
+          commitHist();
+          st.shapes.push({ type:"arrow", x1:st.startX, y1:st.startY, x2:x, y2:y, color:st.color, lw:st.lineScale });
+        }
+      } else if (tool === "crop"){
+        var cr = clampRect(dragRect(x, y));
+        setCropRect(cr.w >= 10 && cr.h >= 10 ? cr : null);
+      }
+      redraw();
+    });
+    canvas.addEventListener("pointercancel", function(){ st.drawing = false; redraw(); });
+    canvas.addEventListener("dblclick", function(e){
+      if (st.tool !== "select") return;
+      var p = coords(e);
+      var i = hitTest(p.x, p.y);
+      if (i >= 0 && st.shapes[i].type === "text") startTextEdit(i);
+    });
 
-  function drawShape(c, sh, baseImg, cw){
-    c.strokeStyle = sh.color; c.fillStyle = sh.color;
-    c.lineWidth = Math.max(3, cw * 0.004);
-    if (sh.type === "rect"){
-      c.save(); c.globalAlpha = 0.15; c.fillRect(sh.x, sh.y, sh.w, sh.h); c.restore();
-      c.strokeRect(sh.x, sh.y, sh.w, sh.h);
-    } else if (sh.type === "arrow"){
-      var head = Math.max(12, cw * 0.015);
-      var ang = Math.atan2(sh.y2 - sh.y1, sh.x2 - sh.x1);
-      c.beginPath(); c.moveTo(sh.x1, sh.y1); c.lineTo(sh.x2, sh.y2); c.stroke();
-      c.beginPath();
-      c.moveTo(sh.x2, sh.y2);
-      c.lineTo(sh.x2 - head * Math.cos(ang - Math.PI/6), sh.y2 - head * Math.sin(ang - Math.PI/6));
-      c.lineTo(sh.x2 - head * Math.cos(ang + Math.PI/6), sh.y2 - head * Math.sin(ang + Math.PI/6));
-      c.closePath(); c.fill();
-    } else if (sh.type === "pen"){
-      c.beginPath();
-      sh.points.forEach(function(pt, i){ if (i === 0) c.moveTo(pt.x, pt.y); else c.lineTo(pt.x, pt.y); });
-      c.stroke();
-    } else if (sh.type === "text"){
-      c.font = "bold " + sh.size + "px sans-serif";
-      c.save(); c.strokeStyle = "rgba(0,0,0,.65)"; c.lineWidth = 4; c.strokeText(sh.text, sh.x, sh.y); c.restore();
-      c.fillText(sh.text, sh.x, sh.y);
-    } else if (sh.type === "mosaic"){
-      if (!baseImg || sh.w < 2 || sh.h < 2) return;
-      var block = Math.max(8, cw * 0.012);
-      var tw = Math.max(1, Math.round(sh.w / block));
-      var th = Math.max(1, Math.round(sh.h / block));
-      var tmp = document.createElement("canvas"); tmp.width = tw; tmp.height = th;
-      // 一度小さく描いてから引き伸ばす＝元のピクセルは残らない（黒塗りと同等に安全）
-      tmp.getContext("2d").drawImage(baseImg, sh.x, sh.y, sh.w, sh.h, 0, 0, tw, th);
-      c.save(); c.imageSmoothingEnabled = false;
-      c.drawImage(tmp, 0, 0, tw, th, sh.x, sh.y, sh.w, sh.h);
-      c.restore();
+    // ---- ツールバー ----
+    function setTool(tool){
+      finishTextEdit(true);
+      setCropRect(null);
+      st.tool = tool;
+      st.sel = -1;
+      qa("[data-tool]").forEach(function(b){ b.classList.toggle("active", b.dataset.tool === tool); });
+      canvas.style.cursor = tool === "select" ? "default" : (tool === "text" ? "text" : "crosshair");
+      if (st.base) redraw();
     }
-  }
+    qa("[data-tool]").forEach(function(b){ b.addEventListener("click", function(){ setTool(b.dataset.tool); }); });
+    qa(".anx-swatch").forEach(function(sw){
+      sw.addEventListener("click", function(){
+        st.color = sw.dataset.color;
+        qa(".anx-swatch").forEach(function(o){ o.classList.toggle("active", o === sw); });
+        applyToSel(function(s){ if (s.type !== "mosaic") s.color = sw.dataset.color; });
+      });
+    });
+    qa("[data-size]").forEach(function(b){
+      b.addEventListener("click", function(){
+        st.textScale = parseFloat(b.dataset.size);
+        qa("[data-size]").forEach(function(o){ o.classList.toggle("active", o === b); });
+        applyToSel(function(s){ if (s.type === "text" || s.type === "num") s.size = baseTextSize() * st.textScale; });
+      });
+    });
+    qa("[data-lw]").forEach(function(b){
+      b.addEventListener("click", function(){
+        st.lineScale = parseFloat(b.dataset.lw);
+        qa("[data-lw]").forEach(function(o){ o.classList.toggle("active", o === b); });
+        applyToSel(function(s){ if (["rect","ellipse","arrow","pen"].indexOf(s.type) >= 0) s.lw = st.lineScale; });
+      });
+    });
+    var ACTIONS = {
+      fill: function(b){ st.fill = !st.fill; b.classList.toggle("active", st.fill); applyToSel(function(s){ if (s.type === "rect" || s.type === "ellipse") s.fill = st.fill; }); },
+      box: function(b){ st.textBox = !st.textBox; b.classList.toggle("active", st.textBox); applyToSel(function(s){ if (s.type === "text") s.box = st.textBox; }); },
+      undo: undo,
+      redo: redo,
+      clear: function(){ if (!st.shapes.length) return; finishTextEdit(false); commitHist(); st.shapes = []; st.sel = -1; redraw(); },
+      prev: function(){ nav(-1); },
+      next: function(){ nav(1); },
+      cancel: close,
+      save: function(){ var changed = commit(); close(); if (changed) toast("注釈を保存しました"); },
+      "crop-apply": applyCropSelection,
+      "crop-cancel": cancelCropSelection
+    };
+    qa("[data-act]").forEach(function(b){
+      b.addEventListener("click", function(){ var f = ACTIONS[b.dataset.act]; if (f) f(b); });
+    });
+    q('[data-size="1"]').classList.add("active");
+    q('[data-lw="1"]').classList.add("active");
+    q('[data-act="fill"]').classList.add("active");
+    q('[data-tool="rect"]').classList.add("active");
+    q(".anx-swatch").classList.add("active");
 
-  function flattenToDataUrl(baseImg, shapes, likeDataUrl){
-    var cv = document.createElement("canvas");
-    cv.width = baseImg.naturalWidth; cv.height = baseImg.naturalHeight;
-    var cx = cv.getContext("2d");
-    cx.drawImage(baseImg, 0, 0);
-    shapes.forEach(function(sh){ drawShape(cx, sh, baseImg, cv.width); });
-    // 元がJPEGならJPEGのまま（PNGに変えると容量が跳ね上がる）
-    return (likeDataUrl && likeDataUrl.indexOf("data:image/jpeg") === 0)
-      ? cv.toDataURL("image/jpeg", 0.92)
-      : cv.toDataURL("image/png");
+    // 開いている間のキー操作はすべてここで受け、呼び出し側のショートカット（Ctrl+S / Ctrl+Z など）には渡さない。
+    document.addEventListener("keydown", function(e){
+      if (!isOpen()) return;
+      if (e.target === textInput) return;   // 入力欄は自分で処理する
+      e.stopPropagation();
+      var k = (e.key || "").toLowerCase();
+      var mod = e.ctrlKey || e.metaKey;
+      if (st.cropRect && e.key === "Enter"){ e.preventDefault(); applyCropSelection(); return; }
+      if (e.key === "Escape"){
+        e.preventDefault();
+        if (st.cropRect) cancelCropSelection();
+        else if (st.sel >= 0){ st.sel = -1; redraw(); }
+        else close();
+      }
+      else if (mod && (k === "y" || (e.shiftKey && k === "z"))){ redo(); e.preventDefault(); }
+      else if (mod && k === "z"){ undo(); e.preventDefault(); }
+      else if (mod && (k === "s" || k === "f" || k === "p")){ e.preventDefault(); }
+      else if ((e.key === "Delete" || e.key === "Backspace") && st.sel >= 0){
+        commitHist(); st.shapes.splice(st.sel, 1); st.sel = -1; redraw(); e.preventDefault();
+      }
+      else if (e.key === "ArrowRight"){ nav(1); e.preventDefault(); }
+      else if (e.key === "ArrowLeft"){ nav(-1); e.preventDefault(); }
+    }, true);
+
+    return {
+      init: function(o){ opts = o || {}; },
+      open: open,
+      isOpen: isOpen,
+      currentKey: function(){ return isOpen() ? st.key : null; },
+      normalizeShapes: normalizeShapes,
+      drawShape: drawShape,
+      flatten: flatten
+    };
+  })();
+
+  // ---- 注釈エディタと証跡データのつなぎ ----
+  // 書き込みは図形の配列として project 側に持ち（＝Undo でき、あとから編集し直せる）、
+  // 表示・出力用に焼き込んだ画像を imageStore へ別に置く（flatRef）。
+  function findImageEntry(imgId){
+    for (var s = 0; s < project.sections.length; s++){
+      var sec = project.sections[s];
+      for (var i = 0; i < sec.images.length; i++) if (sec.images[i].id === imgId) return { sec: sec, img: sec.images[i], idx: i };
+    }
+    return null;
   }
+  function encodeLike(cv, like){
+    // 元がJPEGならJPEGのまま（PNGに変えると容量が跳ね上がる）
+    return (like && like.indexOf("data:image/jpeg") === 0) ? cv.toDataURL("image/jpeg", getFmt().q || 0.92) : cv.toDataURL("image/png");
+  }
+  Annotator.init({
+    toast: showToast,
+    encode: encodeLike,
+    load: function(id){
+      var e = findImageEntry(id);
+      return e ? { src: getImage(e.img.ref), shapes: e.img.shapes || [] } : null;
+    },
+    save: function(id, r){
+      var e = findImageEntry(id);
+      if (!e) return;
+      snapshot();
+      if (r.original) e.img.ref = putImage(r.original);
+      e.img.shapes = r.shapes;
+      e.img.flatRef = r.flattened ? putImage(r.flattened) : null;
+    },
+    nav: function(id, dir){
+      var e = findImageEntry(id);
+      if (!e) return null;
+      var n = e.sec.images[e.idx + dir];
+      return n ? n.id : null;
+    },
+    pos: function(id){
+      var e = findImageEntry(id);
+      return e ? (e.idx + 1) + " / " + e.sec.images.length : "";
+    },
+    onClose: function(){ render(); }
+  });
+  function openAnnotate(secId, imgId){ Annotator.open(imgId); }
 
   // 読み込み直後は焼き込み画像が無い。図形を持つものだけ作り直す。デコードは非同期なので
   // 全部揃ってから1回だけ再描画する（1枚ずつ描くと読み込み中に画面がちらつく）。
@@ -1001,176 +1708,203 @@
     if (!targets.length){ if (done) done(); return; }
     var pending = targets.length;
     targets.forEach(function(im){
-      var image = new Image();
-      var settled = false;
-      function fin(){ if (settled) return; settled = true; if (--pending === 0 && done) done(); }
-      image.onload = function(){
-        try{ im.flatRef = putImage(flattenToDataUrl(image, im.shapes, getImage(im.ref))); }catch(e){}
-        fin();
-      };
-      image.onerror = fin;
-      image.src = getImage(im.ref);
+      Annotator.flatten(getImage(im.ref), im.shapes, function(d){
+        if (d) im.flatRef = putImage(d);
+        if (--pending === 0 && done) done();
+      });
     });
   }
 
-  var annoState = { sectionId:null, imgId:null, tool:"rect", color:"#ff3b30", shapes:[], base:null, drawing:false, sx:0, sy:0, pen:null };
-  function annoEl(id){ return document.getElementById(id); }
-  function annoIsOpen(){ var m = annoEl("annoModal"); return !!m && !m.classList.contains("hidden"); }
-  function annoFindImage(secId, imgId){
-    var sec = getSection(secId);
-    if (!sec) return null;
-    for (var i = 0; i < sec.images.length; i++) if (sec.images[i].id === imgId) return sec.images[i];
-    return null;
-  }
-  function annoIndex(){
-    var sec = getSection(annoState.sectionId);
-    if (!sec) return -1;
-    for (var i = 0; i < sec.images.length; i++) if (sec.images[i].id === annoState.imgId) return i;
-    return -1;
-  }
-  function annoRedraw(){
-    var cv = annoEl("annoCanvas"), cx = cv.getContext("2d");
-    cx.clearRect(0, 0, cv.width, cv.height);
-    if (annoState.base) cx.drawImage(annoState.base, 0, 0);
-    annoState.shapes.forEach(function(sh){ drawShape(cx, sh, annoState.base, cv.width); });
-  }
-  function annoUpdateNav(){
-    var sec = getSection(annoState.sectionId);
-    var idx = annoIndex();
-    annoEl("annoPos").textContent = (idx + 1) + " / " + (sec ? sec.images.length : 0);
-    annoEl("annoPrev").disabled = idx <= 0;
-    annoEl("annoNext").disabled = !sec || idx < 0 || idx >= sec.images.length - 1;
-  }
-  function openAnnotate(secId, imgId){
-    var img = annoFindImage(secId, imgId);
-    if (!img) return;
-    var image = new Image();
-    image.onerror = function(){ showToast("この画像を開けませんでした"); };
-    image.onload = function(){
-      var cv = annoEl("annoCanvas");
-      cv.width = image.naturalWidth; cv.height = image.naturalHeight;
-      annoState.sectionId = secId; annoState.imgId = imgId;
-      annoState.base = image;
-      annoState.shapes = normalizeShapes(img.shapes);
-      annoEl("annoModal").classList.remove("hidden");
-      annoRedraw();
-      annoUpdateNav();
+  // ---- 画像だけ差し替え（キャプション・表示幅・並び位置は保持。注釈は引き継ぐか選べる） ----
+  var swapInput = document.createElement("input");
+  swapInput.type = "file"; swapInput.accept = "image/*"; swapInput.hidden = true;
+  document.body.appendChild(swapInput);
+  var swapTargetId = null;
+  function pickSwapImage(imgId){ swapTargetId = imgId; swapInput.click(); }
+  swapInput.addEventListener("change", function(){
+    var f = swapInput.files && swapInput.files[0];
+    var id = swapTargetId; swapTargetId = null; swapInput.value = "";
+    if (f && id) swapFromBlob(id, f);
+  });
+  function swapFromBlob(imgId, blob){
+    if (!blob || !/^image\//.test(blob.type || "")){ showToast("画像ファイルを選んでください"); return; }
+    var reader = new FileReader();
+    reader.onload = function(){
+      preprocessImage(reader.result, function(u){
+        if (!u){ showToast("画像を読み込めませんでした"); return; }
+        replaceImage(imgId, u);
+      });
     };
-    image.src = getImage(img.ref);
+    reader.onerror = function(){ showToast("画像を読み込めませんでした"); };
+    reader.readAsDataURL(blob);
   }
-  // 書き込みがあるときだけ焼き込み画像を作り直す。図形が0なら flatRef を捨てて原本に戻す。
-  function annoCommit(){
-    var img = annoFindImage(annoState.sectionId, annoState.imgId);
-    if (!img || !annoState.base) return false;
-    if (JSON.stringify(img.shapes || []) === JSON.stringify(annoState.shapes)) return false;
+  function swapFromClipboard(imgId){
+    if (!navigator.clipboard || !navigator.clipboard.read){
+      showToast("このブラウザではクリップボードから直接読めません。「差替」からファイルを選んでください");
+      return;
+    }
+    navigator.clipboard.read().then(function(items){
+      for (var i = 0; i < items.length; i++){
+        var type = items[i].types.filter(function(t){ return t.indexOf("image/") === 0; })[0];
+        if (type) return items[i].getType(type).then(function(b){ swapFromBlob(imgId, b); });
+      }
+      showToast("クリップボードに画像がありません");
+    }).catch(function(){
+      showToast("クリップボードを読めませんでした。「差替」からファイルを選んでください");
+    });
+  }
+  function replaceImage(imgId, dataUrl){
+    var e = findImageEntry(imgId);
+    if (!e) return;
+    var img = e.img;
+    var keep = (img.shapes && img.shapes.length)
+      ? confirm("この画像には注釈があります。新しい画像に注釈を引き継ぎますか？\n\nOK：引き継ぐ（同じ位置に重ねる）\nキャンセル：注釈を消して差し替える")
+      : false;
     snapshot();
-    img.shapes = JSON.parse(JSON.stringify(annoState.shapes));
-    img.flatRef = img.shapes.length
-      ? putImage(flattenToDataUrl(annoState.base, img.shapes, getImage(img.ref)))
-      : null;
+    img.ref = putImage(dataUrl);
+    if (!keep){
+      img.shapes = []; img.flatRef = null;
+      render();
+      showToast("画像を差し替えました（キャプションは保持）");
+      return;
+    }
+    Annotator.flatten(dataUrl, img.shapes, function(d){
+      img.flatRef = d ? putImage(d) : null;
+      render();
+      showToast("画像を差し替えました（キャプション・注釈は保持）");
+    });
+  }
+
+  // ---- 複数画像をまとめて移動（表示順を保つ。移動後も選択したまま） ----
+  function selectedImageIds(){
+    var out = [];
+    project.sections.forEach(function(s){ s.images.forEach(function(im){ if (selectedIds[im.id]) out.push(im.id); }); });
+    return out;
+  }
+  // dstIdx は移動前の並びでの挿入位置。何も変わらなければ false（Undo 履歴を消費しない）。
+  function moveImagesTo(ids, dstSecId, dstIdx){
+    var dst = getSection(dstSecId);
+    if (!dst || !ids.length) return false;
+    var keys = {}; ids.forEach(function(id){ keys[id] = true; });
+    var moving = [];
+    project.sections.forEach(function(s){ s.images.forEach(function(im){ if (keys[im.id]) moving.push(im); }); });
+    if (!moving.length) return false;
+    var sig = function(lists){ return lists.map(function(a){ return a.map(function(im){ return im.id; }).join(","); }).join("|"); };
+    var before = sig(project.sections.map(function(s){ return s.images; }));
+    var idx = Math.max(0, Math.min(dstIdx, dst.images.length));
+    var shift = dst.images.slice(0, idx).filter(function(im){ return keys[im.id]; }).length;
+    var next = project.sections.map(function(s){ return s.images.filter(function(im){ return !keys[im.id]; }); });
+    var di = project.sections.indexOf(dst);
+    Array.prototype.splice.apply(next[di], [idx - shift, 0].concat(moving));
+    if (sig(next) === before) return false;
+    snapshot();
+    project.sections.forEach(function(s, i){ s.images = next[i]; });
     return true;
   }
-  function annoNav(dir){
-    var sec = getSection(annoState.sectionId);
-    var idx = annoIndex();
-    if (!sec || idx < 0) return;
-    var next = idx + dir;
-    if (next < 0 || next >= sec.images.length) return;
-    annoCommit();
-    openAnnotate(annoState.sectionId, sec.images[next].id);
-  }
-  function annoClose(){
-    annoEl("annoModal").classList.add("hidden");
-    annoState.drawing = false;
-    annoState.base = null;
+  // ドラッグ中の画像を落とす。選択中の画像を掴んでいたら選択分をまとめて移動。
+  function dropDraggedImages(d, dstSecId, dstIdx){
+    if (d.multi){
+      var ids = selectedImageIds();
+      if (moveImagesTo(ids, dstSecId, dstIdx)) showToast(ids.length + " 枚を移動しました（Ctrl+Z で戻せます）");
+    } else {
+      var src = getSection(d.sectionId);
+      if (!src) return;
+      if (d.sectionId === dstSecId && (dstIdx === d.from || dstIdx === d.from + 1)) return;   // 動かないなら履歴を消費しない
+      snapshot();
+      moveImageAcross(d.sectionId, d.from, dstSecId, (d.sectionId === dstSecId && d.from < dstIdx) ? dstIdx - 1 : dstIdx);
+    }
+    setActiveSection(dstSecId);
     render();
   }
-  function annoCoords(e){
-    var cv = annoEl("annoCanvas");
-    var r = cv.getBoundingClientRect();
-    return { x: (e.clientX - r.left) * (cv.width / r.width), y: (e.clientY - r.top) * (cv.height / r.height) };
+
+  // ---- キャプションの一括書出・読込（CSV） ----
+  // 読込はセクションNo・画像No（表示順）で照合し、キャプション列だけを上書きする。
+  var CAPTION_HEADER = ["セクションNo", "セクション名", "画像No", "キャプション"];
+  function exportCaptions(){
+    var rows = [CAPTION_HEADER];
+    project.sections.forEach(function(s, si){
+      s.images.forEach(function(im, ii){ rows.push([si + 1, s.name, ii + 1, im.caption || ""]); });
+    });
+    if (rows.length === 1){ showToast("画像がありません"); return; }
+    downloadBlob(new Blob([buildCsv(rows)], { type: "text/csv" }), safeFileName(project.title, "evidence") + "_キャプション.csv");
+    showToast("キャプションを書き出しました（画像 " + (rows.length - 1) + " 枚）");
   }
-  (function(){
-    var cv = annoEl("annoCanvas");
-    cv.addEventListener("pointerdown", function(e){
-      try{ cv.setPointerCapture(e.pointerId); }catch(err){}
-      var p = annoCoords(e);
-      annoState.drawing = true; annoState.sx = p.x; annoState.sy = p.y;
-      if (annoState.tool === "pen"){
-        annoState.pen = { type:"pen", color:annoState.color, points:[{x:p.x, y:p.y}] };
-        annoState.shapes.push(annoState.pen);
-      } else if (annoState.tool === "text"){
-        annoState.drawing = false;
-        var t = prompt("書き込む文字を入力してください");
-        if (t){
-          annoState.shapes.push({ type:"text", x:p.x, y:p.y, text:String(t).slice(0,500), color:annoState.color, size:Math.max(20, cv.width * 0.025) });
-          annoRedraw();
-        }
+  function importCaptions(file){
+    readTextFile(file).then(function(text){
+      var rows = parseDelimited(text);
+      if (!rows.length){ alert("CSVが空です。"); return; }
+      var head = rows[0].map(function(v){ return v.trim(); });
+      var iSec = head.indexOf("セクションNo"), iImg = head.indexOf("画像No"), iCap = head.indexOf("キャプション");
+      if (iSec < 0 || iImg < 0 || iCap < 0){
+        alert("「セクションNo」「画像No」「キャプション」の列が見つかりません。\n「キャプション書出」で作ったCSVを編集して読み込んでください。");
+        return;
       }
-    });
-    cv.addEventListener("pointermove", function(e){
-      if (!annoState.drawing) return;
-      var p = annoCoords(e);
-      if (annoState.tool === "pen"){
-        annoState.pen.points.push({x:p.x, y:p.y});
-        annoRedraw();
-      } else if (annoState.tool === "rect" || annoState.tool === "arrow" || annoState.tool === "mosaic"){
-        annoRedraw();
-        var preview = (annoState.tool === "arrow")
-          ? { type:"arrow", x1:annoState.sx, y1:annoState.sy, x2:p.x, y2:p.y, color:annoState.color }
-          : { type:annoState.tool, x:Math.min(annoState.sx,p.x), y:Math.min(annoState.sy,p.y), w:Math.abs(p.x-annoState.sx), h:Math.abs(p.y-annoState.sy), color:annoState.color };
-        drawShape(cv.getContext("2d"), preview, annoState.base, cv.width);
-      }
-    });
-    cv.addEventListener("pointerup", function(e){
-      if (!annoState.drawing) return;
-      annoState.drawing = false;
-      var p = annoCoords(e);
-      if (annoState.tool === "rect" || annoState.tool === "mosaic"){
-        annoState.shapes.push({ type:annoState.tool, x:Math.min(annoState.sx,p.x), y:Math.min(annoState.sy,p.y), w:Math.abs(p.x-annoState.sx), h:Math.abs(p.y-annoState.sy), color:annoState.color });
-      } else if (annoState.tool === "arrow"){
-        annoState.shapes.push({ type:"arrow", x1:annoState.sx, y1:annoState.sy, x2:p.x, y2:p.y, color:annoState.color });
-      }
-      annoRedraw();
-    });
-    cv.addEventListener("pointercancel", function(){ annoState.drawing = false; annoRedraw(); });
-
-    Array.prototype.forEach.call(document.querySelectorAll(".anno-toolbar [data-tool]"), function(b){
-      b.addEventListener("click", function(){
-        annoState.tool = b.dataset.tool;
-        Array.prototype.forEach.call(document.querySelectorAll(".anno-toolbar [data-tool]"), function(o){ o.classList.toggle("active", o === b); });
+      var missing = [], changes = [];
+      rows.slice(1).forEach(function(r){
+        var sec = project.sections[parseInt(r[iSec], 10) - 1];
+        var im = sec && sec.images[parseInt(r[iImg], 10) - 1];
+        if (!im){ missing.push(r[iSec] + "-" + r[iImg]); return; }
+        var v = (r[iCap] || "").replace(/\r\n?/g, "\n");
+        if ((im.caption || "") !== v) changes.push([im, v]);
       });
+      if (!changes.length){
+        showToast(missing.length ? "変更はありません（該当画像なし " + missing.length + " 件）" : "変更はありません");
+        return;
+      }
+      snapshot();
+      changes.forEach(function(c){ c[0].caption = c[1]; });
+      render();
+      var msg = "キャプションを " + changes.length + " 件更新しました（Ctrl+Z で戻せます）";
+      if (missing.length) msg += " ／ 該当画像なし " + missing.length + " 件：" + missing.slice(0, 5).join("、") + (missing.length > 5 ? " …" : "");
+      showToast(msg);
+    }).catch(function(){ alert("ファイルを読み込めませんでした。"); });
+  }
+  // ==== CSV（Excel で開いて編集→読み戻す用） ====
+  // 書き出しは BOM 付き UTF-8。読み込みは RFC 4180（区切りはカンマかタブを自動判定、セル内の改行・"" に対応）。
+  function csvCell(v){
+    var t = String(v == null ? "" : v);
+    return /[",\r\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
+  }
+  function buildCsv(rows){
+    return "﻿" + rows.map(function(r){ return r.map(csvCell).join(","); }).join("\r\n") + "\r\n";
+  }
+  function parseDelimited(text){
+    text = text.replace(/^﻿/, "");
+    var firstLine = text.split(/\r?\n/, 1)[0] || "";
+    var sep = (firstLine.split("\t").length > firstLine.split(",").length) ? "\t" : ",";
+    var rows = [], row = [], cell = "", inQ = false;
+    for (var i = 0; i < text.length; i++){
+      var ch = text[i];
+      if (inQ){
+        if (ch === '"'){ if (text[i+1] === '"'){ cell += '"'; i++; } else inQ = false; }
+        else cell += ch;
+      } else if (ch === '"' && cell === "") inQ = true;
+      else if (ch === sep){ row.push(cell); cell = ""; }
+      else if (ch === "\n" || ch === "\r"){
+        if (ch === "\r" && text[i+1] === "\n") i++;
+        row.push(cell); rows.push(row); row = []; cell = "";
+      } else cell += ch;
+    }
+    if (cell !== "" || row.length){ row.push(cell); rows.push(row); }
+    return rows.filter(function(r){ return r.some(function(v){ return v !== ""; }); });
+  }
+  // Excel で上書き保存すると Shift_JIS になることがあるため、UTF-8 として壊れていれば Shift_JIS で読み直す
+  function readTextFile(file){
+    return file.arrayBuffer().then(function(buf){
+      try{ return new TextDecoder("utf-8", { fatal:true }).decode(buf); }
+      catch(e){ return new TextDecoder("shift_jis").decode(buf); }
     });
-    Array.prototype.forEach.call(document.querySelectorAll(".anno-toolbar .swatch"), function(b){
-      b.addEventListener("click", function(){
-        annoState.color = b.dataset.color;
-        Array.prototype.forEach.call(document.querySelectorAll(".anno-toolbar .swatch"), function(o){ o.classList.toggle("active", o === b); });
-      });
-    });
-    document.querySelector('.anno-toolbar [data-tool="rect"]').classList.add("active");
-    document.querySelector(".anno-toolbar .swatch").classList.add("active");
-
-    annoEl("annoUndo").addEventListener("click", function(){ annoState.shapes.pop(); annoRedraw(); });
-    annoEl("annoClear").addEventListener("click", function(){ annoState.shapes = []; annoRedraw(); });
-    annoEl("annoPrev").addEventListener("click", function(){ annoNav(-1); });
-    annoEl("annoNext").addEventListener("click", function(){ annoNav(1); });
-    annoEl("annoCancel").addEventListener("click", annoClose);
-    annoEl("annoSave").addEventListener("click", function(){
-      var changed = annoCommit();
-      annoClose();
-      if (changed) showToast("注釈を保存しました");
-    });
-    // モーダルが開いている間はこちらのキー操作が優先（全体の Ctrl+Z とは別物）
-    document.addEventListener("keydown", function(e){
-      if (!annoIsOpen()) return;
-      if (e.key === "Escape"){ annoClose(); }
-      else if (e.key === "ArrowRight"){ annoNav(1); e.preventDefault(); }
-      else if (e.key === "ArrowLeft"){ annoNav(-1); e.preventDefault(); }
-      else if ((e.ctrlKey || e.metaKey) && (e.key || "").toLowerCase() === "z"){ annoState.shapes.pop(); annoRedraw(); e.preventDefault(); }
-    });
-  })();
+  }
+  function downloadBlob(blob, name){
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a"); a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+  function safeFileName(s, fallback){ return String(s || fallback).replace(/[\\/:*?"<>|]/g, "_"); }
 
   // ==== bulk action bar ====
+  var bulkMoveDstId = null;
   var bulkBar = document.createElement("div");
   bulkBar.className = "bulk-bar hidden";
   document.body.appendChild(bulkBar);
@@ -1192,10 +1926,38 @@
       });
       bulkBar.appendChild(b);
     });
+    var sep = document.createElement("span"); sep.className = "bulk-sep";
+    bulkBar.appendChild(sep);
+    var dst = document.createElement("select"); dst.className = "no-undo"; dst.title = "移動先のセクション";
+    project.sections.forEach(function(s, i){
+      var o = document.createElement("option"); o.value = s.id;
+      o.textContent = (i + 1) + ". " + (s.name || "");
+      if (s.id === bulkMoveDstId) o.selected = true;
+      dst.appendChild(o);
+    });
+    dst.addEventListener("change", function(){ bulkMoveDstId = dst.value; });
+    dst.addEventListener("click", function(e){ e.stopPropagation(); });
+    bulkBar.appendChild(dst);
+    var mv = document.createElement("button"); mv.textContent = "へ移動";
+    mv.title = "選択した画像を、選んだセクションの末尾へ表示順のまま移動します";
+    mv.addEventListener("click", function(){
+      var sec = getSection(dst.value);
+      bulkMoveDstId = dst.value;
+      if (!sec) return;
+      var ids = selectedImageIds();
+      if (moveImagesTo(ids, sec.id, sec.images.length)){
+        setActiveSection(sec.id);
+        render();
+        showToast(ids.length + " 枚を「" + sec.name + "」へ移動しました（Ctrl+Z で戻せます）");
+      } else showToast("移動先が現在と同じです");
+    });
+    bulkBar.appendChild(mv);
+    var sep2 = document.createElement("span"); sep2.className = "bulk-sep";
+    bulkBar.appendChild(sep2);
     var delBtn = document.createElement("button");
     delBtn.className = "bulk-del"; delBtn.textContent = "一括削除";
     delBtn.addEventListener("click", function(){
-      if (!confirm(n + "枚の画像を削除しますか？")) return;
+      if (!confirm(n + "枚の画像を削除しますか？（Ctrl+Z で戻せます）")) return;
       snapshot();
       forEachSelected(function(sec, im, i){ sec.images.splice(i,1); });
       selectedIds = {};
@@ -1233,14 +1995,16 @@
 
   // Inline the base64 payloads again for anything that leaves the app (JSON file, export HTML).
   // The on-disk format is unchanged: images carry `src`, exactly as before.
-  function materializeProject(){
+  // forDistribution = true（配布用）のときは原本と図形を含めない。原本にはモザイクで
+  // 隠したはずの社名・氏名・IPがそのまま残っているため、外へ出すファイルに入れてはいけない。
+  function materializeProject(forDistribution){
     var p = JSON.parse(JSON.stringify(project));
     p.sections.forEach(function(s){
       (s.images || []).forEach(function(im){
         // src = 見た目どおり（＝注釈を焼き込んだもの）。読み込み側が古くても正しく表示される。
         im.src = getImage(im.flatRef || im.ref);
         // 注釈を付けた画像だけ、あとで書き直せるように原本も添える。
-        if ((im.shapes || []).length) im.srcOriginal = getImage(im.ref);
+        if ((im.shapes || []).length && !forDistribution) im.srcOriginal = getImage(im.ref);
         else delete im.shapes;
         delete im.ref; delete im.flatRef;
       });
@@ -1293,7 +2057,7 @@
           var origSrc = safeDataUrl(im.srcOriginal);
           var flatSrc = safeDataUrl(im.src);
           var ref = null, shapes = [];
-          if (origSrc){ ref = putImage(origSrc); shapes = normalizeShapes(im.shapes); }
+          if (origSrc){ ref = putImage(origSrc); shapes = Annotator.normalizeShapes(im.shapes); }
           else if (flatSrc) ref = putImage(flatSrc);
           else if (typeof im.ref === "string" && imageStore[im.ref]) ref = im.ref;
           if (!ref) return;  // an image with no payload is not an image
@@ -1359,8 +2123,8 @@
     });
   }
 
-  function buildExportHtml(){
-    var dataJson = JSON.stringify(materializeProject());
+  function buildExportHtml(forDistribution){
+    var dataJson = JSON.stringify(materializeProject(forDistribution));
     var parts = [];
     parts.push('<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8">');
     parts.push('<meta name="viewport" content="width=device-width, initial-scale=1.0">');
@@ -1396,12 +2160,12 @@
     ".ev-gallery{display:flex;flex-wrap:wrap;gap:14px;}",
     ".ev-img-card{border:1px solid var(--border);border-radius:6px;overflow:hidden;background:#fff;}",
     ".ev-img-card img{width:100%;height:auto;display:block;cursor:zoom-in;}",
-    ".ev-caption{font-size:12px;color:var(--ink-soft);padding:6px 8px;border-top:1px solid var(--border);background:var(--paper);}",
+    ".ev-caption{font-size:12px;color:var(--ink-soft);padding:6px 8px;border-top:1px solid var(--border);background:var(--paper);white-space:pre-wrap;overflow-wrap:anywhere;}",
     "#ev-lb{display:none;position:fixed;inset:0;background:rgba(10,12,16,.93);z-index:500;align-items:center;justify-content:center;gap:14px;padding:24px;cursor:zoom-out;}",
     "#ev-lb.open{display:flex;}",
     "#ev-lb figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:8px;max-width:calc(100% - 130px);max-height:100%;cursor:default;}",
     "#ev-lb figure img{max-width:100%;max-height:calc(100vh - 130px);box-shadow:0 0 0 1px #444;background:#fff;}",
-    "#ev-lb .cap{color:#e6e6e6;font-size:13px;text-align:center;max-width:80vw;}",
+    "#ev-lb .cap{color:#e6e6e6;font-size:13px;text-align:center;max-width:80vw;white-space:pre-wrap;}",
     "#ev-lb .nav{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.25);color:#fff;font-size:26px;line-height:1;width:44px;height:64px;border-radius:8px;cursor:pointer;flex:0 0 auto;}",
     "#ev-lb .nav:hover{background:rgba(255,255,255,.2);}",
     "#ev-lb .count{position:fixed;top:14px;right:18px;color:#aaa;font-size:12px;font-family:var(--font-mono);}",
@@ -1433,6 +2197,8 @@
     "  header.appendChild(titleEl);",
     "  app.appendChild(header);",
     "",
+    "  // キャプションの改行と、手入力した <br> を改行として表示する（それ以外は文字のまま）",
+    "  function capText(s){ return String(s || '').replace(/\\r\\n?/g, '\\n').replace(/<br\\s*\\/?>/gi, '\\n'); }",
     "  var main = document.createElement('div'); main.className = 'ev-main';",
     "  var flat = [];",
     "  project.sections.forEach(function(section){",
@@ -1446,10 +2212,10 @@
     "      var el = document.createElement('img'); el.src = img.src;",
     "      el.alt = img.caption || (section.name + ' の画像');",
     "      (function(i){ el.addEventListener('click', function(){ lbShow(i); }); })(flat.length);",
-    "      flat.push({ src: img.src, caption: img.caption || '', section: section.name });",
+    "      flat.push({ src: img.src, caption: capText(img.caption), section: section.name });",
     "      card.appendChild(el);",
     "      if (img.caption){",
-    "        var cap = document.createElement('div'); cap.className = 'ev-caption'; cap.textContent = img.caption;",
+    "        var cap = document.createElement('div'); cap.className = 'ev-caption'; cap.textContent = capText(img.caption);",
     "        card.appendChild(cap);",
     "      }",
     "      gallery.appendChild(card);",
@@ -1500,17 +2266,26 @@
   ].join("\n");
 
   $("#btnExport").addEventListener("click", function(){
-    var html = buildExportHtml();
+    var html = buildExportHtml(false);
     var blob = new Blob([html], {type:"text/html"});
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement("a"); a.href = url; a.download = (project.title || "evidence") + ".html";
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    downloadBlob(blob, (project.title || "evidence") + ".html");
     showToast("HTMLを書き出しました（" + (blob.size/1048576).toFixed(1) + " MB / このHTMLはそのまま読み戻せます）");
+  });
+  $("#btnExportDist").addEventListener("click", function(){
+    var html = buildExportHtml(true);
+    var blob = new Blob([html], {type:"text/html"});
+    downloadBlob(blob, (project.title || "evidence") + "_配布用.html");
+    showToast("配布用HTMLを書き出しました（" + (blob.size/1048576).toFixed(1) + " MB / 注釈前の原本は含みません）");
+  });
+  $("#btnCapExport").addEventListener("click", exportCaptions);
+  $("#capImportInput").addEventListener("change", function(e){
+    var f = e.target.files[0];
+    e.target.value = "";
+    if (f) importCaptions(f);
   });
 
   $("#btnPreview").addEventListener("click", function(){
-    var html = buildExportHtml();
+    var html = buildExportHtml(false);
     $("#previewFrame").srcdoc = html;
     $("#previewModal").classList.remove("hidden");
   });
