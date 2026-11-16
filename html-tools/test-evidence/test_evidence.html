@@ -7,9 +7,19 @@
   :root{
     --paper:#fbfaf7; --ink:#1e2430; --line:#d8dce1; --navy:#1f3a5f;
     --ok:#1c7c4c; --ng:#b0392f; --pending:#a6791f; --muted:#6b7280;
+    --bg:#e9ebee; --soft:#eef2f6;
   }
+  /* ==== 着せ替え（編集画面だけ。保存・配布用HTMLと印刷には影響しない） ====
+     --bg：画面の背景 / --navy：上部バー・番号・強調色 / --soft：選択・ホバーの淡色 / --paper：用紙 */
+  html[data-skin="beige"]{ --bg:#e9e1d2; --navy:#6b4f2a; --soft:#f4ede1; --paper:#fffdf8; }
+  html[data-skin="mint"]{ --bg:#d9eae2; --navy:#1f5c4a; --soft:#e6f3ed; --paper:#fbfdfc; }
+  html[data-skin="sky"]{ --bg:#dbe8f4; --navy:#1d5a8c; --soft:#e7f0f9; --paper:#fbfdff; }
+  html[data-skin="lavender"]{ --bg:#e5e1f0; --navy:#4a3f78; --soft:#efecf7; --paper:#fcfbff; }
+  html[data-skin="sakura"]{ --bg:#f2e0e4; --navy:#8a3b52; --soft:#f8ebee; --paper:#fffbfc; }
+  html[data-skin="night"]{ --bg:#22262e; --navy:#12151a; --soft:#e4e8ef; }
+  .skin-color{ width:28px; height:24px; padding:0 2px; border:1px solid rgba(255,255,255,.5); border-radius:4px; background:transparent; cursor:pointer; vertical-align:middle; }
   *{ box-sizing:border-box; }
-  body{ margin:0; background:#e9ebee; color:var(--ink); font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",Arial,sans-serif; }
+  body{ margin:0; background:var(--bg); color:var(--ink); font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",Arial,sans-serif; }
   .toolbar{ position:sticky; top:0; z-index:10; background:var(--navy); color:#fff; padding:12px 20px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
   .toolbar h1{ font-size:14px; font-weight:600; margin:0 12px 0 0; }
   .toolbar input[type=text]{ padding:6px 9px; border:none; border-radius:4px; font-size:12.5px; width:140px; }
@@ -66,11 +76,11 @@
   .shot-card .shot-actions .spacer{ flex:1; }
 
   .add-shot{ flex:0 0 calc(33% - 12px); min-width:160px; border:2px dashed var(--line); border-radius:6px; min-height:120px; display:flex; flex-direction:column; gap:8px; align-items:center; justify-content:center; text-align:center; color:var(--muted); font-size:11.5px; cursor:pointer; padding:8px; }
-  .add-shot.selected{ border-style:solid; border-color:var(--navy); background:#eef2f6; color:var(--navy); font-weight:600; }
+  .add-shot.selected{ border-style:solid; border-color:var(--navy); background:var(--soft); color:var(--navy); font-weight:600; }
   .add-shot .pick-file{ background:#fff; border:1px solid var(--line); border-radius:4px; padding:4px 10px; font-size:11.5px; cursor:pointer; color:var(--ink); }
 
   .add-case{ display:block; width:100%; padding:12px; border:1px dashed var(--navy); background:none; color:var(--navy); font-size:13px; font-weight:600; border-radius:6px; cursor:pointer; margin-top:6px; }
-  .add-case:hover{ background:#eef2f6; }
+  .add-case:hover{ background:var(--soft); }
 
   /* annotation modal */
   #annotateModal{ position:fixed; inset:0; background:rgba(15,18,24,.92); z-index:100; display:none; flex-direction:column; }
@@ -106,7 +116,7 @@
   .shot-card .thumb-wrap[draggable=true]{ cursor:grab; }
   .shot-card.drag-over-left{ box-shadow:-3px 0 0 0 var(--navy); }
   .shot-card.drag-over-right{ box-shadow:3px 0 0 0 var(--navy); }
-  .add-shot.drag-over-img{ border-style:solid; border-color:var(--navy); background:#eef2f6; }
+  .add-shot.drag-over-img{ border-style:solid; border-color:var(--navy); background:var(--soft); }
   .dragging{ opacity:.4; }
   .sel-box{ position:absolute; top:4px; right:4px; z-index:2; }
   .sel-box input{ width:15px; height:15px; cursor:pointer; accent-color:var(--navy); margin:0; }
@@ -118,7 +128,7 @@
   .bulk-sep{ width:1px; height:18px; background:rgba(255,255,255,.35); }
   #ctxMenu{ position:fixed; z-index:300; background:#fff; border:1px solid var(--line); border-radius:6px; box-shadow:0 6px 20px rgba(0,0,0,.18); min-width:170px; padding:4px 0; display:none; font-size:12.5px; }
   .ctx-item{ padding:7px 14px; cursor:pointer; }
-  .ctx-item:hover{ background:#eef2f6; }
+  .ctx-item:hover{ background:var(--soft); }
   .ctx-item.danger{ color:var(--ng); }
   .ctx-sep{ height:1px; background:var(--line); margin:4px 0; }
   #searchBar{ position:fixed; top:60px; right:24px; z-index:150; background:#fff; border:1px solid var(--line); border-radius:8px; box-shadow:0 6px 20px rgba(0,0,0,.18); padding:8px 10px; display:none; gap:6px; align-items:center; font-size:12.5px; flex-wrap:wrap; max-width:560px; }
@@ -148,7 +158,7 @@
   @media print{
     .toolbar, .add-case, .icon-btn, .shot-actions, .add-shot, .edit-hint, .sel-box, .drag-handle, #searchBar, #ctxMenu, #bulkBar, #restoreBanner, #helpOverlay{ display:none !important; }
     body{ background:#fff; }
-    #sheet{ box-shadow:none; margin:0; max-width:100%; }
+    #sheet{ box-shadow:none; margin:0; max-width:100%; background:#fff; }
     .case{ break-inside:avoid; }
     textarea, input, select{ border:none !important; background:transparent !important; }
     textarea{ overflow:hidden !important; resize:none !important; }
@@ -168,6 +178,9 @@
   <div class="meta-row">縮小<select id="shrinkSel"><option value="1600">長辺1600px</option><option value="1200">長辺1200px</option><option value="800" selected>長辺800px</option><option value="500">長辺500px</option><option value="0">なし</option></select></div>
   <div class="meta-row">形式<select id="fmtSel"><option value="jpeg85" selected>JPEG 標準</option><option value="jpeg92">JPEG 高画質</option><option value="png">PNG</option></select></div>
   <div class="meta-row">既定幅<select id="defWidth" title="新しく取り込む画像の表示幅。個々の画像はカード下のボタン、または右端をドラッグで変更できます"><option value="100">100%</option><option value="50" selected>50%</option><option value="33">33%</option><option value="25">25%</option></select></div>
+  <div class="meta-row" title="編集画面の配色（このブラウザに記憶。保存・配布用HTMLと印刷には影響しません）">着せ替え<select id="skinSel">
+    <option value="">標準（グレー）</option><option value="beige">ベージュ</option><option value="mint">ミント</option><option value="sky">スカイ</option><option value="lavender">ラベンダー</option><option value="sakura">さくら</option><option value="night">夜（背景を暗く）</option>
+  </select><input type="color" id="bgColor" class="skin-color" title="背景色を自由に選ぶ（右クリックで着せ替えの色に戻す）"></div>
   <span id="stats"></span>
   <span id="saveStatus" class="meta-row" style="white-space:nowrap"></span>
   <div style="flex:1"></div>
@@ -235,6 +248,12 @@
         <li>「コメント書出」— 全画像のコメントを CSV（ケースNo・ケース名・画像No・図番号・コメント）で保存。Excel で編集できます</li>
         <li>「コメント読込」— 編集した CSV を読み込み、ケースNo・画像No が一致する画像のコメントを上書きします（<kbd>Ctrl</kbd>+<kbd>Z</kbd> で戻せます）</li>
         <li>コメントの改行は報告書の図キャプションでも改行されます（<code>&lt;br&gt;</code> と書いても改行になります）</li>
+      </ul>
+      <h3>着せ替え</h3>
+      <ul>
+        <li>上部バーの「着せ替え」で編集画面の配色（背景・上部バー・強調色）を切り替えます</li>
+        <li>横の色ボタンで背景色だけを自由に選べます（右クリックで着せ替えの色に戻す）</li>
+        <li>設定はこのブラウザに記憶されます。作業用・配布用HTMLと印刷の見た目には影響しません</li>
       </ul>
       <h3>自動保存</h3>
       <ul>
@@ -2242,7 +2261,9 @@ function saveSettings(){
     localStorage.setItem(SETTINGS_KEY, JSON.stringify({
       shrink:   document.getElementById('shrinkSel').value,
       fmt:      document.getElementById('fmtSel').value,
-      defWidth: document.getElementById('defWidth').value
+      defWidth: document.getElementById('defWidth').value,
+      skin:     document.getElementById('skinSel').value,
+      bg:       customBg
     }));
   }catch(e){ /* プライベートウィンドウ等。設定が残らないだけなので無視 */ }
 }
@@ -2258,8 +2279,37 @@ function loadSettings(){
   setSel('shrinkSel', s.shrink);
   setSel('fmtSel', s.fmt);
   setSel('defWidth', s.defWidth);
+  setSel('skinSel', s.skin);
+  customBg = (typeof s.bg === 'string' && /^#[0-9a-f]{6}$/i.test(s.bg)) ? s.bg : '';
+}
+
+/* ---------- 着せ替え ---------- */
+// プリセットは data-skin で色の組をまとめて切り替える。背景色だけを自由に選んだ場合は --bg を上書きする。
+let customBg = '';
+function applySkin(){
+  const root = document.documentElement;
+  const skin = document.getElementById('skinSel').value;
+  if(skin) root.dataset.skin = skin; else delete root.dataset.skin;
+  if(customBg) root.style.setProperty('--bg', customBg); else root.style.removeProperty('--bg');
+  document.getElementById('bgColor').value = customBg || getComputedStyle(root).getPropertyValue('--bg').trim() || '#e9ebee';
 }
 loadSettings();
+applySkin();
+document.getElementById('skinSel').addEventListener('change', () => {
+  customBg = '';   // 着せ替えを選び直したら、その組の背景色に戻す
+  applySkin(); saveSettings();
+});
+document.getElementById('bgColor').addEventListener('input', e => {
+  customBg = e.target.value;
+  applySkin(); saveSettings();
+});
+document.getElementById('bgColor').addEventListener('contextmenu', e => {
+  e.preventDefault();
+  if(!customBg) return;
+  customBg = '';
+  applySkin(); saveSettings();
+  showToast('背景色を着せ替えの色に戻しました');
+});
 document.getElementById('shrinkSel').addEventListener('change', saveSettings);
 document.getElementById('fmtSel').addEventListener('change', saveSettings);
 document.getElementById('defWidth').addEventListener('change', saveSettings);
